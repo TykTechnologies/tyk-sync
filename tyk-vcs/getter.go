@@ -1,4 +1,4 @@
-package tyk_git
+package tyk_vcs
 
 import (
 	"encoding/json"

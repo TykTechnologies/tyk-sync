@@ -1,3 +1,3 @@
-package tyk_git
+package tyk_vcs
 
 func init() {}

@@ -1,4 +1,4 @@
-package tyk_git
+package tyk_vcs
 
 type PublishAction string
 type SpecType string
@@ -24,7 +24,7 @@ type APIInfo struct {
 }
 
 type TykSourceSpec struct {
-	Type SpecType `json:"type"`
-	File string   `json:"file"`
-	Meta APIInfo  `json:"meta"`
+	Type  SpecType `json:"type"`
+	Files []string   `json:"files"`
+	Meta  APIInfo  `json:"meta"`
 }

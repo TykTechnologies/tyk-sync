@@ -1,4 +1,4 @@
-package tyk_git
+package tyk_vcs
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ var mockPublish MockPublisher = MockPublisher{}
 
 func (mp MockPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
 	newID := "654321"
-	fmt.Printf("Creating API ID: %v (on: %vm to: %v\n)",
+	fmt.Printf("Creating API ID: %v (on: %v to: %v)\n",
 		newID,
 		apiDef.Proxy.ListenPath,
 		apiDef.Proxy.TargetURL)
@@ -22,12 +22,16 @@ func (mp MockPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
 }
 
 func (mp MockPublisher) Update(id string, apiDef *apidef.APIDefinition) error {
-	fmt.Printf("Updating API ID: %v (on: %vm to: %v\n)",
+	fmt.Printf("Updating API ID: %v (on: %v to: %v)\n",
 		apiDef.APIID,
 		apiDef.Proxy.ListenPath,
 		apiDef.Proxy.TargetURL)
 
 	return nil
+}
+
+func (mp MockPublisher) Name() string {
+	return "Mock Publisher"
 }
 
 func TestNewGGetter(t *testing.T) {
@@ -86,10 +90,16 @@ func TestGitGetter_FetchAPIDef(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ad, err := g.FetchAPIDef(ts)
+	ads, err := g.FetchAPIDef(ts)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if len(ads) == 0 {
+		t.Fatal("Should have returned more than 0 API Defs")
+	}
+
+	ad := ads[0]
 
 	if ad.APIID != ts.Meta.APIID {
 		t.Fatalf("APIID Was not properly set, expected: %v, got %v", ts.Meta.APIID, ad.APIID)
@@ -116,10 +126,16 @@ func TestGitGetter_FetchAPIDef_Swagger(t *testing.T) {
 		t.Fatalf("Spec type setting is unexpected expected: 'oas', got %v", ts.Type)
 	}
 
-	ad, err := g.FetchAPIDef(ts)
+	ads, err := g.FetchAPIDef(ts)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if len(ads) == 0 {
+		t.Fatal("Should have returned more than 0 API Defs")
+	}
+
+	ad := ads[0]
 
 	if ad.Name != "Swagger Petstore" {
 		t.Fatalf("Name Was not properly set, expected: 'Swagger Petstore', got %v", ad.Name)
