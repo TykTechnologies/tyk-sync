@@ -129,6 +129,8 @@ func (gg *GitGetter) fetchAPIDefinitionsDirect(spec *TykSourceSpec) ([]apidef.AP
 		defs[i] = ad
 	}
 
+	fmt.Printf("Fetched %v definitions\n", len(defs))
+
 	return defs, nil
 }
 

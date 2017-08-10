@@ -40,5 +40,6 @@ func init() {
 	publishCmd.Flags().StringP("dashboard", "d", "", "Fully qualified dashboard target URL")
 	publishCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
 	publishCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
+	publishCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	publishCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 }

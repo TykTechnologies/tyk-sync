@@ -77,12 +77,22 @@ func (s *SwaggerAST) ReadString(asJson string) error {
 	return nil
 }
 
+func NewEmptyVersion() apidef.VersionInfo {
+	// We need this because sometimes the schemas reject null values
+	d := apidef.VersionInfo{}
+	d.Paths.BlackList = make([]string, 0)
+	d.Paths.WhiteList = make([]string, 0)
+	d.Paths.Ignored = make([]string, 0)
+
+	return d
+}
+
 func (s *SwaggerAST) ConvertIntoApiVersion(versionName string) (apidef.VersionInfo, error) {
-	versionInfo := apidef.VersionInfo{}
+	versionInfo := NewEmptyVersion()
 
 	versionInfo.UseExtendedPaths = true
 	vname := versionName
-	if versionName == ""{
+	if versionName == "" {
 		vname = "Default"
 	}
 
@@ -122,14 +132,28 @@ func (s *SwaggerAST) ConvertIntoApiVersion(versionName string) (apidef.VersionIn
 	return versionInfo, nil
 }
 
-func CreateDefinitionFromSwagger(s *SwaggerAST, orgId string, versionName string) (*apidef.APIDefinition, error) {
-	ad := apidef.APIDefinition{
-		Name:             s.Info.Title,
-		Active:           true,
-		UseKeylessAccess: true,
-		APIID:            uuid.NewV4().String(),
-		OrgID:            orgId,
+func newBlankDBDashDefinition() *apidef.APIDefinition {
+	EmptyMW := apidef.MiddlewareSection{
+		Pre: make([]apidef.MiddlewareDefinition, 0),
+		Post: make([]apidef.MiddlewareDefinition, 0),
 	}
+	return &apidef.APIDefinition{
+		ConfigData: map[string]interface{}{},
+		ResponseProcessors: make([]apidef.ResponseProcessor,0),
+		AllowedIPs: make([]string, 0),
+		CustomMiddleware: EmptyMW,
+		Tags: make([]string,0),
+	}
+}
+
+func CreateDefinitionFromSwagger(s *SwaggerAST, orgId string, versionName string) (*apidef.APIDefinition, error) {
+	ad := newBlankDBDashDefinition()
+	ad.Name =             s.Info.Title
+	ad.Active =           true
+	ad.UseKeylessAccess = true
+	ad.APIID = uuid.NewV4().String()
+	ad.OrgID = orgId
+
 	ad.VersionDefinition.Key = "version"
 	ad.VersionDefinition.Location = "header"
 	ad.VersionData.Versions = make(map[string]apidef.VersionInfo)
@@ -168,5 +192,5 @@ func CreateDefinitionFromSwagger(s *SwaggerAST, orgId string, versionName string
 
 	ad.VersionData.Versions[vname] = versionData
 
-	return &ad, nil
+	return ad, nil
 }

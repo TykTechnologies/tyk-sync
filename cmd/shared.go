@@ -7,6 +7,7 @@ import (
 	"github.com/TykTechnologies/tyk/apidef"
 	"errors"
 	"fmt"
+	"os"
 )
 
 func doGitFetchCycle(getter *tyk_vcs.GitGetter) ([]apidef.APIDefinition, error) {
@@ -38,10 +39,35 @@ func getPublisher(cmd *cobra.Command, args []string) (tyk_vcs.Publisher, error) 
 		return cli_publisher.MockPublisher{}, nil
 	}
 
-	//gwString, _ := cmd.Flags().GetString("gateway")
-	//dbString, _ := cmd.Flags().GetString("dashboard")
+	dbString, _ := cmd.Flags().GetString("dashboard")
 
-	return nil, errors.New("No other publishers defined!")
+	flagVal, _ := cmd.Flags().GetString("secret")
+	if dbString != "" {
+		sec := os.Getenv("TYKGIT_DB_SECRET")
+		if sec == "" && flagVal == "" {
+			return nil, errors.New("Please set TYKGIT_DB_SECRET, or set the --secret flag, to your dashboard user secret")
+		}
+
+		secret := ""
+		if sec != "" {
+			secret = sec
+		}
+
+		if flagVal != "" {
+			secret = flagVal
+		}
+
+		newDashPublisher := &cli_publisher.DashboardPublisher{
+			Secret: secret,
+			Hostname: dbString,
+		}
+
+		return newDashPublisher, nil
+	}
+
+	//gwString, _ := cmd.Flags().GetString("gateway")
+
+	return nil, errors.New("Publisher target not defined!")
 }
 func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 	keyFile, _ := cmd.Flags().GetString("key")
@@ -90,7 +116,6 @@ func processPublish(cmd *cobra.Command, args []string) error {
 			} else {
 				fmt.Printf("--> Status: OK, ID:%v\n", id)
 			}
-			return nil
 		}
 
 		if cmd.Use == "update" {

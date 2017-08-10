@@ -57,5 +57,6 @@ func init() {
 	updateCmd.Flags().StringP("dashboard", "d", "", "Fully qualified dashboard target URL")
 	updateCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
 	updateCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
+	updateCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	updateCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 }
