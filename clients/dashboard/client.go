@@ -1,34 +1,34 @@
 package dashboard
 
 import (
-	"github.com/levigross/grequests"
-	"github.com/TykTechnologies/tyk/apidef"
-	"github.com/ongoingio/urljoin"
 	"errors"
 	"fmt"
+	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/levigross/grequests"
+	"github.com/ongoingio/urljoin"
 )
 
 type Client struct {
-	url string
+	url    string
 	secret string
 }
 
 type APIResponse struct {
 	Message string
-	Meta string
-	Status string
+	Meta    string
+	Status  string
 }
 
 type DBApiDefinition struct {
-	apidef.APIDefinition    `bson:"api_definition,inline" json:"api_definition,inline"`
-	HookReferences          []interface{} `bson:"hook_references" json:"hook_references"`
-	IsSite                  bool            `bson:"is_site" json:"is_site"`
-	SortBy                  int             `bson:"sort_by" json:"sort_by"`
+	apidef.APIDefinition `bson:"api_definition,inline" json:"api_definition,inline"`
+	HookReferences       []interface{} `bson:"hook_references" json:"hook_references"`
+	IsSite               bool          `bson:"is_site" json:"is_site"`
+	SortBy               int           `bson:"sort_by" json:"sort_by"`
 }
 
 type APISResponse struct {
-	Apis    []DBApiDefinition `json:"apis"`
-	Pages   int `json:"pages"`
+	Apis  []DBApiDefinition `json:"apis"`
+	Pages int               `json:"pages"`
 }
 
 const (
@@ -42,7 +42,7 @@ var (
 
 func NewDashboardClient(url, secret string) (*Client, error) {
 	return &Client{
-		url: url,
+		url:    url,
 		secret: secret,
 	}, nil
 }
@@ -57,7 +57,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
-		Params: map[string]string{"p":"-2"},
+		Params: map[string]string{"p": "-2"},
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
@@ -77,14 +77,14 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", err
 	}
 
-	for _, api := range(apis.Apis) {
+	for _, api := range apis.Apis {
 		if api.APIID == def.APIID {
 			return "", UseUpdateError
 		}
 	}
 
 	// Create
-	asDBDef := DBApiDefinition{APIDefinition:*def}
+	asDBDef := DBApiDefinition{APIDefinition: *def}
 	c.fixDBDef(&asDBDef)
 
 	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
@@ -119,7 +119,7 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
-		Params: map[string]string{"p":"-2"},
+		Params: map[string]string{"p": "-2"},
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
@@ -140,8 +140,9 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	}
 
 	found := false
-	for _, api := range(apis.Apis) {
-		if api.APIID == def.APIID {
+	for _, api := range apis.Apis {
+		// Dashboard uses it's own IDs
+		if api.Id == def.Id {
 			found = true
 			break
 		}
@@ -152,10 +153,11 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	}
 
 	// Update
-	asDBDef := DBApiDefinition{APIDefinition:*def}
+	asDBDef := DBApiDefinition{APIDefinition: *def}
 	c.fixDBDef(&asDBDef)
 
-	updateResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
+	updatePath := urljoin.Join(c.url, endpointAPIs, def.Id.Hex())
+	updateResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
 		JSON: asDBDef,
 		Headers: map[string]string{
 			"Authorization": c.secret,

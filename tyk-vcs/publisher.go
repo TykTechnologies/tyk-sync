@@ -7,5 +7,5 @@ import (
 type Publisher interface {
 	Name() string
 	Create(apiDef *apidef.APIDefinition) (string, error)
-	Update(id string, apiDef *apidef.APIDefinition) error
+	Update(apiDef *apidef.APIDefinition) error
 }

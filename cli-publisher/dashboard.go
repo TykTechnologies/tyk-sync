@@ -1,12 +1,12 @@
 package cli_publisher
 
 import (
-	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/TykTechnologies/tyk-git/clients/dashboard"
+	"github.com/TykTechnologies/tyk/apidef"
 )
 
-type DashboardPublisher struct{
-	Secret string
+type DashboardPublisher struct {
+	Secret   string
 	Hostname string
 }
 
@@ -19,7 +19,7 @@ func (p *DashboardPublisher) Create(apiDef *apidef.APIDefinition) (string, error
 	return c.CreateAPI(apiDef)
 }
 
-func (p *DashboardPublisher) Update(id string, apiDef *apidef.APIDefinition) error {
+func (p *DashboardPublisher) Update(apiDef *apidef.APIDefinition) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
 	if err != nil {
 		return err

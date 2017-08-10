@@ -16,4 +16,3 @@ var RootCmd = &cobra.Command{
 		// Do Stuff Here
 	},
 }
-

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/TykTechnologies/tyk-git/tyk-swagger"
 	"github.com/TykTechnologies/tyk/apidef"
+	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/src-d/go-billy.v3"
 	"gopkg.in/src-d/go-billy.v3/memfs"
 	"gopkg.in/src-d/go-git.v4"
@@ -97,12 +98,12 @@ func (gg *GitGetter) fetchAPIDefinitionsDirect(spec *TykSourceSpec) ([]apidef.AP
 
 	defNames := spec.Files
 	if len(spec.Files) == 0 {
-		defNames = append(defNames, "api_definition.json")
+		defNames = append(defNames, APIInfo{File: "api_definition.json"})
 	}
 
 	defs := make([]apidef.APIDefinition, len(defNames))
-	for i, defName := range defNames {
-		defFile, err := gg.fs.Open(defName)
+	for i, defInfo := range defNames {
+		defFile, err := gg.fs.Open(defInfo.File)
 		if err != nil {
 			return nil, err
 		}
@@ -118,12 +119,16 @@ func (gg *GitGetter) fetchAPIDefinitionsDirect(spec *TykSourceSpec) ([]apidef.AP
 			return nil, err
 		}
 
-		if spec.Meta.APIID != "" {
-			ad.APIID = spec.Meta.APIID
+		if defInfo.APIID != "" {
+			ad.APIID = defInfo.APIID
 		}
 
-		if spec.Meta.ORGID != "" {
-			ad.OrgID = spec.Meta.ORGID
+		if defInfo.DBID != "" {
+			ad.Id = bson.ObjectIdHex(defInfo.DBID)
+		}
+
+		if defInfo.ORGID != "" {
+			ad.OrgID = defInfo.ORGID
 		}
 
 		defs[i] = ad
@@ -142,13 +147,13 @@ func (gg *GitGetter) fetchAPIDefinitionsFromOAI(spec *TykSourceSpec) ([]apidef.A
 
 	oaiNames := spec.Files
 	if len(spec.Files) == 0 {
-		oaiNames = append(oaiNames, "swagger.json")
+		oaiNames = append(oaiNames, APIInfo{File: "swagger.json"})
 	}
 
 	defs := make([]apidef.APIDefinition, len(oaiNames))
 
-	for i, oaiName := range(oaiNames) {
-		oaiFile, err := gg.fs.Open(oaiName)
+	for i, oaiInfo := range oaiNames {
+		oaiFile, err := gg.fs.Open(oaiInfo.File)
 		if err != nil {
 			return nil, err
 		}
@@ -164,24 +169,30 @@ func (gg *GitGetter) fetchAPIDefinitionsFromOAI(spec *TykSourceSpec) ([]apidef.A
 			return nil, err
 		}
 
-		ad, err := tyk_swagger.CreateDefinitionFromSwagger(&oai, spec.Meta.ORGID, spec.Meta.OAS.VersionName)
+		ad, err := tyk_swagger.CreateDefinitionFromSwagger(&oai,
+			oaiInfo.ORGID,
+			oaiInfo.OAS.VersionName)
 		if err != nil {
 			return nil, err
 		}
 
-		if spec.Meta.APIID != "" {
-			ad.APIID = spec.Meta.APIID
+		if oaiInfo.APIID != "" {
+			ad.APIID = oaiInfo.APIID
 		}
 
-		if spec.Meta.OAS.OverrideListenPath != "" {
-			ad.Proxy.ListenPath = spec.Meta.OAS.OverrideListenPath
+		if oaiInfo.DBID != "" {
+			ad.Id = bson.ObjectIdHex(oaiInfo.DBID)
 		}
 
-		if spec.Meta.OAS.OverrideTarget != "" {
-			ad.Proxy.TargetURL = spec.Meta.OAS.OverrideTarget
+		if oaiInfo.OAS.OverrideListenPath != "" {
+			ad.Proxy.ListenPath = oaiInfo.OAS.OverrideListenPath
 		}
 
-		if spec.Meta.OAS.StripListenPath {
+		if oaiInfo.OAS.OverrideTarget != "" {
+			ad.Proxy.TargetURL = oaiInfo.OAS.OverrideTarget
+		}
+
+		if oaiInfo.OAS.StripListenPath {
 			ad.Proxy.StripListenPath = true
 		}
 
@@ -196,5 +207,5 @@ func (gg *GitGetter) Create(apiDef *apidef.APIDefinition) (string, error) {
 }
 
 func (gg *GitGetter) Update(id string, apiDef *apidef.APIDefinition) error {
-	return gg.publisher.Update(id, apiDef)
+	return gg.publisher.Update(apiDef)
 }

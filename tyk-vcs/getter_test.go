@@ -101,8 +101,8 @@ func TestGitGetter_FetchAPIDef(t *testing.T) {
 
 	ad := ads[0]
 
-	if ad.APIID != ts.Meta.APIID {
-		t.Fatalf("APIID Was not properly set, expected: %v, got %v", ts.Meta.APIID, ad.APIID)
+	if ad.APIID != ts.Files[0].APIID {
+		t.Fatalf("APIID Was not properly set, expected: %v, got %v", ts.Files[0].APIID, ad.APIID)
 	}
 }
 
@@ -141,15 +141,15 @@ func TestGitGetter_FetchAPIDef_Swagger(t *testing.T) {
 		t.Fatalf("Name Was not properly set, expected: 'Swagger Petstore', got %v", ad.Name)
 	}
 
-	if ad.APIID != ts.Meta.APIID {
-		t.Fatalf("APIID Was not properly set, expected: %v, got %v", ts.Meta.APIID, ad.APIID)
+	if ad.APIID != ts.Files[0].APIID {
+		t.Fatalf("APIID Was not properly set, expected: %v, got %v", ts.Files[0].APIID, ad.APIID)
 	}
 
-	if ad.Proxy.TargetURL != ts.Meta.OAS.OverrideTarget {
-		t.Fatalf("Target Was not properly set, got: %v, expected %v", ad.Proxy.TargetURL, ts.Meta.OAS.OverrideTarget)
+	if ad.Proxy.TargetURL != ts.Files[0].OAS.OverrideTarget {
+		t.Fatalf("Target Was not properly set, got: %v, expected %v", ad.Proxy.TargetURL, ts.Files[0].OAS.OverrideTarget)
 	}
 
-	if ad.Proxy.ListenPath != ts.Meta.OAS.OverrideListenPath {
-		t.Fatalf("Target Was not properly set, expected: %v, got %v", ad.Proxy.ListenPath, ts.Meta.OAS.OverrideListenPath)
+	if ad.Proxy.ListenPath != ts.Files[0].OAS.OverrideListenPath {
+		t.Fatalf("Target Was not properly set, expected: %v, got %v", ad.Proxy.ListenPath, ts.Files[0].OAS.OverrideListenPath)
 	}
 }

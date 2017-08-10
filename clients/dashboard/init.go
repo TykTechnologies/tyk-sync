@@ -1,5 +1,5 @@
 package dashboard
 
-func init(){
+func init() {
 
 }

@@ -1,8 +1,8 @@
 package cli_publisher
 
 import (
-	"github.com/TykTechnologies/tyk/apidef"
 	"fmt"
+	"github.com/TykTechnologies/tyk/apidef"
 )
 
 type MockPublisher struct{}
@@ -16,7 +16,7 @@ func (mp MockPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
 	return newID, nil
 }
 
-func (mp MockPublisher) Update(id string, apiDef *apidef.APIDefinition) error {
+func (mp MockPublisher) Update(apiDef *apidef.APIDefinition) error {
 	fmt.Printf("Updating API ID: %v (on: %v to: %v)\n",
 		apiDef.APIID,
 		apiDef.Proxy.ListenPath,

@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/TykTechnologies/tyk-git/tyk-vcs"
-	"github.com/TykTechnologies/tyk-git/cli-publisher"
-	"github.com/TykTechnologies/tyk/apidef"
 	"errors"
 	"fmt"
+	"github.com/TykTechnologies/tyk-git/cli-publisher"
+	"github.com/TykTechnologies/tyk-git/tyk-vcs"
+	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/spf13/cobra"
 	"os"
 )
 
@@ -58,7 +58,7 @@ func getPublisher(cmd *cobra.Command, args []string) (tyk_vcs.Publisher, error) 
 		}
 
 		newDashPublisher := &cli_publisher.DashboardPublisher{
-			Secret: secret,
+			Secret:   secret,
 			Hostname: dbString,
 		}
 
@@ -94,7 +94,8 @@ func processPublish(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Using publisher: %v\n", publisher.Name())
 
-	getter, err := tyk_vcs.NewGGetter(args[0], branch, auth, publisher); if err != nil {
+	getter, err := tyk_vcs.NewGGetter(args[0], branch, auth, publisher)
+	if err != nil {
 		return err
 	}
 

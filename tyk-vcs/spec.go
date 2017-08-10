@@ -13,7 +13,9 @@ const (
 )
 
 type APIInfo struct {
+	File  string `json:"file"`
 	APIID string `json:"api_id"`
+	DBID  string `json:"db_id"`
 	ORGID string `json:"org_id"`
 	OAS   struct {
 		OverrideTarget     string `json:"override_target"`
@@ -24,7 +26,6 @@ type APIInfo struct {
 }
 
 type TykSourceSpec struct {
-	Type  SpecType `json:"type"`
-	Files []string   `json:"files"`
-	Meta  APIInfo  `json:"meta"`
+	Type  SpecType  `json:"type"`
+	Files []APIInfo `json:"files"`
 }

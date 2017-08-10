@@ -2,11 +2,11 @@ package tyk_swagger
 
 import (
 	"encoding/json"
-	"github.com/TykTechnologies/tyk/apidef"
 	"errors"
-	"github.com/satori/go.uuid"
 	"fmt"
+	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/ongoingio/urljoin"
+	"github.com/satori/go.uuid"
 )
 
 type DefinitionObjectFormatAST struct {
@@ -134,22 +134,22 @@ func (s *SwaggerAST) ConvertIntoApiVersion(versionName string) (apidef.VersionIn
 
 func newBlankDBDashDefinition() *apidef.APIDefinition {
 	EmptyMW := apidef.MiddlewareSection{
-		Pre: make([]apidef.MiddlewareDefinition, 0),
+		Pre:  make([]apidef.MiddlewareDefinition, 0),
 		Post: make([]apidef.MiddlewareDefinition, 0),
 	}
 	return &apidef.APIDefinition{
-		ConfigData: map[string]interface{}{},
-		ResponseProcessors: make([]apidef.ResponseProcessor,0),
-		AllowedIPs: make([]string, 0),
-		CustomMiddleware: EmptyMW,
-		Tags: make([]string,0),
+		ConfigData:         map[string]interface{}{},
+		ResponseProcessors: make([]apidef.ResponseProcessor, 0),
+		AllowedIPs:         make([]string, 0),
+		CustomMiddleware:   EmptyMW,
+		Tags:               make([]string, 0),
 	}
 }
 
 func CreateDefinitionFromSwagger(s *SwaggerAST, orgId string, versionName string) (*apidef.APIDefinition, error) {
 	ad := newBlankDBDashDefinition()
-	ad.Name =             s.Info.Title
-	ad.Active =           true
+	ad.Name = s.Info.Title
+	ad.Active = true
 	ad.UseKeylessAccess = true
 	ad.APIID = uuid.NewV4().String()
 	ad.OrgID = orgId

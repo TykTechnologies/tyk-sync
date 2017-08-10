@@ -1,9 +1,9 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"github.com/TykTechnologies/tyk-git/cmd"
+	"os"
 )
 
 func main() {
