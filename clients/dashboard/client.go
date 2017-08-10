@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	UseUpdateError error = errors.New("Object exists, use update()")
+	UseUpdateError error = errors.New("Object seems to exist (same ID, API ID, Listen Path or Slug), use update()")
 	UseCreateError error = errors.New("Object does not exist, use create()")
 )
 
@@ -79,6 +79,18 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 
 	for _, api := range apis.Apis {
 		if api.APIID == def.APIID {
+			return "", UseUpdateError
+		}
+
+		if api.Id == def.Id {
+			return "", UseUpdateError
+		}
+
+		if api.Slug == def.Slug {
+			return "", UseUpdateError
+		}
+
+		if api.Proxy.ListenPath == api.Proxy.ListenPath {
 			return "", UseUpdateError
 		}
 	}
@@ -143,6 +155,9 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	for _, api := range apis.Apis {
 		// Dashboard uses it's own IDs
 		if api.Id == def.Id {
+			if def.APIID == "" {
+				def.APIID = api.APIID
+			}
 			found = true
 			break
 		}
