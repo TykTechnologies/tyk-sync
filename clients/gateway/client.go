@@ -1,4 +1,4 @@
-package dashboard
+package gateway
 
 import (
 	"errors"
@@ -13,53 +13,39 @@ type Client struct {
 	secret string
 }
 
-type APIResponse struct {
-	Message string
-	Meta    string
-	Status  string
-}
-
-type DBApiDefinition struct {
-	apidef.APIDefinition `bson:"api_definition,inline" json:"api_definition,inline"`
-	HookReferences       []interface{} `bson:"hook_references" json:"hook_references"`
-	IsSite               bool          `bson:"is_site" json:"is_site"`
-	SortBy               int           `bson:"sort_by" json:"sort_by"`
-}
-
-type APISResponse struct {
-	Apis  []DBApiDefinition `json:"apis"`
-	Pages int               `json:"pages"`
-}
-
 const (
-	endpointAPIs string = "/api/apis"
+	endpointAPIs string = "/tyk/apis/"
+	reloadAPIs   string = "/tyk/reload/group"
 )
 
 var (
-	UseUpdateError error = errors.New("Object seems to exist (same ID, API ID, Listen Path or Slug), use update()")
+	UseUpdateError error = errors.New("Object seems to exist (same API ID, Listen Path or Slug), use update()")
 	UseCreateError error = errors.New("Object does not exist, use create()")
 )
 
-func NewDashboardClient(url, secret string) (*Client, error) {
+type APIMessage struct {
+	Key     string `json:"key"`
+	Status  string `json:"status"`
+	Action  string `json:"action"`
+	Message string `json:"message"`
+}
+
+type APISList []apidef.APIDefinition
+
+func NewGatewayClient(url, secret string) (*Client, error) {
 	return &Client{
 		url:    url,
 		secret: secret,
 	}, nil
 }
 
-func (c *Client) fixDBDef(def *DBApiDefinition) {
-	if def.HookReferences == nil {
-		def.HookReferences = make([]interface{}, 0)
-	}
-}
-
 func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
-		Params: map[string]string{"p": "-2"},
 		Headers: map[string]string{
-			"Authorization": c.secret,
+			"x-tyk-authorization": c.secret,
+			"content-type":        "application/json",
 		},
 	}
 
@@ -72,37 +58,27 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", fmt.Errorf("API Returned error: %v", resp.String())
 	}
 
-	apis := APISResponse{}
+	apis := APISList{}
 	if err := resp.JSON(&apis); err != nil {
 		return "", err
 	}
 
-	for _, api := range apis.Apis {
+	for _, api := range apis {
 		if api.APIID == def.APIID {
 			return "", UseUpdateError
 		}
 
-		if api.Id == def.Id {
-			return "", UseUpdateError
-		}
-
-		if api.Slug == def.Slug {
-			return "", UseUpdateError
-		}
-
-		if api.Proxy.ListenPath == api.Proxy.ListenPath {
+		if api.Proxy.ListenPath == def.Proxy.ListenPath {
 			return "", UseUpdateError
 		}
 	}
 
 	// Create
-	asDBDef := DBApiDefinition{APIDefinition: *def}
-	c.fixDBDef(&asDBDef)
-
 	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
-		JSON: asDBDef,
+		JSON: def,
 		Headers: map[string]string{
-			"Authorization": c.secret,
+			"x-tyk-authorization": c.secret,
+			"content-type":        "application/json",
 		},
 	})
 
@@ -114,26 +90,55 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", fmt.Errorf("API Returned error: %v (code: %v)", createResp.String(), createResp.StatusCode)
 	}
 
-	var status APIResponse
+	var status APIMessage
 	if err := createResp.JSON(&status); err != nil {
 		return "", err
 	}
 
-	if status.Status != "OK" {
+	if status.Status != "ok" {
 		return "", fmt.Errorf("API request completed, but with error: %v", status.Message)
 	}
 
-	return status.Meta, nil
+	return status.Key, nil
+}
 
+func (c *Client) Reload() error {
+	// Reload
+	fmt.Println("Reloading...")
+	fullPath := urljoin.Join(c.url, reloadAPIs)
+	reloadREsp, err := grequests.Get(fullPath, &grequests.RequestOptions{
+		Headers: map[string]string{
+			"x-tyk-authorization": c.secret,
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if reloadREsp.StatusCode != 200 {
+		return fmt.Errorf("API Returned error: %v (code: %v)", reloadREsp.String(), reloadREsp.StatusCode)
+	}
+
+	var status APIMessage
+	if err := reloadREsp.JSON(&status); err != nil {
+		return err
+	}
+
+	if status.Status != "ok" {
+		fmt.Errorf("API request completed, but with error: %v", status.Message)
+	}
+
+	return nil
 }
 
 func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
-		Params: map[string]string{"p": "-2"},
 		Headers: map[string]string{
-			"Authorization": c.secret,
+			"x-tyk-authorization": c.secret,
+			"content-type":        "application/json",
 		},
 	}
 
@@ -146,20 +151,15 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 		return fmt.Errorf("API Returned error: %v", resp.String())
 	}
 
-	apis := APISResponse{}
+	apis := APISList{}
 	if err := resp.JSON(&apis); err != nil {
 		return err
 	}
 
 	found := false
-	for _, api := range apis.Apis {
-		// Dashboard uses it's own IDs
-		if api.Id == def.Id {
-			if def.APIID == "" {
-				def.APIID = api.APIID
-			}
+	for _, api := range apis {
+		if api.APIID == def.APIID {
 			found = true
-			break
 		}
 	}
 
@@ -168,14 +168,16 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	}
 
 	// Update
-	asDBDef := DBApiDefinition{APIDefinition: *def}
-	c.fixDBDef(&asDBDef)
+	if def.APIID == "" {
+		return errors.New("API ID must be set")
+	}
 
-	updatePath := urljoin.Join(c.url, endpointAPIs, def.Id.Hex())
-	updateResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
-		JSON: asDBDef,
+	updatePath := urljoin.Join(c.url, endpointAPIs, def.APIID)
+	uResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
+		JSON: def,
 		Headers: map[string]string{
-			"Authorization": c.secret,
+			"x-tyk-authorization": c.secret,
+			"content-type":        "application/json",
 		},
 	})
 
@@ -183,17 +185,8 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 		return err
 	}
 
-	if updateResp.StatusCode != 200 {
-		return fmt.Errorf("API Returned error: %v", updateResp.String())
-	}
-
-	var status APIResponse
-	if err := updateResp.JSON(&status); err != nil {
-		return err
-	}
-
-	if status.Status != "OK" {
-		return fmt.Errorf("API request completed, but with error: %v", status.Message)
+	if uResp.StatusCode != 200 {
+		return fmt.Errorf("API Returned error: %v (code: %v)", uResp.String(), uResp.StatusCode)
 	}
 
 	return nil
@@ -204,13 +197,12 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 	updateAPIs := []apidef.APIDefinition{}
 	createAPIs := []apidef.APIDefinition{}
 
-	// Fetch the running API list
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
-		Params: map[string]string{"p": "-2"},
 		Headers: map[string]string{
-			"Authorization": c.secret,
+			"x-tyk-authorization": c.secret,
+			"content-type":        "application/json",
 		},
 	}
 
@@ -223,35 +215,35 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 		return fmt.Errorf("API Returned error: %v", resp.String())
 	}
 
-	apis := APISResponse{}
+	apis := APISList{}
 	if err := resp.JSON(&apis); err != nil {
 		return err
 	}
 
-	DashIDMap := map[string]int{}
+	GWIDMap := map[string]int{}
 	GitIDMap := map[string]int{}
 
 	// Build the dash ID map
-	for i, api := range apis.Apis {
+	for i, api := range apis {
 		// Lets get a full list of existing IDs
-		DashIDMap[api.Id.Hex()] = i
+		GWIDMap[api.APIID] = i
 	}
 
 	// Build the Git ID Map
 	for i, def := range apiDefs {
-		GitIDMap[def.Id.Hex()] = i
+		GitIDMap[def.APIID] = i
 	}
 
 	// Updates are when we find items in git that are also in dash
 	for key, index := range GitIDMap {
-		_, ok := DashIDMap[key]
+		_, ok := GWIDMap[key]
 		if ok {
 			updateAPIs = append(updateAPIs, apiDefs[index])
 		}
 	}
 
 	// Deletes are when we find items in the dash that are not in git
-	for key, _ := range DashIDMap {
+	for key, _ := range GWIDMap {
 		_, ok := GitIDMap[key]
 		if !ok {
 			deleteAPIs = append(deleteAPIs, key)
@@ -260,7 +252,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 
 	// Create operations are when we find things in Git that are not in the dashboard
 	for key, index := range GitIDMap {
-		_, ok := DashIDMap[key]
+		_, ok := GWIDMap[key]
 		if !ok {
 			createAPIs = append(createAPIs, apiDefs[index])
 		}

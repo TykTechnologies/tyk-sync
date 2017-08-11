@@ -25,6 +25,14 @@ func (mp MockPublisher) Update(apiDef *apidef.APIDefinition) error {
 	return nil
 }
 
+func (mp MockPublisher) Sync(apiDef []apidef.APIDefinition) error {
+	return nil
+}
+
 func (mp MockPublisher) Name() string {
 	return "Mock Publisher"
+}
+
+func (mp MockPublisher) Reload() error {
+	return nil
 }

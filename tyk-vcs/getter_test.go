@@ -21,7 +21,7 @@ func (mp MockPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
 	return newID, nil
 }
 
-func (mp MockPublisher) Update(id string, apiDef *apidef.APIDefinition) error {
+func (mp MockPublisher) Update(apiDef *apidef.APIDefinition) error {
 	fmt.Printf("Updating API ID: %v (on: %v to: %v)\n",
 		apiDef.APIID,
 		apiDef.Proxy.ListenPath,
@@ -32,6 +32,14 @@ func (mp MockPublisher) Update(id string, apiDef *apidef.APIDefinition) error {
 
 func (mp MockPublisher) Name() string {
 	return "Mock Publisher"
+}
+
+func (mp MockPublisher) Reload() error {
+	return nil
+}
+
+func (mp MockPublisher) Sync(defs []apidef.APIDefinition) error {
+	return nil
 }
 
 func TestNewGGetter(t *testing.T) {

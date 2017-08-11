@@ -202,10 +202,18 @@ func (gg *GitGetter) fetchAPIDefinitionsFromOAI(spec *TykSourceSpec) ([]apidef.A
 	return defs, nil
 }
 
+func (gg *GitGetter) Sync(apiDefs []apidef.APIDefinition) error {
+	return gg.publisher.Sync(apiDefs)
+}
+
 func (gg *GitGetter) Create(apiDef *apidef.APIDefinition) (string, error) {
 	return gg.publisher.Create(apiDef)
 }
 
 func (gg *GitGetter) Update(id string, apiDef *apidef.APIDefinition) error {
 	return gg.publisher.Update(apiDef)
+}
+
+func (gg *GitGetter) Reload() error {
+	return gg.publisher.Reload()
 }
