@@ -268,7 +268,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 
 	// Do the updates
 	for _, api := range updateAPIs {
-		fmt.Printf("SYNC Updating: %v\n", api.Id.Hex())
+		fmt.Printf("SYNC Updating: %v\n", api.APIID)
 		if err := c.UpdateAPI(&api); err != nil {
 			return err
 		}
@@ -289,10 +289,13 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 }
 
 func (c *Client) deleteAPI(id string) error {
-	delPath := urljoin.Join(c.url, endpointAPIs, id)
+	delPath := urljoin.Join(c.url, endpointAPIs)
+	delPath += id
+
 	delResp, err := grequests.Delete(delPath, &grequests.RequestOptions{
 		Headers: map[string]string{
-			"Authorization": c.secret,
+			"x-tyk-authorization": c.secret,
+			"content-type":        "application/json",
 		},
 	})
 

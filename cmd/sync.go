@@ -36,10 +36,10 @@ var syncCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(syncCmd)
 
-	publishCmd.Flags().StringP("gateway", "g", "", "Fully qualified gateway target URL")
-	publishCmd.Flags().StringP("dashboard", "d", "", "Fully qualified dashboard target URL")
-	publishCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
-	publishCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
-	publishCmd.Flags().StringP("secret", "s", "", "Your API secret")
-	publishCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
+	syncCmd.Flags().StringP("gateway", "g", "", "Fully qualified gateway target URL")
+	syncCmd.Flags().StringP("dashboard", "d", "", "Fully qualified dashboard target URL")
+	syncCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
+	syncCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
+	syncCmd.Flags().StringP("secret", "s", "", "Your API secret")
+	syncCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 }

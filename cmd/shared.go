@@ -146,6 +146,12 @@ func processSync(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if isGateway {
+		if err := getter.Reload(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
