@@ -6,6 +6,8 @@ import (
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
+	"github.com/satori/go.uuid"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type Client struct {
@@ -77,22 +79,33 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", err
 	}
 
+	retainedIDs := false
+
 	for _, api := range apis.Apis {
 		if api.APIID == def.APIID {
+			fmt.Println("Warning: API ID Exists")
 			return "", UseUpdateError
 		}
 
 		if api.Id == def.Id {
+			fmt.Println("Warning: Object ID Exists")
 			return "", UseUpdateError
 		}
 
 		if api.Slug == def.Slug {
+			fmt.Println("Warning: Slug Exists")
 			return "", UseUpdateError
 		}
 
-		if api.Proxy.ListenPath == api.Proxy.ListenPath {
+		if api.Proxy.ListenPath == def.Proxy.ListenPath {
+			fmt.Println("Warning: Listen Path Exists")
 			return "", UseUpdateError
 		}
+	}
+
+	if def.APIID != "" {
+		// Retain the API ID
+		retainedIDs = true
 	}
 
 	// Create
@@ -121,6 +134,15 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 
 	if status.Status != "OK" {
 		return "", fmt.Errorf("API request completed, but with error: %v", status.Message)
+	}
+
+	// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
+	if retainedIDs {
+		def.Id = bson.ObjectIdHex(status.Meta)
+		if err := c.UpdateAPI(def); err != nil {
+			fmt.Printf("Problem trying to retain API ID: %v\n", err)
+		}
+
 	}
 
 	return status.Meta, nil
@@ -239,7 +261,16 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 
 	// Build the Git ID Map
 	for i, def := range apiDefs {
-		GitIDMap[def.Id.Hex()] = i
+		if def.Id.Hex() != "" {
+			GitIDMap[def.Id.Hex()] = i
+			continue
+		} else if def.APIID != "" {
+			GitIDMap[def.APIID] = i
+			continue
+		} else {
+			created := fmt.Sprintf("temp-%v", uuid.NewV4().String())
+			GitIDMap[created] = i
+		}
 	}
 
 	// Updates are when we find items in git that are also in dash
@@ -265,6 +296,10 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 			createAPIs = append(createAPIs, apiDefs[index])
 		}
 	}
+
+	fmt.Printf("Deleting: %v\n", len(deleteAPIs))
+	fmt.Printf("Updating: %v\n", len(updateAPIs))
+	fmt.Printf("Creating: %v\n", len(createAPIs))
 
 	// Do the deletes
 	for _, dbId := range deleteAPIs {

@@ -6,6 +6,7 @@ import (
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
+	"github.com/satori/go.uuid"
 )
 
 type Client struct {
@@ -223,7 +224,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 	GWIDMap := map[string]int{}
 	GitIDMap := map[string]int{}
 
-	// Build the dash ID map
+	// Build the gw ID map
 	for i, api := range apis {
 		// Lets get a full list of existing IDs
 		GWIDMap[api.APIID] = i
@@ -231,7 +232,12 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 
 	// Build the Git ID Map
 	for i, def := range apiDefs {
-		GitIDMap[def.APIID] = i
+		if def.APIID != "" {
+			GitIDMap[def.APIID] = i
+		} else {
+			created := fmt.Sprintf("temp-%v", uuid.NewV4().String())
+			GitIDMap[created] = i
+		}
 	}
 
 	// Updates are when we find items in git that are also in dash
@@ -257,6 +263,10 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 			createAPIs = append(createAPIs, apiDefs[index])
 		}
 	}
+
+	fmt.Printf("Deleting: %v\n", len(deleteAPIs))
+	fmt.Printf("Updating: %v\n", len(updateAPIs))
+	fmt.Printf("Creating: %v\n", len(createAPIs))
 
 	// Do the deletes
 	for _, dbId := range deleteAPIs {
