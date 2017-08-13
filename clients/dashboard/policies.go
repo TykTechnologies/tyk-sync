@@ -120,14 +120,14 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 
 	found := false
 	for _, ePol := range existingPols {
-		if ePol.MID.Hex() == pol.MID.Hex() {
-			found = true
-			break
-		}
-
 		if ePol.ID == pol.ID {
 			fmt.Println("--> Found policy using explicit ID, substituting remote ID for update")
 			pol.MID = ePol.MID
+			found = true
+			break
+		}
+		
+		if ePol.MID.Hex() == pol.MID.Hex() {
 			found = true
 			break
 		}

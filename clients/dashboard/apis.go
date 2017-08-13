@@ -153,6 +153,14 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 
 	found := false
 	for _, api := range apis.Apis {
+		// For an update, prefer API IDs
+		if api.APIID == def.APIID {
+			// Lets make sure we target the internal ID of the matching API ID
+			def.Id = api.Id
+			found = true
+			break
+		}
+
 		// Dashboard uses it's own IDs
 		if api.Id == def.Id {
 			if def.APIID == "" {
