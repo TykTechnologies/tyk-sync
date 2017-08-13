@@ -139,13 +139,21 @@ func doGetData(cmd *cobra.Command, args []string) (*tyk_vcs.GitGetter, []apidef.
 }
 
 func processSync(cmd *cobra.Command, args []string) error {
-	getter, defs, _, err := doGetData(cmd, args)
+	getter, defs, pols, err := doGetData(cmd, args)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("Processing APIs...")
 	if err := getter.Sync(defs); err != nil {
 		return err
+	}
+
+	if len(pols) > 0 {
+		fmt.Println("Processing Policies...")
+		if err := getter.SyncPolicies(pols); err != nil {
+			return err
+		}
 	}
 
 	if isGateway {

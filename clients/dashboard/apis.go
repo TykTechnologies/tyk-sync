@@ -234,16 +234,17 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 	// Build the dash ID map
 	for i, api := range apis.Apis {
 		// Lets get a full list of existing IDs
-		DashIDMap[api.Id.Hex()] = i
+		DashIDMap[api.APIID] = i
 	}
 
 	// Build the Git ID Map
 	for i, def := range apiDefs {
-		if def.Id.Hex() != "" {
-			GitIDMap[def.Id.Hex()] = i
-			continue
-		} else if def.APIID != "" {
+		if def.APIID != "" {
 			GitIDMap[def.APIID] = i
+			continue
+		} else if def.Id.Hex() != "" {
+			// No API ID? Let's try the actual DB ID
+			GitIDMap[def.Id.Hex()] = i
 			continue
 		} else {
 			created := fmt.Sprintf("temp-%v", uuid.NewV4().String())
@@ -253,17 +254,21 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 
 	// Updates are when we find items in git that are also in dash
 	for key, index := range GitIDMap {
-		_, ok := DashIDMap[key]
+		dashIndex, ok := DashIDMap[key]
 		if ok {
-			updateAPIs = append(updateAPIs, apiDefs[index])
+			// Make sure we are targeting the correct DB ID
+			api := apiDefs[index]
+			api.Id = apis.Apis[dashIndex].Id
+			updateAPIs = append(updateAPIs, api)
 		}
 	}
 
 	// Deletes are when we find items in the dash that are not in git
-	for key, _ := range DashIDMap {
+	for key, dashIndex := range DashIDMap {
 		_, ok := GitIDMap[key]
 		if !ok {
-			deleteAPIs = append(deleteAPIs, key)
+			// Make sure we always target the DB ID
+			deleteAPIs = append(deleteAPIs, apis.Apis[dashIndex].Id.Hex())
 		}
 	}
 
