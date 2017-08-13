@@ -126,7 +126,7 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 			found = true
 			break
 		}
-		
+
 		if ePol.MID.Hex() == pol.MID.Hex() {
 			found = true
 			break

@@ -15,8 +15,9 @@ type Client struct {
 }
 
 const (
-	endpointAPIs string = "/tyk/apis/"
-	reloadAPIs   string = "/tyk/reload/group"
+	endpointAPIs     string = "/tyk/apis/"
+	reloadAPIs       string = "/tyk/reload/group"
+	endpointPolicies string = "/tyk/policies"
 )
 
 var (

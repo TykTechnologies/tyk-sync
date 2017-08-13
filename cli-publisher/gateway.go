@@ -1,6 +1,7 @@
 package cli_publisher
 
 import (
+	"errors"
 	"github.com/TykTechnologies/tyk-git/clients/gateway"
 	"github.com/TykTechnologies/tyk-git/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
@@ -52,13 +53,13 @@ func (p *GatewayPublisher) Sync(apiDefs []apidef.APIDefinition) error {
 }
 
 func (p *GatewayPublisher) CreatePolicy(pol *objects.Policy) (string, error) {
-	return "", nil
+	return "", errors.New("Policy handling not supported by Gateway publisher")
 }
 
 func (p *GatewayPublisher) UpdatePolicy(pol *objects.Policy) error {
-	return nil
+	return errors.New("Policy handling not supported by Gateway publisher")
 }
 
 func (p *GatewayPublisher) SyncPolicies(pols []objects.Policy) error {
-	return nil
+	return errors.New("Policy handling not supported by Gateway publisher")
 }
