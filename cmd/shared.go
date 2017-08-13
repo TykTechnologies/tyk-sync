@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/TykTechnologies/tyk-git/cli-publisher"
+	"github.com/TykTechnologies/tyk-git/clients/objects"
 	"github.com/TykTechnologies/tyk-git/tyk-vcs"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/spf13/cobra"
@@ -12,27 +13,28 @@ import (
 
 var isGateway bool
 
-func doGitFetchCycle(getter *tyk_vcs.GitGetter) ([]apidef.APIDefinition, error) {
+func doGitFetchCycle(getter *tyk_vcs.GitGetter) ([]apidef.APIDefinition, []objects.Policy, error) {
 	err := getter.FetchRepo()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ts, err := getter.FetchTykSpec()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ads, err := getter.FetchAPIDef(ts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if len(ads) == 0 {
-		return nil, err
+	pols, err := getter.FetchPolicies(ts)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return ads, nil
+	return ads, pols, nil
 }
 
 func getPublisher(cmd *cobra.Command, args []string) (tyk_vcs.Publisher, error) {
@@ -105,39 +107,39 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 	return auth, branch
 }
 
-func doGetData(cmd *cobra.Command, args []string) (*tyk_vcs.GitGetter, []apidef.APIDefinition, error) {
+func doGetData(cmd *cobra.Command, args []string) (*tyk_vcs.GitGetter, []apidef.APIDefinition, []objects.Policy, error) {
 	auth, branch := getAuthAndBranch(cmd, args)
 
 	if len(args) == 0 {
-		return nil, nil, errors.New("Must specify repo address to pull from as first argument")
+		return nil, nil, nil, errors.New("Must specify repo address to pull from as first argument")
 	}
 
 	publisher, err := getPublisher(cmd, args)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	fmt.Printf("Using publisher: %v\n", publisher.Name())
 
 	getter, err := tyk_vcs.NewGGetter(args[0], branch, auth, publisher)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	defs, err := doGitFetchCycle(getter)
+	defs, pols, err := doGitFetchCycle(getter)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return getter, defs, nil
+	return getter, defs, pols, nil
 }
 
 func processSync(cmd *cobra.Command, args []string) error {
-	getter, defs, err := doGetData(cmd, args)
+	getter, defs, _, err := doGetData(cmd, args)
 	if err != nil {
 		return err
 	}
@@ -156,7 +158,7 @@ func processSync(cmd *cobra.Command, args []string) error {
 }
 
 func processPublish(cmd *cobra.Command, args []string) error {
-	getter, defs, err := doGetData(cmd, args)
+	getter, defs, pols, err := doGetData(cmd, args)
 
 	if err != nil {
 		return err
@@ -175,11 +177,33 @@ func processPublish(cmd *cobra.Command, args []string) error {
 
 		if cmd.Use == "update" {
 			fmt.Printf("Updating API %v: %v\n", i, d.Name)
-			err := getter.Update(d.APIID, &d)
+			err := getter.Update(&d)
 			if err != nil {
 				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
 			} else {
 				fmt.Printf("--> Status: OK, ID:%v\n", d.APIID)
+			}
+		}
+	}
+
+	for i, d := range pols {
+		if cmd.Use == "publish" {
+			fmt.Printf("Creating Policy %v: %v\n", i, d.Name)
+			id, err := getter.CreatePolicy(&d)
+			if err != nil {
+				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+			} else {
+				fmt.Printf("--> Status: OK, ID:%v\n", id)
+			}
+		}
+
+		if cmd.Use == "update" {
+			fmt.Printf("Updating Policy %v: %v\n", i, d.Name)
+			err := getter.UpdatePolicy(&d)
+			if err != nil {
+				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+			} else {
+				fmt.Printf("--> Status: OK, ID:%v\n", d.Name)
 			}
 		}
 	}

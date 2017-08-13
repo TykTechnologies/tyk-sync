@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/TykTechnologies/tyk-git/clients/objects"
 	"github.com/TykTechnologies/tyk-git/tyk-swagger"
 	"github.com/TykTechnologies/tyk/apidef"
 	"gopkg.in/mgo.v2/bson"
@@ -61,6 +62,7 @@ func (gg *GitGetter) FetchTykSpec() (*TykSourceSpec, error) {
 
 	specFile, err := gg.fs.Open(".tyk.json")
 	if err != nil {
+		fmt.Println(".tyk.json")
 		return nil, err
 	}
 
@@ -97,10 +99,6 @@ func (gg *GitGetter) fetchAPIDefinitionsDirect(spec *TykSourceSpec) ([]apidef.AP
 	}
 
 	defNames := spec.Files
-	if len(spec.Files) == 0 {
-		defNames = append(defNames, APIInfo{File: "api_definition.json"})
-	}
-
 	defs := make([]apidef.APIDefinition, len(defNames))
 	for i, defInfo := range defNames {
 		defFile, err := gg.fs.Open(defInfo.File)
@@ -146,10 +144,6 @@ func (gg *GitGetter) fetchAPIDefinitionsFromOAI(spec *TykSourceSpec) ([]apidef.A
 	}
 
 	oaiNames := spec.Files
-	if len(spec.Files) == 0 {
-		oaiNames = append(oaiNames, APIInfo{File: "swagger.json"})
-	}
-
 	defs := make([]apidef.APIDefinition, len(oaiNames))
 
 	for i, oaiInfo := range oaiNames {
@@ -202,6 +196,47 @@ func (gg *GitGetter) fetchAPIDefinitionsFromOAI(spec *TykSourceSpec) ([]apidef.A
 	return defs, nil
 }
 
+func (gg *GitGetter) FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error) {
+	if gg.r == nil {
+		return nil, errors.New("No repository in memory, fetch repo first")
+	}
+
+	defNames := spec.Policies
+	defs := make([]objects.Policy, len(defNames))
+	for i, defInfo := range defNames {
+		defFile, err := gg.fs.Open(defInfo.File)
+		if err != nil {
+			fmt.Println(defInfo.File)
+			return nil, err
+		}
+
+		rawDef, err := ioutil.ReadAll(defFile)
+		if err != nil {
+			return nil, err
+		}
+
+		pol := objects.Policy{}
+		err = json.Unmarshal(rawDef, &pol)
+		if err != nil {
+			return nil, err
+		}
+
+		if defInfo.ID != "" {
+			pol.ID = defInfo.ID
+		}
+
+		if pol.OrgID == "" {
+			return nil, errors.New("Policies must include an org ID")
+		}
+
+		defs[i] = pol
+	}
+
+	fmt.Printf("Fetched %v policies\n", len(defs))
+
+	return defs, nil
+}
+
 func (gg *GitGetter) Sync(apiDefs []apidef.APIDefinition) error {
 	return gg.publisher.Sync(apiDefs)
 }
@@ -210,10 +245,22 @@ func (gg *GitGetter) Create(apiDef *apidef.APIDefinition) (string, error) {
 	return gg.publisher.Create(apiDef)
 }
 
-func (gg *GitGetter) Update(id string, apiDef *apidef.APIDefinition) error {
+func (gg *GitGetter) Update(apiDef *apidef.APIDefinition) error {
 	return gg.publisher.Update(apiDef)
 }
 
 func (gg *GitGetter) Reload() error {
 	return gg.publisher.Reload()
+}
+
+func (gg *GitGetter) CreatePolicy(pol *objects.Policy) (string, error) {
+	return gg.publisher.CreatePolicy(pol)
+}
+
+func (gg *GitGetter) UpdatePolicy(pol *objects.Policy) error {
+	return gg.publisher.UpdatePolicy(pol)
+}
+
+func (gg *GitGetter) SyncPolicies(pols []objects.Policy) error {
+	return gg.publisher.SyncPolicies(pols)
 }

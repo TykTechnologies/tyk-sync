@@ -25,7 +25,13 @@ type APIInfo struct {
 	} `json:"oas"`
 }
 
+type PolicyInfo struct {
+	File string `json:"file"`
+	ID   string `json:"id"`
+}
+
 type TykSourceSpec struct {
-	Type  SpecType  `json:"type"`
-	Files []APIInfo `json:"files"`
+	Type     SpecType     `json:"type"`
+	Files    []APIInfo    `json:"files"`
+	Policies []PolicyInfo `json:"policies"`
 }

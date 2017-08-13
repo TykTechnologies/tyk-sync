@@ -2,6 +2,7 @@ package cli_publisher
 
 import (
 	"github.com/TykTechnologies/tyk-git/clients/gateway"
+	"github.com/TykTechnologies/tyk-git/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 )
 
@@ -48,4 +49,16 @@ func (p *GatewayPublisher) Sync(apiDefs []apidef.APIDefinition) error {
 	}
 
 	return c.Sync(apiDefs)
+}
+
+func (p *GatewayPublisher) CreatePolicy(pol *objects.Policy) (string, error) {
+	return "", nil
+}
+
+func (p *GatewayPublisher) UpdatePolicy(pol *objects.Policy) error {
+	return nil
+}
+
+func (p *GatewayPublisher) SyncPolicies(pols []objects.Policy) error {
+	return nil
 }

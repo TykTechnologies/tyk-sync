@@ -2,6 +2,7 @@ package cli_publisher
 
 import (
 	"fmt"
+	"github.com/TykTechnologies/tyk-git/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 )
 
@@ -26,6 +27,18 @@ func (mp MockPublisher) Update(apiDef *apidef.APIDefinition) error {
 }
 
 func (mp MockPublisher) Sync(apiDef []apidef.APIDefinition) error {
+	return nil
+}
+
+func (mp MockPublisher) CreatePolicy(pol *objects.Policy) (string, error) {
+	return "", nil
+}
+
+func (mp MockPublisher) UpdatePolicy(pol *objects.Policy) error {
+	return nil
+}
+
+func (mp MockPublisher) SyncPolicies(pols []objects.Policy) error {
 	return nil
 }
 
