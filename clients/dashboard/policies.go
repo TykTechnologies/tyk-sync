@@ -108,6 +108,32 @@ func (c *Client) DeletePolicy(id string) error {
 	return nil
 }
 
+func (c *Client) FetchPolicy(id string) (*objects.Policy, error) {
+	fullPath := urljoin.Join(c.url, endpointPolicies, id)
+
+	ro := &grequests.RequestOptions{
+		Headers: map[string]string{
+			"Authorization": c.secret,
+		},
+	}
+
+	resp, err := grequests.Get(fullPath, ro)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("API Returned error: %v", resp.String())
+	}
+
+	pol := objects.Policy{}
+	if err := resp.JSON(&pol); err != nil {
+		return nil, err
+	}
+
+	return &pol, nil
+}
+
 func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 	existingPols, err := c.FetchPolicies()
 	if err != nil {

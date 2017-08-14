@@ -127,6 +127,33 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 
 }
 
+func (c *Client) FetchAPIs() ([]DBApiDefinition, error) {
+	fullPath := urljoin.Join(c.url, endpointAPIs)
+
+	ro := &grequests.RequestOptions{
+		Params: map[string]string{"p": "-2"},
+		Headers: map[string]string{
+			"Authorization": c.secret,
+		},
+	}
+
+	resp, err := grequests.Get(fullPath, ro)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("API Returned error: %v", resp.String())
+	}
+
+	apis := APISResponse{}
+	if err := resp.JSON(&apis); err != nil {
+		return nil, err
+	}
+
+	return apis.Apis, nil
+}
+
 func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
