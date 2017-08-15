@@ -10,7 +10,8 @@ import (
 var publishCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "publish API definitions from a Git repo to a gateway or dashboard",
-	Long:  `Publish API definitions from a Git repo to a gateway or dashboard`,
+	Long:  `Publish API definitions from a Git repo to a gateway or dashboard, this
+	will not update existing APIs, and if it detects a collision, will stop.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		gwString, _ := cmd.Flags().GetString("gateway")
 		dbString, _ := cmd.Flags().GetString("dashboard")

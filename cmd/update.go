@@ -23,13 +23,9 @@ import (
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Update a dashboard or gateway with APIs and policies",
+	Long: `Update will attempt to identify matching APIs or Policies in the target, and update those APIs
+	It will not create new ones, to do this use publish or sync.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		gwString, _ := cmd.Flags().GetString("gateway")
 		dbString, _ := cmd.Flags().GetString("dashboard")

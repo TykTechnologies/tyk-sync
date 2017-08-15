@@ -39,7 +39,7 @@ Currently the application is only available via go, so to install you must have 
 go install github.com/TykTechnologies/tyk-git
 ```
 
-this should make the `tyk-git` command available to your console.
+This should make the `tyk-git` command available to your console.
 
 ## Usage
 

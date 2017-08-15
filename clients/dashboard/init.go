@@ -1,5 +1,0 @@
-package dashboard
-
-func init() {
-
-}
