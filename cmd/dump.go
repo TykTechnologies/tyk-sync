@@ -3,26 +3,23 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-	"os"
+	"encoding/json"
 	"github.com/TykTechnologies/tyk-git/clients/dashboard"
 	"github.com/TykTechnologies/tyk-git/clients/objects"
-	"encoding/json"
-	"io/ioutil"
-	"path"
 	"github.com/TykTechnologies/tyk-git/tyk-vcs"
+	"github.com/spf13/cobra"
+	"io/ioutil"
+	"os"
+	"path"
 )
 
 // dumpCmd represents the dump command
 var dumpCmd = &cobra.Command{
 	Use:   "dump",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Dump will extract policies and APIs from a target (dashboard)",
+	Long: `Dump will extract policies and APIs from a target (dashboard) and
+	place them in a directory of your choosing. It will also generate a spec file
+	that can be used for sync.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dbString, _ := cmd.Flags().GetString("dashboard")
 
@@ -133,8 +130,8 @@ to quickly create a Cobra application.`,
 
 		// Create a spec file
 		gitSpec := tyk_vcs.TykSourceSpec{
-			Type: tyk_vcs.TYPE_APIDEF,
-			Files: make([]tyk_vcs.APIInfo, len(apiFiles)),
+			Type:     tyk_vcs.TYPE_APIDEF,
+			Files:    make([]tyk_vcs.APIInfo, len(apiFiles)),
 			Policies: make([]tyk_vcs.PolicyInfo, len(policyFiles)),
 		}
 
