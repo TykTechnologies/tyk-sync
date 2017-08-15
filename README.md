@@ -31,6 +31,16 @@ dependent tokens continue to have access to your services.
 - In order for policy ID matching to work correctly, your gateway must have `policies.allow_explicit_policy_id: true`.
 - It is assumed you have a Tyk CE or Tyk Pro installation
 
+## Installation
+
+Currently the application is only available via go, so to install you must have go installed and run:
+
+```
+go install github.com/TykTechnologies/tyk-git
+```
+
+this should make the `tyk-git` command available to your console.
+
 ## Usage
 
 ```
