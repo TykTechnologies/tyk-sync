@@ -196,6 +196,32 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 			found = true
 			break
 		}
+
+		// We can also match on the slug
+		if api.Slug == def.Slug {
+			if def.APIID == "" {
+				def.APIID = api.APIID
+			}
+			if def.Id == "" {
+				def.Id = api.Id
+			}
+
+			found = true
+			break
+		}
+
+		// We can also match on the listen_path
+		if api.Proxy.ListenPath == def.Proxy.ListenPath {
+			if def.APIID == "" {
+				def.APIID = api.APIID
+			}
+			if def.Id == "" {
+				def.Id = api.Id
+			}
+
+			found = true
+			break
+		}
 	}
 
 	if !found {
@@ -269,11 +295,20 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 	// Build the dash ID map
 	for i, api := range apis.Apis {
 		// Lets get a full list of existing IDs
+		if c.isCloud {
+			DashIDMap[api.Slug] = i
+			continue
+		}
 		DashIDMap[api.APIID] = i
 	}
 
 	// Build the Git ID Map
 	for i, def := range apiDefs {
+		if c.isCloud {
+			GitIDMap[def.Slug] = i
+			continue
+		}
+
 		if def.APIID != "" {
 			GitIDMap[def.APIID] = i
 			continue
@@ -289,11 +324,13 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 
 	// Updates are when we find items in git that are also in dash
 	for key, index := range GitIDMap {
+		fmt.Printf("Checking: %v\n", key)
 		dashIndex, ok := DashIDMap[key]
 		if ok {
 			// Make sure we are targeting the correct DB ID
 			api := apiDefs[index]
 			api.Id = apis.Apis[dashIndex].Id
+			api.APIID = apis.Apis[dashIndex].APIID
 			updateAPIs = append(updateAPIs, api)
 		}
 	}

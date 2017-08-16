@@ -2,11 +2,13 @@ package dashboard
 
 import (
 	"errors"
+	"strings"
 )
 
 type Client struct {
 	url    string
 	secret string
+	isCloud bool
 }
 
 const (
@@ -24,5 +26,6 @@ func NewDashboardClient(url, secret string) (*Client, error) {
 	return &Client{
 		url:    url,
 		secret: secret,
+		isCloud: strings.Contains(url, "tyk.io"),
 	}, nil
 }
