@@ -105,8 +105,8 @@ var dumpCmd = &cobra.Command{
 			apiFiles[i] = fname
 		}
 
-		policyFiles := make([]string, len(policies))
-		for i, pol := range policies {
+		policyFiles := make([]string, len(cleanPolicyObjects))
+		for i, pol := range cleanPolicyObjects {
 			if pol.ID == "" {
 				pol.ID = pol.MID.Hex()
 			}

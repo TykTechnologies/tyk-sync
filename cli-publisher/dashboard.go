@@ -8,8 +8,27 @@ import (
 )
 
 type DashboardPublisher struct {
-	Secret   string
-	Hostname string
+	Secret      string
+	Hostname    string
+	OrgOverride string
+}
+
+func (p *DashboardPublisher) enforceOrgID(apiDef *apidef.APIDefinition) *apidef.APIDefinition {
+	if p.OrgOverride != "" {
+		fmt.Println("org override detected, setting.")
+		apiDef.OrgID = p.OrgOverride
+	}
+
+	return apiDef
+}
+
+func (p *DashboardPublisher) enforceOrgIDForPolicy(pol *objects.Policy) *objects.Policy {
+	if p.OrgOverride != "" {
+		fmt.Println("org override detected, setting.")
+		pol.OrgID = p.OrgOverride
+	}
+
+	return pol
 }
 
 func (p *DashboardPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
@@ -18,7 +37,7 @@ func (p *DashboardPublisher) Create(apiDef *apidef.APIDefinition) (string, error
 		return "", err
 	}
 
-	return c.CreateAPI(apiDef)
+	return c.CreateAPI(p.enforceOrgID(apiDef))
 }
 
 func (p *DashboardPublisher) Update(apiDef *apidef.APIDefinition) error {
@@ -27,13 +46,24 @@ func (p *DashboardPublisher) Update(apiDef *apidef.APIDefinition) error {
 		return err
 	}
 
-	return c.UpdateAPI(apiDef)
+	return c.UpdateAPI(p.enforceOrgID(apiDef))
 }
 
 func (p *DashboardPublisher) Sync(apiDefs []apidef.APIDefinition) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
 	if err != nil {
 		return err
+	}
+
+	if p.OrgOverride != "" {
+		fixedDefs := make([]apidef.APIDefinition, len(apiDefs))
+		for i, a := range apiDefs {
+			newDef := a
+			newDef.OrgID = p.OrgOverride
+			fixedDefs[i] = newDef
+		}
+
+		return c.Sync(fixedDefs)
 	}
 
 	return c.Sync(apiDefs)
@@ -70,6 +100,17 @@ func (p *DashboardPublisher) SyncPolicies(pols []objects.Policy) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
 	if err != nil {
 		return err
+	}
+
+	if p.OrgOverride != "" {
+		fixedPols := make([]objects.Policy, len(pols))
+		for i, pol := range pols {
+			newPol := pol
+			newPol.OrgID = p.OrgOverride
+			fixedPols[i] = newPol
+		}
+
+		return c.SyncPolicies(fixedPols)
 	}
 
 	return c.SyncPolicies(pols)

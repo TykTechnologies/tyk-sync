@@ -61,9 +61,12 @@ func getPublisher(cmd *cobra.Command, args []string) (tyk_vcs.Publisher, error) 
 			secret = flagVal
 		}
 
+		orgOverride, _ := cmd.Flags().GetString("org")
+
 		newDashPublisher := &cli_publisher.DashboardPublisher{
-			Secret:   secret,
-			Hostname: dbString,
+			Secret:      secret,
+			Hostname:    dbString,
+			OrgOverride: orgOverride,
 		}
 
 		return newDashPublisher, nil

@@ -43,5 +43,6 @@ func init() {
 	syncCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
 	syncCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
 	syncCmd.Flags().StringP("secret", "s", "", "Your API secret")
+	syncCmd.Flags().StringP("org", "o", "", "org ID override")
 	syncCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 }
