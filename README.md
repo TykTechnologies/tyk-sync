@@ -91,7 +91,7 @@ git push -u origin my-test-branch
 Now to restore this data directly from GitHub:
 
 ```
-./tyk sync -d="http://localhost:3010" -s="b2d420ca5302442b6f20100f76de7d83" -b="refs/heads/my-test-branch" https://github.com/myname/my-test.git
+./tyk-git sync -d="http://localhost:3010" -s="b2d420ca5302442b6f20100f76de7d83" -b="refs/heads/my-test-branch" https://github.com/myname/my-test.git
 Using publisher: Dashboard Publisher
 Fetched 3 definitions
 Fetched 1 policies
