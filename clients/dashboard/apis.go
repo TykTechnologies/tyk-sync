@@ -76,8 +76,10 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		}
 
 		if api.Proxy.ListenPath == def.Proxy.ListenPath {
-			fmt.Println("Warning: Listen Path Exists")
-			return "", UseUpdateError
+			if api.Domain == def.Domain {
+				fmt.Println("Warning: Listen Path Exists")
+				return "", UseUpdateError
+			}
 		}
 	}
 
@@ -359,7 +361,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 	// Do the deletes
 	for _, dbId := range deleteAPIs {
 		fmt.Printf("SYNC Deleting: %v\n", dbId)
-		if err := c.deleteAPI(dbId); err != nil {
+		if err := c.DeleteAPI(dbId); err != nil {
 			return err
 		}
 	}
@@ -386,7 +388,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 	return nil
 }
 
-func (c *Client) deleteAPI(id string) error {
+func (c *Client) DeleteAPI(id string) error {
 	delPath := urljoin.Join(c.url, endpointAPIs, id)
 	delResp, err := grequests.Delete(delPath, &grequests.RequestOptions{
 		Headers: map[string]string{
