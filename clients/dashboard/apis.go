@@ -15,6 +15,12 @@ type APIResponse struct {
 	Status  string
 }
 
+type CertResponse struct {
+	Id      string `json:"id"`
+	Message string `json:"message"`
+	Status  string `json:"status"`
+}
+
 type DBApiDefinition struct {
 	apidef.APIDefinition `bson:"api_definition,inline" json:"api_definition,inline"`
 	HookReferences       []interface{} `bson:"hook_references" json:"hook_references"`
