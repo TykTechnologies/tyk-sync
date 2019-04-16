@@ -37,7 +37,7 @@ dependent tokens continue to have access to your services.
 Currently the application is only available via Go, so to install you must have Go installed and run:
 
 ```
-go install github.com/TykTechnologies/tyk-git
+go install -u github.com/TykTechnologies/tyk-git
 ```
 
 This should make the `tyk-git` command available to your console.
@@ -68,7 +68,7 @@ First, we need to extract the data from our Tyk Dashboard, here we `dump` into .
 directory
 
 ```
-./tyk-git dump -d="http://localhost:3000" -s="b2d420ca5302442b6f20100f76de7d83" -t="./tmp"
+tyk-git dump -d="http://localhost:3000" -s="b2d420ca5302442b6f20100f76de7d83" -t="./tmp"
 Extracting APIs and Policies from http://localhost:3000
 > Fetching policies
 --> Identified 1 policies
@@ -91,7 +91,7 @@ git push -u origin my-test-branch
 Now to restore this data directly from GitHub:
 
 ```
-./tyk-git sync -d="http://localhost:3010" -s="b2d420ca5302442b6f20100f76de7d83" -b="refs/heads/my-test-branch" https://github.com/myname/my-test.git
+tyk-git sync -d="http://localhost:3010" -s="b2d420ca5302442b6f20100f76de7d83" -b="refs/heads/my-test-branch" https://github.com/myname/my-test.git
 Using publisher: Dashboard Publisher
 Fetched 3 definitions
 Fetched 1 policies

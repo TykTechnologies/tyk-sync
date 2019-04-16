@@ -10,6 +10,12 @@
 			"revisionTime": "2017-07-26T18:22:33Z"
 		},
 		{
+			"checksumSHA1": "wFnSvPbjvlEIoonJPA2AUxJnpHk=",
+			"path": "github.com/TykTechnologies/gojsonschema",
+			"revision": "dcb3e4bb79906c5695321440deca10592f4eeb2d",
+			"revisionTime": "2017-02-22T15:40:38Z"
+		},
+		{
 			"checksumSHA1": "8isFGBofxsaVf2VK3YZUrdzkOAU=",
 			"path": "github.com/TykTechnologies/tyk/apidef",
 			"revision": "288924abc78d9eb92c9be247951ec337f67afe74",
@@ -147,6 +153,18 @@
 			"path": "github.com/xanzy/ssh-agent",
 			"revision": "ba9c9e33906f58169366275e3450db66139a31a9",
 			"revisionTime": "2015-12-15T15:34:51Z"
+		},
+		{
+			"checksumSHA1": "+SLRfCdnZzt59tTsNUp6ie39zjo=",
+			"path": "github.com/xeipuuv/gojsonpointer",
+			"revision": "4e3ac2762d5f479393488629ee9370b50873b3a6",
+			"revisionTime": "2018-01-27T04:07:02Z"
+		},
+		{
+			"checksumSHA1": "cjCjdAbLpKV1bxMpMRzC5Fn4R34=",
+			"path": "github.com/xeipuuv/gojsonreference",
+			"revision": "bd5ef7bd5415a7ac448318e64f11a24cd21e594b",
+			"revisionTime": "2018-01-27T04:06:03Z"
 		},
 		{
 			"checksumSHA1": "MlEHIE/60sB86Lmf0MPTIXHzKzE=",
