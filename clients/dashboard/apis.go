@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"github.com/TykTechnologies/tyk-git/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
@@ -21,19 +22,12 @@ type CertResponse struct {
 	Status  string `json:"status"`
 }
 
-type DBApiDefinition struct {
-	apidef.APIDefinition `bson:"api_definition,inline" json:"api_definition,inline"`
-	HookReferences       []interface{} `bson:"hook_references" json:"hook_references"`
-	IsSite               bool          `bson:"is_site" json:"is_site"`
-	SortBy               int           `bson:"sort_by" json:"sort_by"`
-}
-
 type APISResponse struct {
-	Apis  []DBApiDefinition `json:"apis"`
-	Pages int               `json:"pages"`
+	Apis  []objects.DBApiDefinition `json:"apis"`
+	Pages int                       `json:"pages"`
 }
 
-func (c *Client) fixDBDef(def *DBApiDefinition) {
+func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
 	if def.HookReferences == nil {
 		def.HookReferences = make([]interface{}, 0)
 	}
@@ -95,7 +89,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 	}
 
 	// Create
-	asDBDef := DBApiDefinition{APIDefinition: *def}
+	asDBDef := objects.DBApiDefinition{APIDefinition: *def}
 	c.fixDBDef(&asDBDef)
 
 	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
@@ -135,7 +129,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 
 }
 
-func (c *Client) FetchAPIs() ([]DBApiDefinition, error) {
+func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
@@ -237,7 +231,7 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	}
 
 	// Update
-	asDBDef := DBApiDefinition{APIDefinition: *def}
+	asDBDef := objects.DBApiDefinition{APIDefinition: *def}
 	c.fixDBDef(&asDBDef)
 
 	updatePath := urljoin.Join(c.url, endpointAPIs, def.Id.Hex())

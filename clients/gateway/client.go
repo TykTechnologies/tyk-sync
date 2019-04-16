@@ -3,6 +3,7 @@ package gateway
 import (
 	"errors"
 	"fmt"
+	"github.com/TykTechnologies/tyk-git/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
@@ -39,6 +40,38 @@ func NewGatewayClient(url, secret string) (*Client, error) {
 		url:    url,
 		secret: secret,
 	}, nil
+}
+
+func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
+	fullPath := urljoin.Join(c.url, endpointAPIs)
+
+	ro := &grequests.RequestOptions{
+		Headers: map[string]string{
+			"x-tyk-authorization": c.secret,
+			"content-type":        "application/json",
+		},
+	}
+
+	resp, err := grequests.Get(fullPath, ro)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("API Returned error: %v", resp.String())
+	}
+
+	apis := APISList{}
+	if err := resp.JSON(&apis); err != nil {
+		return nil, err
+	}
+
+	retList := make([]objects.DBApiDefinition, len(apis))
+	for i, api := range apis {
+		retList[i] = objects.DBApiDefinition{APIDefinition: api}
+	}
+
+	return retList, nil
 }
 
 func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
@@ -297,6 +330,10 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 	}
 
 	return nil
+}
+
+func (c *Client) DeleteAPI(id string) error {
+	return c.deleteAPI(id)
 }
 
 func (c *Client) deleteAPI(id string) error {
