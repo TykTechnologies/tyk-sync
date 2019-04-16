@@ -16,12 +16,6 @@ type APIResponse struct {
 	Status  string
 }
 
-type CertResponse struct {
-	Id      string `json:"id"`
-	Message string `json:"message"`
-	Status  string `json:"status"`
-}
-
 type APISResponse struct {
 	Apis  []objects.DBApiDefinition `json:"apis"`
 	Pages int                       `json:"pages"`

@@ -11,3 +11,12 @@ type APIManagementClient interface {
 	UpdateAPI(def *apidef.APIDefinition) error
 	DeleteAPI(id string) error
 }
+
+type CertificateManagementClient interface {
+	CreateCertificate(cert []byte) (string, error)
+}
+
+type UniversalClient interface {
+	APIManagementClient
+	CertificateManagementClient
+}
