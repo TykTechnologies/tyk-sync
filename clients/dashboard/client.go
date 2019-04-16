@@ -6,9 +6,10 @@ import (
 )
 
 type Client struct {
-	url     string
-	secret  string
-	isCloud bool
+	url                string
+	secret             string
+	isCloud            bool
+	InsecureSkipVerify bool
 }
 
 const (

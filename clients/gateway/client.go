@@ -11,8 +11,9 @@ import (
 )
 
 type Client struct {
-	url    string
-	secret string
+	url                string
+	secret             string
+	InsecureSkipVerify bool
 }
 
 const (
@@ -43,6 +44,10 @@ func NewGatewayClient(url, secret string) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) SetInsecureTLS(val bool) {
+	c.InsecureSkipVerify = val
+}
+
 func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
@@ -51,6 +56,7 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Get(fullPath, ro)
@@ -83,6 +89,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Get(fullPath, ro)
@@ -116,6 +123,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	})
 
 	if err != nil {
@@ -146,6 +154,7 @@ func (c *Client) Reload() error {
 		Headers: map[string]string{
 			"x-tyk-authorization": c.secret,
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	})
 
 	if err != nil {
@@ -176,6 +185,7 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Get(fullPath, ro)
@@ -215,6 +225,7 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	})
 
 	if err != nil {
@@ -240,6 +251,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Get(fullPath, ro)
@@ -346,6 +358,7 @@ func (c *Client) deleteAPI(id string) error {
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	})
 
 	if err != nil {

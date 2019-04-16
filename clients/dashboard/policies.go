@@ -22,6 +22,7 @@ func (c *Client) FetchPolicies() ([]objects.Policy, error) {
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Get(fullPath, ro)
@@ -64,6 +65,7 @@ func (c *Client) CreatePolicy(pol *objects.Policy) (string, error) {
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Post(fullPath, ro)
@@ -94,6 +96,7 @@ func (c *Client) DeletePolicy(id string) error {
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Delete(fullPath, ro)
@@ -115,6 +118,7 @@ func (c *Client) FetchPolicy(id string) (*objects.Policy, error) {
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Get(fullPath, ro)
@@ -170,6 +174,7 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
 	}
 
 	resp, err := grequests.Put(fullPath, ro)

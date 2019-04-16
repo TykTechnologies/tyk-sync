@@ -19,4 +19,5 @@ type CertificateManagementClient interface {
 type UniversalClient interface {
 	APIManagementClient
 	CertificateManagementClient
+	SetInsecureTLS(bool)
 }

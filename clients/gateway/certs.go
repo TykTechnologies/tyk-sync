@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/TykTechnologies/tyk-git/clients/objects"
@@ -33,7 +34,10 @@ func (c *Client) CreateCertificate(cert []byte) (string, error) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Authorization", c.secret)
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: c.InsecureSkipVerify},
+	}
+	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
 
 	rBody, _ := ioutil.ReadAll(resp.Body)
