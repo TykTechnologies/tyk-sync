@@ -143,6 +143,9 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", fmt.Errorf("API request completed, but with error: %v", status.Message)
 	}
 
+	// initiate a reload
+	go c.Reload()
+
 	return status.Key, nil
 }
 
@@ -235,6 +238,9 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	if uResp.StatusCode != 200 {
 		return fmt.Errorf("API Returned error: %v (code: %v)", uResp.String(), uResp.StatusCode)
 	}
+
+	// initiate a reload
+	go c.Reload()
 
 	return nil
 }
@@ -368,6 +374,9 @@ func (c *Client) deleteAPI(id string) error {
 	if delResp.StatusCode != 200 {
 		return fmt.Errorf("API Returned error: %v", delResp.String())
 	}
+
+	// initiate a reload
+	go c.Reload()
 
 	return nil
 }
