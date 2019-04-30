@@ -48,6 +48,10 @@ func (c *Client) SetInsecureTLS(val bool) {
 	c.InsecureSkipVerify = val
 }
 
+func (c *Client) GetActiveID(def *apidef.APIDefinition) string {
+	return def.APIID
+}
+
 func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 

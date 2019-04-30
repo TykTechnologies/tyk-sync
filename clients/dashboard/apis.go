@@ -31,6 +31,10 @@ func (c *Client) SetInsecureTLS(val bool) {
 	c.InsecureSkipVerify = val
 }
 
+func (c *Client) GetActiveID(def *apidef.APIDefinition) string {
+	return def.Id.Hex()
+}
+
 func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 

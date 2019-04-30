@@ -19,5 +19,6 @@ type CertificateManagementClient interface {
 type UniversalClient interface {
 	APIManagementClient
 	CertificateManagementClient
+	GetActiveID(def *apidef.APIDefinition) string
 	SetInsecureTLS(bool)
 }
