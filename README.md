@@ -52,8 +52,8 @@ Usage:
 Available Commands:
   dump        Dump will extract policies and APIs from a target (dashboard)
   help        Help about any command
-  publish     publish API definitions from a Git repo to a gateway or dashboard
-  sync        Synchronise a github repo with a gateway
+  publish     publish API definitions from a Git repo or file system to a gateway or dashboard
+  sync        Synchronise a github repo or file system with a gateway
   update      A brief description of your command
 
 Flags:
