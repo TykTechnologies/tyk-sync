@@ -1,56 +1,20 @@
 package tyk_vcs
 
 import (
-	"fmt"
-	"github.com/TykTechnologies/tyk/apidef"
 	"testing"
 )
 
-var REPO string = "https://github.com/lonelycode/integration-test.git"
-
-type MockPublisher struct{}
-
-var mockPublish MockPublisher = MockPublisher{}
-
-func (mp MockPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
-	newID := "654321"
-	fmt.Printf("Creating API ID: %v (on: %v to: %v)\n",
-		newID,
-		apiDef.Proxy.ListenPath,
-		apiDef.Proxy.TargetURL)
-	return newID, nil
-}
-
-func (mp MockPublisher) Update(apiDef *apidef.APIDefinition) error {
-	fmt.Printf("Updating API ID: %v (on: %v to: %v)\n",
-		apiDef.APIID,
-		apiDef.Proxy.ListenPath,
-		apiDef.Proxy.TargetURL)
-
-	return nil
-}
-
-func (mp MockPublisher) Name() string {
-	return "Mock Publisher"
-}
-
-func (mp MockPublisher) Reload() error {
-	return nil
-}
-
-func (mp MockPublisher) Sync(defs []apidef.APIDefinition) error {
-	return nil
-}
+const REPO string = "https://github.com/lonelycode/integration-test.git"
 
 func TestNewGGetter(t *testing.T) {
-	_, e := NewGGetter(REPO, "refs/heads/master", []byte{}, mockPublish)
+	_, e := NewGGetter(REPO, "refs/heads/master", []byte{})
 	if e != nil {
 		t.Fatal(e)
 	}
 }
 
 func TestGitGetter_FetchRepo(t *testing.T) {
-	g, e := NewGGetter(REPO, "refs/heads/master", []byte{}, mockPublish)
+	g, e := NewGGetter(REPO, "refs/heads/master", []byte{})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -62,7 +26,7 @@ func TestGitGetter_FetchRepo(t *testing.T) {
 }
 
 func TestGitGetter_FetchTykSpec(t *testing.T) {
-	g, e := NewGGetter(REPO, "refs/heads/master", []byte{}, mockPublish)
+	g, e := NewGGetter(REPO, "refs/heads/master", []byte{})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -83,7 +47,7 @@ func TestGitGetter_FetchTykSpec(t *testing.T) {
 }
 
 func TestGitGetter_FetchAPIDef(t *testing.T) {
-	g, e := NewGGetter(REPO, "refs/heads/master", []byte{}, mockPublish)
+	g, e := NewGGetter(REPO, "refs/heads/master", []byte{})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -115,7 +79,7 @@ func TestGitGetter_FetchAPIDef(t *testing.T) {
 }
 
 func TestGitGetter_FetchAPIDef_Swagger(t *testing.T) {
-	g, e := NewGGetter(REPO, "refs/heads/swagger-test", []byte{}, mockPublish)
+	g, e := NewGGetter(REPO, "refs/heads/swagger-test", []byte{})
 	if e != nil {
 		t.Fatal(e)
 	}

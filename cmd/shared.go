@@ -13,7 +13,7 @@ import (
 
 var isGateway bool
 
-func doGitFetchCycle(getter *tyk_vcs.GitGetter) ([]apidef.APIDefinition, []objects.Policy, error) {
+func doGitFetchCycle(getter tyk_vcs.Getter) ([]apidef.APIDefinition, []objects.Policy, error) {
 	err := getter.FetchRepo()
 	if err != nil {
 		return nil, nil, err
@@ -99,6 +99,7 @@ func getPublisher(cmd *cobra.Command, args []string) (tyk_vcs.Publisher, error) 
 
 	return nil, errors.New("Publisher target not defined!")
 }
+
 func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 	keyFile, _ := cmd.Flags().GetString("key")
 	var auth []byte
@@ -110,57 +111,59 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 	return auth, branch
 }
 
-func doGetData(cmd *cobra.Command, args []string) (*tyk_vcs.GitGetter, []apidef.APIDefinition, []objects.Policy, error) {
-	auth, branch := getAuthAndBranch(cmd, args)
+func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
+	filePath, _ :=  cmd.Flags().GetString("path")
+	if filePath != "" {
+		return tyk_vcs.NewFSGetter(filePath)
+	}
 
 	if len(args) == 0 {
-		return nil, nil, nil, errors.New("Must specify repo address to pull from as first argument")
+		return nil, errors.New("must specify repo address to pull from as first argument")
 	}
+	auth, branch := getAuthAndBranch(cmd, args)
+	return tyk_vcs.NewGGetter(args[0], branch, auth)
+}
 
-	publisher, err := getPublisher(cmd, args)
+func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []objects.Policy, error) {
+	getter, err := NewGetter(cmd, args)
 	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	fmt.Printf("Using publisher: %v\n", publisher.Name())
-
-	getter, err := tyk_vcs.NewGGetter(args[0], branch, auth, publisher)
-	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	defs, pols, err := doGitFetchCycle(getter)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return getter, defs, pols, nil
+	return defs, pols, nil
 }
 
 func processSync(cmd *cobra.Command, args []string) error {
-	getter, defs, pols, err := doGetData(cmd, args)
+	defs, pols, err := doGetData(cmd, args)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Processing APIs...")
-	if err := getter.Sync(defs); err != nil {
+	publisher, err := getPublisher(cmd, args)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Using publisher: %v\n", publisher.Name())
+
+	if err := publisher.Sync(defs); err != nil {
 		return err
 	}
 
 	if len(pols) > 0 {
 		fmt.Println("Processing Policies...")
-		if err := getter.SyncPolicies(pols); err != nil {
+		if err := publisher.SyncPolicies(pols); err != nil {
 			return err
 		}
 	}
 
 	if isGateway {
-		if err := getter.Reload(); err != nil {
+		if err := publisher.Reload(); err != nil {
 			return err
 		}
 	}
@@ -169,16 +172,21 @@ func processSync(cmd *cobra.Command, args []string) error {
 }
 
 func processPublish(cmd *cobra.Command, args []string) error {
-	getter, defs, pols, err := doGetData(cmd, args)
-
+	defs, pols, err := doGetData(cmd, args)
 	if err != nil {
 		return err
 	}
 
+	publisher, err := getPublisher(cmd, args)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Using publisher: %v\n", publisher.Name())
+
 	for i, d := range defs {
 		if cmd.Use == "publish" {
 			fmt.Printf("Creating API %v: %v\n", i, d.Name)
-			id, err := getter.Create(&d)
+			id, err := publisher.Create(&d)
 			if err != nil {
 				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
 			} else {
@@ -188,7 +196,7 @@ func processPublish(cmd *cobra.Command, args []string) error {
 
 		if cmd.Use == "update" {
 			fmt.Printf("Updating API %v: %v\n", i, d.Name)
-			err := getter.Update(&d)
+			err := publisher.Update(&d)
 			if err != nil {
 				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
 			} else {
@@ -200,7 +208,7 @@ func processPublish(cmd *cobra.Command, args []string) error {
 	for i, d := range pols {
 		if cmd.Use == "publish" {
 			fmt.Printf("Creating Policy %v: %v\n", i, d.Name)
-			id, err := getter.CreatePolicy(&d)
+			id, err := publisher.CreatePolicy(&d)
 			if err != nil {
 				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
 			} else {
@@ -210,7 +218,7 @@ func processPublish(cmd *cobra.Command, args []string) error {
 
 		if cmd.Use == "update" {
 			fmt.Printf("Updating Policy %v: %v\n", i, d.Name)
-			err := getter.UpdatePolicy(&d)
+			err := publisher.UpdatePolicy(&d)
 			if err != nil {
 				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
 			} else {
@@ -220,7 +228,7 @@ func processPublish(cmd *cobra.Command, args []string) error {
 	}
 
 	if isGateway {
-		if err := getter.Reload(); err != nil {
+		if err := publisher.Reload(); err != nil {
 			return err
 		}
 	}

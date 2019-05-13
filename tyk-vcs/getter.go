@@ -10,29 +10,55 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/src-d/go-billy.v3"
 	"gopkg.in/src-d/go-billy.v3/memfs"
+	"gopkg.in/src-d/go-billy.v3/osfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 	"io/ioutil"
 )
 
+type Getter interface {
+	FetchRepo() error
+	FetchAPIDef(spec *TykSourceSpec) ([]apidef.APIDefinition, error)
+	FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error)
+	FetchTykSpec() (*TykSourceSpec, error)
+}
+
+type BaseGetter struct {
+	Getter
+	fs        billy.Filesystem
+}
+
 type GitGetter struct {
+	*BaseGetter
+	Getter
 	repo      string
 	branch    string
 	key       []byte
-	publisher Publisher
-
-	r  *git.Repository
-	fs billy.Filesystem
+	fs        billy.Filesystem
+	r         *git.Repository
 }
 
-func NewGGetter(repo, branch string, key []byte, pub Publisher) (*GitGetter, error) {
+type FSGetter struct {
+	*BaseGetter
+	Getter
+	fs        billy.Filesystem
+}
+
+func NewGGetter(repo, branch string, key []byte) (*GitGetter, error) {
 	gh := &GitGetter{
 		repo:      repo,
 		branch:    branch,
 		key:       key,
 		fs:        memfs.New(),
-		publisher: pub,
+	}
+
+	return gh, nil
+}
+
+func NewFSGetter(filePath string) (*FSGetter, error) {
+	gh := &FSGetter{
+		fs:        osfs.New(filePath),
 	}
 
 	return gh, nil
@@ -55,12 +81,12 @@ func (gg *GitGetter) FetchRepo() error {
 	return nil
 }
 
-func (gg *GitGetter) FetchTykSpec() (*TykSourceSpec, error) {
-	if gg.r == nil {
-		return nil, errors.New("No repository in memory, fetch repo first")
-	}
+func (gg *FSGetter) FetchRepo() error {
+	return nil
+}
 
-	specFile, err := gg.fs.Open(".tyk.json")
+func fetchSpec(fs billy.Filesystem) (*TykSourceSpec, error) {
+	specFile, err := fs.Open(".tyk.json")
 	if err != nil {
 		fmt.Println(".tyk.json")
 		return nil, err
@@ -80,28 +106,44 @@ func (gg *GitGetter) FetchTykSpec() (*TykSourceSpec, error) {
 	return &ts, nil
 }
 
+func (gg *GitGetter) FetchTykSpec() (*TykSourceSpec, error) {
+	if gg.r == nil {
+		return nil, errors.New("no repository in memory, fetch repo first")
+	}
+	return fetchSpec(gg.fs)
+}
+
+func (gg *FSGetter) FetchTykSpec() (*TykSourceSpec, error) {
+	return fetchSpec(gg.fs)
+}
+
+func (gg *FSGetter) FetchAPIDef(spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
+	return fetchAPIDefinitions(gg.fs, spec)
+}
+
 func (gg *GitGetter) FetchAPIDef(spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
+	if gg.r == nil {
+		return nil, errors.New("no repository in memory, fetch repo first")
+	}
+	return fetchAPIDefinitions(gg.fs, spec)
+}
+
+func fetchAPIDefinitions(fs billy.Filesystem, spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
 	switch spec.Type {
 	case TYPE_APIDEF:
-		return gg.fetchAPIDefinitionsDirect(spec)
+		return fetchAPIDefinitionsDirect(fs, spec)
 	case TYPE_OAI:
-		return gg.fetchAPIDefinitionsFromOAI(spec)
+		return fetchAPIDefinitionsFromOAI(fs, spec)
 	default:
 		return nil, fmt.Errorf("Type must be '%v or '%v'", TYPE_APIDEF, TYPE_OAI)
 	}
-
-	return nil, nil
 }
 
-func (gg *GitGetter) fetchAPIDefinitionsDirect(spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
-	if gg.r == nil {
-		return nil, errors.New("No repository in memory, fetch repo first")
-	}
-
+func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
 	defNames := spec.Files
 	defs := make([]apidef.APIDefinition, len(defNames))
 	for i, defInfo := range defNames {
-		defFile, err := gg.fs.Open(defInfo.File)
+		defFile, err := fs.Open(defInfo.File)
 		if err != nil {
 			return nil, err
 		}
@@ -137,17 +179,12 @@ func (gg *GitGetter) fetchAPIDefinitionsDirect(spec *TykSourceSpec) ([]apidef.AP
 	return defs, nil
 }
 
-func (gg *GitGetter) fetchAPIDefinitionsFromOAI(spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
-
-	if gg.r == nil {
-		return nil, errors.New("No repository in memory, fetch repo first")
-	}
-
+func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
 	oaiNames := spec.Files
 	defs := make([]apidef.APIDefinition, len(oaiNames))
 
 	for i, oaiInfo := range oaiNames {
-		oaiFile, err := gg.fs.Open(oaiInfo.File)
+		oaiFile, err := fs.Open(oaiInfo.File)
 		if err != nil {
 			return nil, err
 		}
@@ -196,15 +233,22 @@ func (gg *GitGetter) fetchAPIDefinitionsFromOAI(spec *TykSourceSpec) ([]apidef.A
 	return defs, nil
 }
 
+func (gg *FSGetter) FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error) {
+	return fetchPolicies(gg.fs, spec)
+}
+
 func (gg *GitGetter) FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error) {
 	if gg.r == nil {
 		return nil, errors.New("No repository in memory, fetch repo first")
 	}
+	return fetchPolicies(gg.fs, spec)
+}
 
+func fetchPolicies(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.Policy, error)  {
 	defNames := spec.Policies
 	defs := make([]objects.Policy, len(defNames))
 	for i, defInfo := range defNames {
-		defFile, err := gg.fs.Open(defInfo.File)
+		defFile, err := fs.Open(defInfo.File)
 		if err != nil {
 			fmt.Println(defInfo.File)
 			return nil, err
@@ -235,32 +279,4 @@ func (gg *GitGetter) FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error
 	fmt.Printf("Fetched %v policies\n", len(defs))
 
 	return defs, nil
-}
-
-func (gg *GitGetter) Sync(apiDefs []apidef.APIDefinition) error {
-	return gg.publisher.Sync(apiDefs)
-}
-
-func (gg *GitGetter) Create(apiDef *apidef.APIDefinition) (string, error) {
-	return gg.publisher.Create(apiDef)
-}
-
-func (gg *GitGetter) Update(apiDef *apidef.APIDefinition) error {
-	return gg.publisher.Update(apiDef)
-}
-
-func (gg *GitGetter) Reload() error {
-	return gg.publisher.Reload()
-}
-
-func (gg *GitGetter) CreatePolicy(pol *objects.Policy) (string, error) {
-	return gg.publisher.CreatePolicy(pol)
-}
-
-func (gg *GitGetter) UpdatePolicy(pol *objects.Policy) error {
-	return gg.publisher.UpdatePolicy(pol)
-}
-
-func (gg *GitGetter) SyncPolicies(pols []objects.Policy) error {
-	return gg.publisher.SyncPolicies(pols)
 }
