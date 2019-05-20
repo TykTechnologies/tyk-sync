@@ -2,7 +2,7 @@
 
 ## What is it?
 
-Tyk-Git is a command line tool and library to manage and synchronise a Tyk installation with a Git repository.
+Tyk-Git is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
 
 ## Features
 
@@ -10,10 +10,12 @@ Tyk-Git is a command line tool and library to manage and synchronise a Tyk insta
 - Update APIs on remote Tyk CE Gateways
 - Publish APIS/Policies to remote Tyk Dashboards
 - Publish APIs to remote Tyk CE Gateways
-- Synchronise a Tyk Dashboard's APIs and Policies with those stored in a repository (one-way, Git writes to Dashboard)
-- Synchronise a Tyk CE Gateway's APIs with those stored in a repository (one-way, Git writes to the Gateway)
+- Synchronise a Tyk Dashboard's APIs and Policies with your VCS (one-way, definitions are written to the Dashboard)
+- Synchronise a Tyk CE Gateway's APIs with those stored in a VCS (one-way, definitions are written to the Gateway)
 - Dump Policies and APIs in a transportable format from a Dashboard to a directory
 - Support for importing, converting and publishing Swagger (Open API Spec) files to Tyk.
+- Specialized support for Git. But since API and policy definitions can be read directly from
+the file system, it will integrate with any VCS.
 
 ### Sync
 

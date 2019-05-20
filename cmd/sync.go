@@ -9,7 +9,7 @@ import (
 // syncCmd represents the sync command
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Synchronise a github repo with a gateway",
+	Short: "Synchronise a github repo or file system with a gateway",
 	Long: `This command will synchronise an API Gateway with the contents of a Github repository, the
 	sync is one way: from the repo to the gateway, the command will not write back to the repo.
 	Sync will delete any objects in the dashboard or gateway that it cannot find in the github repo,
