@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // syncCmd represents the sync command
@@ -18,12 +18,13 @@ var syncCmd = &cobra.Command{
 		verificationError := verifyArguments(cmd)
 		if verificationError != nil {
 			fmt.Println(verificationError)
-			return
+			os.Exit(1)
 		}
 
 		err := processSync(cmd, args)
 		if err != nil {
 			fmt.Println("Error: ", err)
+			os.Exit(1)
 		}
 	},
 }
