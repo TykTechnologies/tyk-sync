@@ -16,7 +16,7 @@ package cmd
 
 import (
 	"fmt"
-
+	"os"
 	"github.com/spf13/cobra"
 )
 
@@ -30,12 +30,13 @@ var updateCmd = &cobra.Command{
 		verificationError := verifyArguments(cmd)
 		if verificationError != nil {
 			fmt.Println(verificationError)
-			return
+			os.Exit(1)
 		}
 
 		err := processPublish(cmd, args)
 		if err != nil {
 			fmt.Println("Error: ", err)
+			os.Exit(1)
 		}
 	},
 }

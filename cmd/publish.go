@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // publishCmd represents the publish command
@@ -16,12 +16,13 @@ var publishCmd = &cobra.Command{
 		verificationError := verifyArguments(cmd)
 		if verificationError != nil {
 			fmt.Println(verificationError)
-			return
+			os.Exit(1)
 		}
 
 		err := processPublish(cmd, args)
 		if err != nil {
 			fmt.Println("Error: ", err)
+			os.Exit(1)
 		}
 	},
 }
