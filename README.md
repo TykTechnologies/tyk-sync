@@ -1,8 +1,8 @@
-# Tyk-Git
+# Tyk-Sync
 
 ## What is it?
 
-Tyk-Git is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
+Tyk-Sync is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
 
 ## Features
 
@@ -19,18 +19,18 @@ the file system, it will integrate with any VCS.
 
 ### Sync
 
-Tyk-Git tries to be clever about what APIs and Policies to update and which to create, it will actually base all
+Tyk-Sync tries to be clever about what APIs and Policies to update and which to create, it will actually base all
 ID matching on the API ID and the masked Policy ID, so it can identify the same object across installations. Tyk has
-a tendency to generate fresh IDs for all new Objects, so Tyk-Git gets around this by using portable IDs and ensuring
+a tendency to generate fresh IDs for all new Objects, so Tyk-Sync gets around this by using portable IDs and ensuring
 the necessary portable IDs are set when using the `dump` command.
 
-This means that Tyk-Git can be used to back-up your most important API Gateway configurations as code, and to deploy
+This means that Tyk-Sync can be used to back-up your most important API Gateway configurations as code, and to deploy
 those configurations to any target and ensure that API IDs and Policy IDs will remain consistent, ensuring that any
 dependent tokens continue to have access to your services.
 
 ### Prerequisites:
 
-- Tyk-Git was built using Go 1.10. The minimum Go version required to install is 1.7.
+- Tyk-Sync was built using Go 1.10. The minimum Go version required to install is 1.7.
 - In order for policy ID matching to work correctly, your Gateway must have `policies.allow_explicit_policy_id: true`.
 - It is assumed you have a Tyk CE or Tyk Pro installation.
 
@@ -39,17 +39,17 @@ dependent tokens continue to have access to your services.
 Currently the application is only available via Go, so to install you must have Go installed and run:
 
 ```
-go install -u github.com/TykTechnologies/tyk-git
+go install -u github.com/TykTechnologies/tyk-sync
 ```
 
-This should make the `tyk-git` command available to your console.
+This should make the `tyk-sync` command available to your console.
 
 ## Usage
 
 ```
 Usage:
-  tyk-git [flags]
-  tyk-git [command]
+  tyk-sync [flags]
+  tyk-sync [command]
 
 Available Commands:
   dump        Dump will extract policies and APIs from a target (dashboard)
@@ -59,9 +59,9 @@ Available Commands:
   update      A brief description of your command
 
 Flags:
-  -h, --help   help for tyk-git
+  -h, --help   help for tyk-sync
 
-Use "tyk-git [command] --help" for more information about a command.
+Use "tyk-sync [command] --help" for more information about a command.
 ```
 
 ## Example: Transfer from one Tyk Dashboard to another
@@ -70,7 +70,7 @@ First, we need to extract the data from our Tyk Dashboard, here we `dump` into .
 directory
 
 ```
-tyk-git dump -d="http://localhost:3000" -s="b2d420ca5302442b6f20100f76de7d83" -t="./tmp"
+tyk-sync dump -d="http://localhost:3000" -s="b2d420ca5302442b6f20100f76de7d83" -t="./tmp"
 Extracting APIs and Policies from http://localhost:3000
 > Fetching policies
 --> Identified 1 policies
@@ -93,7 +93,7 @@ git push -u origin my-test-branch
 Now to restore this data directly from GitHub:
 
 ```
-tyk-git sync -d="http://localhost:3010" -s="b2d420ca5302442b6f20100f76de7d83" -b="refs/heads/my-test-branch" https://github.com/myname/my-test.git
+tyk-sync sync -d="http://localhost:3010" -s="b2d420ca5302442b6f20100f76de7d83" -b="refs/heads/my-test-branch" https://github.com/myname/my-test.git
 Using publisher: Dashboard Publisher
 Fetched 3 definitions
 Fetched 1 policies
