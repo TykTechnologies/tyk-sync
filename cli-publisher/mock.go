@@ -2,7 +2,7 @@ package cli_publisher
 
 import (
 	"fmt"
-	"github.com/TykTechnologies/tyk-git/clients/objects"
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 )
 

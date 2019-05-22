@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"encoding/json"
-	"github.com/TykTechnologies/tyk-git/clients/dashboard"
-	"github.com/TykTechnologies/tyk-git/clients/objects"
-	"github.com/TykTechnologies/tyk-git/tyk-vcs"
+	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"

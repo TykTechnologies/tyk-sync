@@ -2,8 +2,8 @@ package cli_publisher
 
 import (
 	"errors"
-	"github.com/TykTechnologies/tyk-git/clients/gateway"
-	"github.com/TykTechnologies/tyk-git/clients/objects"
+	"github.com/TykTechnologies/tyk-sync/clients/gateway"
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 )
 

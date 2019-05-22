@@ -3,7 +3,7 @@ package gateway
 import (
 	"errors"
 	"fmt"
-	"github.com/TykTechnologies/tyk-git/clients/objects"
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"

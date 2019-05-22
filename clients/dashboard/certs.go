@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/TykTechnologies/tyk-git/clients/objects"
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/ongoingio/urljoin"
 	"io"
 	"io/ioutil"
