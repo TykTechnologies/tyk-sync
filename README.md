@@ -39,7 +39,7 @@ dependent tokens continue to have access to your services.
 Currently the application is only available via Go, so to install you must have Go installed and run:
 
 ```
-go install -u github.com/TykTechnologies/tyk-sync
+go install -i github.com/TykTechnologies/tyk-sync
 ```
 
 This should make the `tyk-sync` command available to your console.
