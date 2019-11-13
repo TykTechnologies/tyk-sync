@@ -115,7 +115,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 			return "", UseUpdateError
 		}
 
-		if api.Proxy.ListenPath == def.Proxy.ListenPath {
+		if api.Proxy.TargetURL == def.Proxy.TargetURL && api.Proxy.ListenPath == def.Proxy.ListenPath {
 			return "", UseUpdateError
 		}
 	}
