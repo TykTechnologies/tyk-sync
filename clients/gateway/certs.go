@@ -32,7 +32,7 @@ func (c *Client) CreateCertificate(cert []byte) (string, error) {
 
 	req, err := http.NewRequest("POST", fullPath, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Authorization", c.secret)
+	req.Header.Set("X-Tyk-Authorization", c.secret)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: c.InsecureSkipVerify},
