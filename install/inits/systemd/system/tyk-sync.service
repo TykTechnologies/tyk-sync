@@ -1,0 +1,19 @@
+[Unit]
+Description=Tyk sync
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=tyk
+Group=tyk
+# Load env vars from /etc/default/ and /etc/sysconfig/ if they exist.
+# Prefixing the path with '-' makes it try to load, but if the file doesn't
+# exist, it continues onward.
+EnvironmentFile=-/etc/default/tyk-sync
+EnvironmentFile=-/etc/sysconfig/tyk-sync
+Restart=always
+WorkingDirectory=/opt/tyk-sync
+
+[Install]
+WantedBy=multi-user.target

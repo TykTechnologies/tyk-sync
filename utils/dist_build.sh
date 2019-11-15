@@ -33,7 +33,6 @@ gox -osarch="linux/arm64 linux/amd64 linux/386"
 echo "Copying files"
 cd $TYK_IB_SRC_DIR
 cp -R install $BUILD_DIR/
-cp tib_sample.conf $BUILD_DIR/tib.conf
 cp LICENSE.md $BUILD_DIR/
 cp README.md $BUILD_DIR/
 
