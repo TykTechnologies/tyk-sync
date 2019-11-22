@@ -6,9 +6,6 @@
 TYK_IB_SRC_DIR=$ORGDIR/tyk-sync
 BUILDTOOLSDIR=$TYK_IB_SRC_DIR/build_tools
 
-echo "Set version number"
-: ${VERSION:=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' version.go)}
-
 if [ $BUILDPKGS == "1" ]; then
     echo "Importing signing key"
     gpg --list-keys | grep -w $SIGNKEY && echo "Key exists" || gpg --batch --import $BUILDTOOLSDIR/build_key.key
@@ -32,7 +29,6 @@ gox -osarch="linux/arm64 linux/amd64 linux/386"
 # ---- CREATE TARGET FOLDER ---
 echo "Copying files"
 cd $TYK_IB_SRC_DIR
-cp -R install $BUILD_DIR/
 cp LICENSE.md $BUILD_DIR/
 cp README.md $BUILD_DIR/
 
@@ -52,13 +48,6 @@ FPMCOMMON=(
     --url "https://tyk.io"
     -s dir
     -C $BUILD_DIR
-    --before-install $BUILD_DIR/install/before_install.sh
-    --after-install $BUILD_DIR/install/post_install.sh
-    --after-remove $BUILD_DIR/install/post_remove.sh
-)
-FPMRPM=(
-    --before-upgrade $BUILD_DIR/install/post_remove.sh
-    --after-upgrade $BUILD_DIR/install/post_install.sh
 )
 
 for arch in i386 amd64 arm64
@@ -71,8 +60,8 @@ do
 
     if [ $BUILDPKGS == "1" ]; then
         echo "Building $arch packages"
-        fpm "${FPMCOMMON[@]}" -a $arch -t deb --deb-user tyk --deb-group tyk ./=/opt/tyk-sync
-        fpm "${FPMCOMMON[@]}" "${FPMRPM[@]}" -a $arch -t rpm --rpm-user tyk --rpm-group tyk  ./=/opt/tyk-sync
+        fpm "${FPMCOMMON[@]}" -a $arch -t deb ./=/opt/tyk-sync
+        fpm "${FPMCOMMON[@]}" -a $arch -t rpm ./=/opt/tyk-sync
 
         rpmName="tyk-sync-$VERSION-1.${arch/amd64/x86_64}.rpm"
         echo "Signing $arch RPM"

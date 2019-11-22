@@ -5,9 +5,6 @@
 : ${RPMVERS:="el/6 el/7"}
 : ${PKGNAME:="tyk-sync"}
 
-echo "Set version number"
-: ${VERSION:=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' version.go)}
-
 RELEASE_DIR="$SOURCEBINPATH/build"
 export PACKAGECLOUDREPO=$PC_TARGET
 

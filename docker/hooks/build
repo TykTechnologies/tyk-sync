@@ -10,7 +10,7 @@ echo "DOCKER_TAG: $DOCKER_TAG"
 
 dockerfilepath="$PWD/Dockerfile"
 repopath="$(dirname $PWD)"
-versionfile="$(cat $repopath/version.go)"
+versionfile="$DOCKER_TAG"
 regex="v([0-9]+\.[0-9]+\.[0-9]+)"
 if [[ $versionfile =~ $regex ]]; then
     TYKVERSION=${BASH_REMATCH[1]}
