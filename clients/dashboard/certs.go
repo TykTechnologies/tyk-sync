@@ -23,6 +23,9 @@ func (c *Client) CreateCertificate(cert []byte) (string, error) {
 		return "", err
 	}
 	_, err = io.Copy(part, ioutil.NopCloser(bytes.NewReader(cert)))
+	if err != nil {
+		return "", err
+	}
 
 	err = writer.Close()
 	if err != nil {
@@ -30,13 +33,24 @@ func (c *Client) CreateCertificate(cert []byte) (string, error) {
 	}
 
 	req, err := http.NewRequest("POST", fullPath, body)
+	if err != nil {
+		return "", err
+	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Authorization", c.secret)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-	rBody, _ := ioutil.ReadAll(resp.Body)
+	rBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("API Returned error: %v", string(rBody))
 	}
