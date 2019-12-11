@@ -1,7 +1,7 @@
 #!/bin/bash
 : ${ORGDIR:="/src/github.com/TykTechnologies"}
 : ${SOURCEBINPATH:="${ORGDIR}/tyk-sync"}
-: ${DEBVERS:="ubuntu/trusty ubuntu/xenial ubuntu/bionic debian/jessie debian/stretch debian/buster"}
+: ${DEBVERS:="ubuntu/xenial ubuntu/bionic debian/jessie debian/stretch debian/buster"}
 : ${RPMVERS:="el/6 el/7"}
 : ${PKGNAME:="tyk-sync"}
 

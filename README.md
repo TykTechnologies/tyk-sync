@@ -36,13 +36,33 @@ dependent tokens continue to have access to your services.
 
 ## Installation
 
-Currently the application is only available via Go, so to install you must have Go installed and run:
+Currently the application is available via Go, Docker and in packagecloud, so to install via Go you must have Go installed and run:
 
-```
-go install -i github.com/TykTechnologies/tyk-sync
-```
-
+ ```
+ go install -i github.com/TykTechnologies/tyk-sync
+ ```
 This should make the `tyk-sync` command available to your console.
+
+
+To install the latest version of `tyk-sync` via docker image please run:
+```
+docker pull tykio/tyk-sync
+```
+To run `tyk-sync` do:
+```
+docker run -it -d tyk-sync:latest
+```
+To connect to the running container please do:
+```
+docker exec -it {container_name} /bin/bash
+```
+Then inside the running container you can run `tyk-sync` in the following way:
+```
+./tyk-sync [flags]
+./tyk-sync [command]
+
+```
+
 
 ## Usage
 
@@ -114,4 +134,3 @@ SYNC Updating Policy: Test policy 1
 
 The command provides output to identify which actions have been taken. If using a Tyk Gateway, the Gateway will be
 automatically hot-reloaded.
-
