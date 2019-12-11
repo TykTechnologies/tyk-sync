@@ -43,6 +43,7 @@ Currently the application is available via Go, Docker and in packagecloud, so to
  ```
 This should make the `tyk-sync` command available to your console.
 
+### Docker:
 
 To install the latest version of `tyk-sync` via docker image please run:
 ```
@@ -60,9 +61,7 @@ Then inside the running container you can run `tyk-sync` in the following way:
 ```
 ./tyk-sync [flags]
 ./tyk-sync [command]
-
 ```
-
 
 ## Usage
 
