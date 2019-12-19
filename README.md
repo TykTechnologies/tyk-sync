@@ -49,20 +49,15 @@ To install the latest version of `tyk-sync` via docker image please run:
 ```
 docker pull tykio/tyk-sync
 ```
-To run `tyk-sync` do:
+To run `tyk-sync` as a one-off command and display usage options please do:
 ```
-docker run -it -d tyk-sync:latest
+docker run -it --rm tyk-sync:latest help
 ```
-To connect to the running container please do:
+Then the docker image `tyk-sync` can be used in the following way:
 ```
-docker exec -it {container_name} /bin/bash
+docker run -it --rm tyk-sync:latest [flags]
+docker run -it --rm tyk-sync:latest [command]
 ```
-Then inside the running container you can run `tyk-sync` in the following way:
-```
-./tyk-sync [flags]
-./tyk-sync [command]
-```
-
 ## Usage
 
 ```

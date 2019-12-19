@@ -19,3 +19,5 @@ RUN echo "deb https://packagecloud.io/tyk/tyk-sync/debian/ buster main" | tee /e
  && rm -rf /var/lib/apt/lists/*
 
  WORKDIR /opt/tyk-sync
+
+ ENTRYPOINT ["./tyk-sync"]
