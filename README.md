@@ -45,18 +45,18 @@ This should make the `tyk-sync` command available to your console.
 
 ### Docker:
 
-To install the latest version of `tyk-sync` via docker image please run:
+To install particular version of `tyk-sync` via docker image please run the command bellow with appropriate version you want to use. All available versions could be found on Tyk Sync Docker Hub page here: https://hub.docker.com/r/tykio/tyk-sync/tags
 ```
-docker pull tykio/tyk-sync
+docker pull tykio/tyk-sync:{version_id}
 ```
 To run `tyk-sync` as a one-off command and display usage options please do:
 ```
-docker run -it --rm tyk-sync:latest help
+docker run -it --rm tykio/tyk-sync:{version_id} help
 ```
 Then the docker image `tyk-sync` can be used in the following way:
 ```
-docker run -it --rm tyk-sync:latest [flags]
-docker run -it --rm tyk-sync:latest [command]
+docker run -it --rm tykio/tyk-sync:{version_id} [flags]
+docker run -it --rm tykio/tyk-sync:{version_id} [command]
 ```
 ## Usage
 
