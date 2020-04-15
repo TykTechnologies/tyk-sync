@@ -4,6 +4,8 @@
 
 Tyk-Sync is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
 
+About `tyk-git` - that was project's originally name and recently we have decided to change it to `tyk-sync` since it syncs to files as well as git repos.
+
 ## Features
 
 - Update APIs and policies on remote Tyk Dashboards
