@@ -2,11 +2,12 @@ package dashboard
 
 import (
 	"fmt"
+
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/kataras/go-errors"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 type PoliciesData struct {
@@ -58,8 +59,9 @@ func (c *Client) CreatePolicy(pol *objects.Policy) (string, error) {
 		}
 	}
 
-	fullPath := urljoin.Join(c.url, endpointPolicies)
+	fixPolicyAPIIDs(pol)
 
+	fullPath := urljoin.Join(c.url, endpointPolicies)
 	ro := &grequests.RequestOptions{
 		JSON: pol,
 		Headers: map[string]string{
@@ -166,6 +168,8 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 	if !found {
 		return UseCreateError
 	}
+
+	fixPolicyAPIIDs(pol)
 
 	fullPath := urljoin.Join(c.url, endpointPolicies, pol.MID.Hex())
 
@@ -298,4 +302,21 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 	}
 
 	return nil
+}
+
+func fixPolicyAPIIDs(pol *objects.Policy) {
+	apiIDToRemove := []string{}
+	for apiID, accessRights := range pol.AccessRights {
+		newAPIID, found := APIIDRelations[apiID]
+		if found {
+			newAccessRights := accessRights
+			newAccessRights.APIID = newAPIID
+			pol.AccessRights[newAPIID] = newAccessRights
+			apiIDToRemove = append(apiIDToRemove, apiID)
+		}
+	}
+
+	for _, apiID := range apiIDToRemove {
+		delete(pol.AccessRights, apiID)
+	}
 }

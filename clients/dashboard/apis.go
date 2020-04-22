@@ -2,11 +2,12 @@ package dashboard
 
 import (
 	"fmt"
+
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -19,6 +20,10 @@ type APIResponse struct {
 type APISResponse struct {
 	Apis  []objects.DBApiDefinition `json:"apis"`
 	Pages int                       `json:"pages"`
+}
+
+type APIDefinitionResponse struct {
+	APIDefinition apidef.APIDefinition `json:"api_definition"`
 }
 
 func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
@@ -122,16 +127,30 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 
 	// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
 	if retainedIDs {
-		def.Id = bson.ObjectIdHex(status.Meta)
-		if err := c.UpdateAPI(def); err != nil {
-			fmt.Printf("Problem trying to retain API ID: %v\n", err)
-		}
+		path := fullPath + "/" + status.Meta
+		getResp, err := grequests.Get(path, &grequests.RequestOptions{
+			Headers: map[string]string{
+				"Authorization": c.secret,
+			},
+			InsecureSkipVerify: c.InsecureSkipVerify,
+		})
 
+		if err != nil {
+			return "", fmt.Errorf("Error getting new API definition  with error: %v", err)
+		}
+		var newAPIDef APIDefinitionResponse
+		if err := getResp.JSON(&newAPIDef); err != nil {
+			return "", fmt.Errorf("Error unmarshalling new API Definition with error: %v", err)
+		}
+		newAPIID := newAPIDef.APIDefinition.APIID
+		APIIDRelations[def.APIID] = newAPIID
 	}
 
 	return status.Meta, nil
 
 }
+
+var APIIDRelations map[string]string
 
 func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
@@ -382,6 +401,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 		}
 	}
 
+	APIIDRelations = make(map[string]string, len(createAPIs))
 	// Do the creates
 	for _, api := range createAPIs {
 		fmt.Printf("SYNC Creating: %v\n", api.Name)
@@ -390,7 +410,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 		if id, err = c.CreateAPI(&api); err != nil {
 			return err
 		}
-		fmt.Printf("--> ID: %v\n", id)
+		fmt.Printf("--> ID: %v\n", bson.ObjectIdHex(id))
 	}
 
 	return nil
