@@ -65,7 +65,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", err
 	}
 
-	retainedIDs := false
+	hadDefinedAPIID := false
 
 	for _, api := range apis.Apis {
 		if api.APIID == def.APIID {
@@ -93,7 +93,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 
 	if def.APIID != "" {
 		// Retain the API ID
-		retainedIDs = true
+		hadDefinedAPIID = true
 	}
 
 	// Create
@@ -125,8 +125,8 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", fmt.Errorf("API request completed, but with error: %v", status.Message)
 	}
 
-	// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
-	if retainedIDs {
+	//If the API HAD an already defined APIID, we have to modify the policies asociated to it.
+	if hadDefinedAPIID {
 		path := fullPath + "/" + status.Meta
 		getResp, err := grequests.Get(path, &grequests.RequestOptions{
 			Headers: map[string]string{

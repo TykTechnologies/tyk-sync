@@ -59,7 +59,7 @@ func (c *Client) CreatePolicy(pol *objects.Policy) (string, error) {
 		}
 	}
 
-	fixPolicyAPIIDs(pol)
+	pol.FixPolicyAPIIDs(APIIDRelations)
 
 	fullPath := urljoin.Join(c.url, endpointPolicies)
 	ro := &grequests.RequestOptions{
@@ -87,6 +87,8 @@ func (c *Client) CreatePolicy(pol *objects.Policy) (string, error) {
 	if dbResp.Status != "OK" {
 		return "", fmt.Errorf("API request completed, but with error: %v", dbResp.Message)
 	}
+
+	fmt.Println("newPolicyID:", dbResp)
 
 	return dbResp.Meta, nil
 }
@@ -169,7 +171,7 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 		return UseCreateError
 	}
 
-	fixPolicyAPIIDs(pol)
+	pol.FixPolicyAPIIDs(APIIDRelations)
 
 	fullPath := urljoin.Join(c.url, endpointPolicies, pol.MID.Hex())
 
@@ -198,6 +200,8 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 	if dbResp.Status != "OK" {
 		return fmt.Errorf("API request completed, but with error: %v", dbResp.Message)
 	}
+
+	fmt.Println("newPolicyID:", dbResp)
 
 	return nil
 }
@@ -302,21 +306,4 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 	}
 
 	return nil
-}
-
-func fixPolicyAPIIDs(pol *objects.Policy) {
-	apiIDToRemove := []string{}
-	for apiID, accessRights := range pol.AccessRights {
-		newAPIID, found := APIIDRelations[apiID]
-		if found {
-			newAccessRights := accessRights
-			newAccessRights.APIID = newAPIID
-			pol.AccessRights[newAPIID] = newAccessRights
-			apiIDToRemove = append(apiIDToRemove, apiID)
-		}
-	}
-
-	for _, apiID := range apiIDToRemove {
-		delete(pol.AccessRights, apiID)
-	}
 }
