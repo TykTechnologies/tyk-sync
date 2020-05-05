@@ -11,6 +11,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+var apisMap = map[string]apidef.APIDefinition{}
+
 type APIResponse struct {
 	Message string
 	Meta    string
@@ -144,6 +146,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		}
 		newAPIID := newAPIDef.APIDefinition.APIID
 		APIIDRelations[def.APIID] = newAPIID
+		apisMap[def.APIID] = newAPIDef.APIDefinition
 	}
 
 	return status.Meta, nil
@@ -320,6 +323,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 
 	DashIDMap := map[string]int{}
 	GitIDMap := map[string]int{}
+	apisMap = make(map[string]apidef.APIDefinition, len(apis.Apis))
 
 	// Build the dash ID map
 	for i, api := range apis.Apis {
@@ -361,6 +365,8 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 			api.Id = apis.Apis[dashIndex].Id
 			api.APIID = apis.Apis[dashIndex].APIID
 			updateAPIs = append(updateAPIs, api)
+			// We add the apis to update in the apisMap in case we need to update something about it latter
+			apisMap[apiDefs[index].APIID] = api
 		}
 	}
 
@@ -378,6 +384,8 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 		_, ok := DashIDMap[key]
 		if !ok {
 			createAPIs = append(createAPIs, apiDefs[index])
+			// We add the apis to create in the apisMap in case we need to update something about it latter
+			apisMap[apiDefs[index].APIID] = apiDefs[index]
 		}
 	}
 
