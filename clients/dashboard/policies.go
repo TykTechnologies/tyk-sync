@@ -2,11 +2,13 @@ package dashboard
 
 import (
 	"fmt"
+
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/kataras/go-errors"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 type PoliciesData struct {
@@ -58,8 +60,9 @@ func (c *Client) CreatePolicy(pol *objects.Policy) (string, error) {
 		}
 	}
 
+	pol.FixPolicyAPIIDs(APIIDRelations)
+	pol.ID = ""
 	fullPath := urljoin.Join(c.url, endpointPolicies)
-
 	ro := &grequests.RequestOptions{
 		JSON: pol,
 		Headers: map[string]string{
@@ -86,7 +89,40 @@ func (c *Client) CreatePolicy(pol *objects.Policy) (string, error) {
 		return "", fmt.Errorf("API request completed, but with error: %v", dbResp.Message)
 	}
 
-	return dbResp.Meta, nil
+	//We need to update the APIS where this policy was in an OIDC Provider and update them with the new policy ID
+	for _, def := range apisMap {
+		shouldUpdate := false
+		newAPIDef := def
+
+		newAPIDef.OpenIDOptions.Providers = []apidef.OIDProviderConfig{}
+
+		for _, provider := range def.OpenIDOptions.Providers {
+			fixedProvider := apidef.OIDProviderConfig{}
+			fixedProvider.Issuer = provider.Issuer
+
+			clientsIDs := make(map[string]string, len(provider.ClientIDs))
+			for key, policyID := range provider.ClientIDs {
+				if provider.ClientIDs[key] == pol.MID.Hex() {
+					shouldUpdate = true
+					clientsIDs[key] = dbResp.Message
+				} else {
+					clientsIDs[key] = policyID
+				}
+			}
+			fixedProvider.ClientIDs = clientsIDs
+			newAPIDef.OpenIDOptions.Providers = append(newAPIDef.OpenIDOptions.Providers, fixedProvider)
+		}
+
+		if shouldUpdate {
+			err := c.UpdateAPI(&newAPIDef)
+			if err != nil {
+				fmt.Println("Error updating API with the new Policy ID:", err)
+				return "", err
+			}
+		}
+	}
+
+	return dbResp.Message, nil
 }
 
 func (c *Client) DeletePolicy(id string) error {
@@ -166,6 +202,8 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 	if !found {
 		return UseCreateError
 	}
+
+	pol.FixPolicyAPIIDs(APIIDRelations)
 
 	fullPath := urljoin.Join(c.url, endpointPolicies, pol.MID.Hex())
 

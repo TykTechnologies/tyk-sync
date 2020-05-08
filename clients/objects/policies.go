@@ -1,8 +1,9 @@
 package objects
 
 import (
-	"gopkg.in/mgo.v2/bson"
 	"time"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 type AccessSpec struct {
@@ -39,4 +40,21 @@ type Policy struct {
 		Acl       bool `bson:"acl" json:"acl"`
 	} `bson:"partitions" json:"partitions"`
 	LastUpdated string `bson:"last_updated" json:"last_updated"`
+}
+
+func (pol *Policy) FixPolicyAPIIDs(APIIDRelations map[string]string) {
+	apiIDToRemove := []string{}
+	for apiID, accessRights := range pol.AccessRights {
+		newAPIID, found := APIIDRelations[apiID]
+		if found {
+			newAccessRights := accessRights
+			newAccessRights.APIID = newAPIID
+			pol.AccessRights[newAPIID] = newAccessRights
+			apiIDToRemove = append(apiIDToRemove, apiID)
+		}
+	}
+
+	for _, apiID := range apiIDToRemove {
+		delete(pol.AccessRights, apiID)
+	}
 }
