@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	"encoding/json"
-	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
+	"github.com/spf13/cobra"
 )
 
 // dumpCmd represents the dump command
@@ -47,7 +48,7 @@ var dumpCmd = &cobra.Command{
 
 		fmt.Printf("Extracting APIs and Policies from %v\n", dbString)
 
-		c, err := dashboard.NewDashboardClient(dbString, secret)
+		c, err := dashboard.NewDashboardClient(dbString, secret, "")
 		if err != nil {
 			fmt.Println(err)
 		}
