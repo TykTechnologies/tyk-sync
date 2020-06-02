@@ -73,7 +73,7 @@ func (gg *GitGetter) FetchRepo() error {
 		SingleBranch:  true,
 	}
 	if len(gg.key) != 0 {
-		publicKey, keyError := ssh.NewPublicKeys("git", []byte(gg.key), "")
+		publicKey, keyError := ssh.NewPublicKeys("git", gg.key, "")
 		if keyError != nil {
 			fmt.Println("Error getting key for git authentication:", keyError)
 		}

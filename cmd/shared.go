@@ -107,7 +107,7 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 	if keyFile != "" {
 		sshKey, errSsh := ioutil.ReadFile(keyFile)
 		if errSsh != nil {
-			fmt.Println("Error reading ",keyFile, " for github key.")
+			fmt.Println("Error reading ",keyFile," for github key:",errSsh)
 		}
 		auth = []byte(sshKey)
 	}
