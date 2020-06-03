@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 
 	"encoding/json"
 	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
@@ -53,11 +54,32 @@ var dumpCmd = &cobra.Command{
 		}
 
 		fmt.Println("> Fetching policies")
-		policies, err := c.FetchPolicies()
-		if err != nil {
-			fmt.Println(err)
-			return
+		wantedPolicies , _ := cmd.Flags().GetStringSlice("policies")
+
+		policies := []objects.Policy{}
+		var errPoliciesFetch error
+
+		if len(wantedPolicies) == 0{
+			policies, errPoliciesFetch = c.FetchPolicies()
+			if errPoliciesFetch != nil {
+				fmt.Println(errPoliciesFetch)
+				return
+			}
+		}else{
+			for _,wantedPolicy := range wantedPolicies{
+					if !bson.IsObjectIdHex(wantedPolicy){
+						fmt.Println("Invalid selected Policiy ID:",wantedPolicy,".")
+						return
+					}
+					pol := objects.Policy{
+						ID: wantedPolicy,
+						MID: bson.ObjectIdHex(wantedPolicy),
+					}
+					policies = append(policies,pol)
+			}
 		}
+
+
 		fmt.Printf("--> Identified %v policies\n", len(policies))
 		fmt.Println("--> Fetching and cleaning policy objects")
 		// A bug exists which causes decoding of the access rights to break,
@@ -78,12 +100,34 @@ var dumpCmd = &cobra.Command{
 			cleanPolicyObjects[i] = cp
 		}
 
+		if len(wantedPolicies) > 0 &&  len(cleanPolicyObjects) == 0{
+			fmt.Println("Selected Policies were not found.")
+			return
+		}
+
 		fmt.Println("> Fetching APIs")
 		apis, err := c.FetchAPIs()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+		wantedAPIs , _ := cmd.Flags().GetStringSlice("apis")
+		if len(wantedAPIs) >0 {
+			newAPIs := []objects.DBApiDefinition{}
+			for _, api := range apis{
+				for _, wantedAPI := range wantedAPIs{
+					if wantedAPI == api.APIID {
+						newAPIs = append(newAPIs, api)
+					}
+				}
+			}
+			if len(newAPIs) == 0{
+				fmt.Println("Selected API IDs were not found.")
+				return
+			}
+			apis = newAPIs
+		}
+
 		fmt.Printf("--> Fetched %v APIs\n", len(apis))
 
 		dir, _ := cmd.Flags().GetString("target")
@@ -103,6 +147,43 @@ var dumpCmd = &cobra.Command{
 				return
 			}
 			apiFiles[i] = fname
+		}
+
+		// If we have selected Policies specified we're going to check if we're importing all the necessary APIs
+		if len(wantedPolicies) >0 {
+			for _, policy := range cleanPolicyObjects{
+				for _, accesRights := range policy.AccessRights{
+					found := false
+					for _, api := range apis{
+						if api.APIID == accesRights.APIID {
+							found = true
+						}
+					}
+					if !found {
+						fmt.Println("!!! Policy ",policy.ID," has access rights of API ID ",accesRights.APIID," and that API ID it's not imported. It might cause some problems in the future." )
+					}
+				}
+			}
+		}
+		// If we have selected APIs specified we're going to check if we're importing all the necessary policies
+		if len(wantedAPIs) >0 {
+			//checking selected APIs  -  Policies integrity
+			for _, api := range apis{
+				for _, provider := range api.OpenIDOptions.Providers{
+					for _, id := range provider.ClientIDs{
+						found := false
+						for _, policy := range cleanPolicyObjects{
+							if policy.ID == id {
+								found=true
+								break
+							}
+						}
+						if !found {
+							fmt.Println("!!! Api ",api.APIID," has the Policy  ",id, " as a OIDC issuer policy and it's not imported. It might cause some problems in the future." )
+						}
+					}
+				}
+			}
 		}
 
 		policyFiles := make([]string, len(cleanPolicyObjects))
@@ -173,4 +254,6 @@ func init() {
 	dumpCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
 	dumpCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
+	dumpCmd.Flags().StringSliceP("policies","p",[]string{},"Specific Policies ids to dump")
+	dumpCmd.Flags().StringSliceP("apis","a",[]string{},"Specific Apis ids to dump")
 }
