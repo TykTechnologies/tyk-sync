@@ -43,6 +43,14 @@ func (c *Client) GetActiveID(def *apidef.APIDefinition) string {
 }
 
 func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
+	if len(APIIDRelations) == 0 {
+		APIIDRelations = make(map[string]string)
+	}
+	if len(apisMap) == 0 {
+		apisMap = make(map[string]apidef.APIDefinition)
+		apisMap[def.APIID] = *def
+	}
+
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{

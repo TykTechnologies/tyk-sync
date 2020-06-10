@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/ongoingio/urljoin"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 type DefinitionObjectFormatAST struct {

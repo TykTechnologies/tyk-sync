@@ -2,6 +2,7 @@ package cli_publisher
 
 import (
 	"fmt"
+
 	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
@@ -32,27 +33,37 @@ func (p *DashboardPublisher) enforceOrgIDForPolicy(pol *objects.Policy) *objects
 }
 
 func (p *DashboardPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return "", err
+	}
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
 	}
 
 	return c.CreateAPI(p.enforceOrgID(apiDef))
 }
 
 func (p *DashboardPublisher) Update(apiDef *apidef.APIDefinition) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
+	}
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
 	}
 
 	return c.UpdateAPI(p.enforceOrgID(apiDef))
 }
 
 func (p *DashboardPublisher) Sync(apiDefs []apidef.APIDefinition) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
+	}
+
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
 	}
 
 	if p.OrgOverride != "" {
@@ -79,27 +90,34 @@ func (p *DashboardPublisher) Name() string {
 }
 
 func (p *DashboardPublisher) CreatePolicy(pol *objects.Policy) (string, error) {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return "", err
 	}
-
-	return c.CreatePolicy(pol)
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+	return c.CreatePolicy(p.enforceOrgIDForPolicy(pol))
 }
 
 func (p *DashboardPublisher) UpdatePolicy(pol *objects.Policy) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
 	}
-
-	return c.UpdatePolicy(pol)
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+	return c.UpdatePolicy(p.enforceOrgIDForPolicy(pol))
 }
 
 func (p *DashboardPublisher) SyncPolicies(pols []objects.Policy) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
+	}
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
 	}
 
 	if p.OrgOverride != "" {
