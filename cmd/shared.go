@@ -8,6 +8,7 @@ import (
 	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/spf13/cobra"
+	"io/ioutil"
 	"os"
 )
 
@@ -104,7 +105,11 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 	keyFile, _ := cmd.Flags().GetString("key")
 	var auth []byte
 	if keyFile != "" {
-		//TODO: Set up auth
+		sshKey, errSsh := ioutil.ReadFile(keyFile)
+		if errSsh != nil {
+			fmt.Println("Error reading ",keyFile," for github key:",errSsh)
+		}
+		auth = []byte(sshKey)
 	}
 
 	branch, _ := cmd.Flags().GetString("branch")

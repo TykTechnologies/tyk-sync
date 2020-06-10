@@ -13,6 +13,7 @@ import (
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 	"io/ioutil"
 )
@@ -65,12 +66,20 @@ func NewFSGetter(filePath string) (*FSGetter, error) {
 }
 
 func (gg *GitGetter) FetchRepo() error {
-	// TODO: Auth support
-	r, err := git.Clone(memory.NewStorage(), gg.fs, &git.CloneOptions{
+
+	cloneOptions := git.CloneOptions{
 		URL:           gg.repo,
 		ReferenceName: plumbing.ReferenceName(gg.branch),
 		SingleBranch:  true,
-	})
+	}
+	if len(gg.key) != 0 {
+		publicKey, keyError := ssh.NewPublicKeys("git", gg.key, "")
+		if keyError != nil {
+			fmt.Println("Error getting key for git authentication:", keyError)
+		}
+		cloneOptions.Auth = publicKey
+	}
+	r, err := git.Clone(memory.NewStorage(), gg.fs, &cloneOptions)
 
 	if err != nil {
 		return err
