@@ -1,0 +1,21 @@
+# action.yml
+name: 'PackageCloud'
+description: 'Interact with PackageCloud via the package_cloud gem.'
+inputs:
+  repo:
+    description: 'PackageCloud repo name to use'
+    required: true
+  dir:
+    description: 'base directory where packages are'
+    required: true
+outputs:
+  rpmout:
+    description: 'Output from rpm uploads'
+  debout:
+    description: 'Output from deb uploads'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.repo }}
+    - ${{ inputs.dir }}

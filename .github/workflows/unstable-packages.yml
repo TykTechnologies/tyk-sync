@@ -23,7 +23,7 @@ jobs:
           go-version: 1.14
             
       - name: Tag release
-        if: startsWith(github.ref, '/refs/heads/')
+        if: startsWith(github.ref, 'refs/heads/')
         run: git tag $(git describe --tags)
       
       - name: Run GoReleaser
@@ -33,3 +33,11 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to PackageCloud
+        uses: ./.github/actions/packagecloud
+        env:
+          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+        with:
+          repo: 'tyk/tyk-sync-unstable'
+          dir: 'dist'

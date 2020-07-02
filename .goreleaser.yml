@@ -8,11 +8,9 @@ builds:
       - CGO_ENABLED=0
     goarch:
       - amd64
-      - arm
       - 386
       - arm64
     goarm:
-      - 6
       - 7
 
 nfpms:
