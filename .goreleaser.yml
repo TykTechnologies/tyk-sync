@@ -1,0 +1,44 @@
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks:
+    - go mod download
+      
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - 386
+      - arm64
+    goarm:
+      - 7
+
+nfpms:
+  - vendor: "Tyk Technologies Ltd"
+    homepage: "https://tyk.io"
+    maintainer: "Tyk <info@tyk.io>"
+    description: "Maintain your Tyk API definitions under version control."
+    license: MPL 2.0
+    formats:
+      - deb
+      - rpm
+    bindir: "/opt/tyk-sync"
+
+archives:
+- replacements:
+    linux: Linux
+    386: i386
+    amd64: x86_64
+      
+checksum:
+  name_template: 'checksums.txt'
+    
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^utils:'
+    - (?i)typo
