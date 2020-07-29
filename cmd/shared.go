@@ -149,22 +149,22 @@ func processSync(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Println("Processing APIs...")
 	publisher, err := getPublisher(cmd, args)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Using publisher: %v\n", publisher.Name())
 
-	if err := publisher.Sync(defs); err != nil {
-		return err
-	}
-
 	if len(pols) > 0 {
 		fmt.Println("Processing Policies...")
 		if err := publisher.SyncPolicies(pols); err != nil {
 			return err
 		}
+	}
+
+	fmt.Println("Processing APIs...")
+	if err := publisher.Sync(defs); err != nil {
+		return err
 	}
 
 	if isGateway {
