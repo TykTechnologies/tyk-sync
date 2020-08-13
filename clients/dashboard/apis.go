@@ -36,51 +36,6 @@ func (c *Client) GetActiveID(def *apidef.APIDefinition) string {
 	return def.Id.Hex()
 }
 
-
-func APIHasPolicyOIDC(def *apidef.APIDefinition) bool{
-	if len(def.OpenIDOptions.Providers) > 0 {
-		return true
-	}
-
-	return false
-}
-
-func (c *Client) updateAPIOIDC(def *apidef.APIDefinition) error {
-	existingPols, err := c.FetchPolicies()
-	if err != nil {
-		return err
-	}
-
-	shouldUpdate := false
-
-	providers := []apidef.OIDProviderConfig{}
-	for _, ePol := range existingPols {
-		for _, provider := range def.OpenIDOptions.Providers {
-			fixedProvider := apidef.OIDProviderConfig{}
-			fixedProvider.Issuer = provider.Issuer
-
-			clientsIDs := make(map[string]string, len(provider.ClientIDs))
-			for key, oldPolID := range provider.ClientIDs {
-				if oldPolID == ePol.ID {
-					shouldUpdate = true
-					clientsIDs[key] = ePol.MID.Hex()
-				} else {
-					clientsIDs[key] = oldPolID
-				}
-			}
-
-			fixedProvider.ClientIDs = clientsIDs
-			providers = append(providers, fixedProvider)
-		}
-	}
-
-	if shouldUpdate {
-		def.OpenIDOptions.Providers = providers
-	}
-
-	return nil
-}
-
 func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
@@ -136,13 +91,6 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		// Retain the API ID
 		retainedIDs = true
 	}
-
-	if APIHasPolicyOIDC(def){
-		if err := c.updateAPIOIDC(def); err != nil{
-			return "",err
-		}
-	}
-
 
 	// Create
 	asDBDef := objects.DBApiDefinition{APIDefinition: *def}
@@ -215,12 +163,6 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 }
 
 func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
-	if APIHasPolicyOIDC(def){
-		if err := c.updateAPIOIDC(def); err != nil{
-			return err
-		}
-	}
-
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
