@@ -66,26 +66,24 @@ var dumpCmd = &cobra.Command{
 		var errApisFetch error
 
 
-		if len(wantedAPIs) > 0 {
-			for _, APIID := range wantedAPIs{
-				api :=  objects.DBApiDefinition{}
-				api.APIID = APIID
-				apis = append(apis, api)
-			}
-
+		//building the api def objs from wantedAPIs
+		for _, APIID := range wantedAPIs{
+			api :=  objects.DBApiDefinition{}
+			api.APIID = APIID
+			apis = append(apis, api)
 		}
-		if len(wantedPolicies) > 0  {
-			for _,wantedPolicy := range wantedPolicies{
-				if !bson.IsObjectIdHex(wantedPolicy){
-					fmt.Println("Invalid selected Policiy ID:",wantedPolicy,".")
-					return
-				}
-				pol := objects.Policy{
-					ID: wantedPolicy,
-					MID: bson.ObjectIdHex(wantedPolicy),
-				}
-				policies = append(policies,pol)
+
+		//building the policies obj from wantedAPIs
+		for _,wantedPolicy := range wantedPolicies{
+			if !bson.IsObjectIdHex(wantedPolicy){
+				fmt.Printf("Invalid selected policy ID: %s.\n", wantedPolicy)
+				return
 			}
+			pol := objects.Policy{
+				ID: wantedPolicy,
+				MID: bson.ObjectIdHex(wantedPolicy),
+			}
+			policies = append(policies,pol)
 		}
 
 
