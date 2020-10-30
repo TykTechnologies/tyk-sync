@@ -11,8 +11,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-var apisMap = map[string]apidef.APIDefinition{}
-
 type APIResponse struct {
 	Message string
 	Meta    string
@@ -22,10 +20,6 @@ type APIResponse struct {
 type APISResponse struct {
 	Apis  []objects.DBApiDefinition `json:"apis"`
 	Pages int                       `json:"pages"`
-}
-
-type APIDefinitionResponse struct {
-	APIDefinition apidef.APIDefinition `json:"api_definition"`
 }
 
 func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
@@ -43,14 +37,6 @@ func (c *Client) GetActiveID(def *apidef.APIDefinition) string {
 }
 
 func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
-	if len(APIIDRelations) == 0 {
-		APIIDRelations = make(map[string]string)
-	}
-	if len(apisMap) == 0 {
-		apisMap = make(map[string]apidef.APIDefinition)
-		apisMap[def.APIID] = *def
-	}
-
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
@@ -75,7 +61,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", err
 	}
 
-	hadDefinedAPIID := false
+	retainedIDs := false
 
 	for _, api := range apis.Apis {
 		if api.APIID == def.APIID {
@@ -103,7 +89,7 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 
 	if def.APIID != "" {
 		// Retain the API ID
-		hadDefinedAPIID = true
+		retainedIDs = true
 	}
 
 	// Create
@@ -135,33 +121,18 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 		return "", fmt.Errorf("API request completed, but with error: %v", status.Message)
 	}
 
-	//If the API HAD an already defined APIID, we have to modify the policies asociated to it.
-	if hadDefinedAPIID {
-		path := fullPath + "/" + status.Meta
-		getResp, err := grequests.Get(path, &grequests.RequestOptions{
-			Headers: map[string]string{
-				"Authorization": c.secret,
-			},
-			InsecureSkipVerify: c.InsecureSkipVerify,
-		})
-
-		if err != nil {
-			return "", fmt.Errorf("Error getting new API definition  with error: %v", err)
+	// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
+	if retainedIDs {
+		def.Id = bson.ObjectIdHex(status.Meta)
+		if err := c.UpdateAPI(def); err != nil {
+			fmt.Printf("Problem trying to retain API ID: %v\n", err)
 		}
-		var newAPIDef APIDefinitionResponse
-		if err := getResp.JSON(&newAPIDef); err != nil {
-			return "", fmt.Errorf("Error unmarshalling new API Definition with error: %v", err)
-		}
-		newAPIID := newAPIDef.APIDefinition.APIID
-		APIIDRelations[def.APIID] = newAPIID
-		apisMap[def.APIID] = newAPIDef.APIDefinition
 	}
+
 
 	return status.Meta, nil
 
 }
-
-var APIIDRelations map[string]string
 
 func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
@@ -360,7 +331,6 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 
 	DashIDMap := map[string]int{}
 	GitIDMap := map[string]int{}
-	apisMap = make(map[string]apidef.APIDefinition, len(apis.Apis))
 
 	// Build the dash ID map
 	for i, api := range apis.Apis {
@@ -402,8 +372,6 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 			api.Id = apis.Apis[dashIndex].Id
 			api.APIID = apis.Apis[dashIndex].APIID
 			updateAPIs = append(updateAPIs, api)
-			// We add the apis to update in the apisMap in case we need to update something about it latter
-			apisMap[apiDefs[index].APIID] = api
 		}
 	}
 
@@ -421,8 +389,6 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 		_, ok := DashIDMap[key]
 		if !ok {
 			createAPIs = append(createAPIs, apiDefs[index])
-			// We add the apis to create in the apisMap in case we need to update something about it latter
-			apisMap[apiDefs[index].APIID] = apiDefs[index]
 		}
 	}
 
@@ -446,7 +412,6 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 		}
 	}
 
-	APIIDRelations = make(map[string]string, len(createAPIs))
 	// Do the creates
 	for _, api := range createAPIs {
 		fmt.Printf("SYNC Creating: %v\n", api.Name)
@@ -455,7 +420,7 @@ func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
 		if id, err = c.CreateAPI(&api); err != nil {
 			return err
 		}
-		fmt.Printf("--> ID: %v\n", bson.ObjectIdHex(id))
+		fmt.Printf("--> ID: %v\n", id)
 	}
 
 	return nil
