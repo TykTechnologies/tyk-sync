@@ -78,20 +78,3 @@ type Policy struct {
 	LastUpdated string                 `bson:"last_updated" json:"last_updated"`
 	MetaData    map[string]interface{} `bson:"meta_data" json:"meta_data"`
 }
-
-func (pol *Policy) FixPolicyAPIIDs(APIIDRelations map[string]string) {
-	apiIDToRemove := []string{}
-	for apiID, accessRights := range pol.AccessRights {
-		newAPIID, found := APIIDRelations[apiID]
-		if found {
-			newAccessRights := accessRights
-			newAccessRights.APIID = newAPIID
-			pol.AccessRights[newAPIID] = newAccessRights
-			apiIDToRemove = append(apiIDToRemove, apiID)
-		}
-	}
-
-	for _, apiID := range apiIDToRemove {
-		delete(pol.AccessRights, apiID)
-	}
-}
