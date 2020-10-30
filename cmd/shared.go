@@ -130,6 +130,7 @@ func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
 }
 
 func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []objects.Policy, error) {
+
 	getter, err := NewGetter(cmd, args)
 	if err != nil {
 		return nil, nil, err
@@ -140,7 +141,46 @@ func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []obj
 		return nil, nil, err
 	}
 
-	return defs, pols, nil
+	wantedPolicies , _ := cmd.Flags().GetStringSlice("policies")
+	wantedAPIs , _ := cmd.Flags().GetStringSlice("apis")
+
+	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
+		return defs, pols, nil
+	}
+	filteredAPIS := []apidef.APIDefinition{}
+	filteredPolicies := []objects.Policy{}
+
+	if len(wantedAPIs) > 0 {
+		filteredAPIS = defs[:]
+		newL := 0
+		for _, apiID := range wantedAPIs{
+			for _, api := range filteredAPIS {
+				if apiID  != api.APIID {
+					continue
+				}
+				filteredAPIS[newL] = api
+				newL++
+			}
+		}
+		filteredAPIS = filteredAPIS[:newL]
+	}
+
+	if len(wantedPolicies) > 0 {
+		filteredPolicies=pols[:]
+		newL := 0
+		for _, polID := range wantedPolicies{
+			for _, pol := range filteredPolicies {
+				if !((polID  == pol.ID) || (polID == pol.MID.Hex())) {
+					continue
+				}
+				filteredPolicies[newL] = pol
+				newL++
+			}
+		}
+		filteredPolicies = filteredPolicies[:newL]
+	}
+
+	return filteredAPIS, filteredPolicies, nil
 }
 
 func processSync(cmd *cobra.Command, args []string) error {
