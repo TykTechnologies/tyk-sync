@@ -155,7 +155,7 @@ func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []obj
 		newL := 0
 		for _, apiID := range wantedAPIs{
 			for _, api := range filteredAPIS {
-				if apiID  == api.APIID {
+				if apiID  != api.APIID {
 					continue
 				}
 				filteredAPIS[newL] = api
@@ -170,7 +170,7 @@ func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []obj
 		newL := 0
 		for _, polID := range wantedPolicies{
 			for _, pol := range filteredPolicies {
-				if (polID  == pol.ID) || (polID == pol.MID.Hex()) {
+				if !((polID  == pol.ID) || (polID == pol.MID.Hex())) {
 					continue
 				}
 				filteredPolicies[newL] = pol
@@ -221,9 +221,6 @@ func processPublish(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("::::TO PUBLISH::::")
-	
 
 	publisher, err := getPublisher(cmd, args)
 	if err != nil {
