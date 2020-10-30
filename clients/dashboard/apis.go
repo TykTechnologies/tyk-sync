@@ -191,6 +191,35 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 	return apis.Apis, nil
 }
 
+func (c *Client) FetchAPI(apiID string) (objects.DBApiDefinition, error) {
+	api :=  objects.DBApiDefinition{}
+	fullPath := urljoin.Join(c.url, endpointAPIs, apiID)
+
+	ro := &grequests.RequestOptions{
+		Params: map[string]string{"p": "-2"},
+		Headers: map[string]string{
+			"Authorization": c.secret,
+		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
+	}
+
+	resp, err := grequests.Get(fullPath, ro)
+	if err != nil {
+		return api, err
+	}
+
+	if resp.StatusCode != 200 {
+		return api, fmt.Errorf("API %v Returned error: %v for %v", apiID, resp.String(), fullPath)
+	}
+
+
+	if err := resp.JSON(&api); err != nil {
+		return api, err
+	}
+
+	return api, nil
+}
+
 func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 

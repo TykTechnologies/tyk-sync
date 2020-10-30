@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"gopkg.in/mgo.v2/bson"
 
 	"encoding/json"
@@ -56,33 +57,63 @@ var dumpCmd = &cobra.Command{
 
 		fmt.Println("> Fetching policies")
 		wantedPolicies , _ := cmd.Flags().GetStringSlice("policies")
+		wantedAPIs , _ := cmd.Flags().GetStringSlice("apis")
+
 
 		policies := []objects.Policy{}
+		apis := []objects.DBApiDefinition{}
 		var errPoliciesFetch error
+		var errApisFetch error
 
-		if len(wantedPolicies) == 0{
+
+		if len(wantedAPIs) > 0 {
+			for _, APIID := range wantedAPIs{
+				api :=  objects.DBApiDefinition{}
+				api.APIID = APIID
+				apis = append(apis, api)
+			}
+
+		}
+		if len(wantedPolicies) > 0  {
+			for _,wantedPolicy := range wantedPolicies{
+				if !bson.IsObjectIdHex(wantedPolicy){
+					fmt.Println("Invalid selected Policiy ID:",wantedPolicy,".")
+					return
+				}
+				pol := objects.Policy{
+					ID: wantedPolicy,
+					MID: bson.ObjectIdHex(wantedPolicy),
+				}
+				policies = append(policies,pol)
+			}
+		}
+
+
+		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
+			fmt.Println("> Fetching policies ")
+
 			policies, errPoliciesFetch = c.FetchPolicies()
 			if errPoliciesFetch != nil {
 				fmt.Println(errPoliciesFetch)
 				return
 			}
-		}else{
-			for _,wantedPolicy := range wantedPolicies{
-					if !bson.IsObjectIdHex(wantedPolicy){
-						fmt.Println("Invalid selected Policiy ID:",wantedPolicy,".")
-						return
-					}
-					pol := objects.Policy{
-						ID: wantedPolicy,
-						MID: bson.ObjectIdHex(wantedPolicy),
-					}
-					policies = append(policies,pol)
+			fmt.Println("> Fetching APIs")
+
+			apis, errApisFetch = c.FetchAPIs()
+			if err != nil {
+				fmt.Println(errApisFetch)
+				return
 			}
 		}
 
 
+
 		fmt.Printf("--> Identified %v policies\n", len(policies))
-		fmt.Println("--> Fetching and cleaning policy objects")
+		if len(wantedPolicies) > 0 {
+			fmt.Println("--> Fetching and cleaning policy objects")
+		}else{
+			fmt.Println("--> Cleaning policy objects")
+		}
 		// A bug exists which causes decoding of the access rights to break,
 		// so we should fetch individually
 		cleanPolicyObjects := make([]*objects.Policy, len(policies))
@@ -100,33 +131,20 @@ var dumpCmd = &cobra.Command{
 
 			cleanPolicyObjects[i] = cp
 		}
+		fmt.Printf("--> Fetched %v Policies\n", len(cleanPolicyObjects))
 
-		if len(wantedPolicies) > 0 &&  len(cleanPolicyObjects) == 0{
-			fmt.Println("Selected Policies were not found.")
-			return
-		}
-
-		fmt.Println("> Fetching APIs")
-		apis, err := c.FetchAPIs()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		wantedAPIs , _ := cmd.Flags().GetStringSlice("apis")
 		if len(wantedAPIs) >0 {
-			newAPIs := []objects.DBApiDefinition{}
-			for _, api := range apis{
-				for _, wantedAPI := range wantedAPIs{
-					if wantedAPI == api.APIID {
-						newAPIs = append(newAPIs, api)
-					}
+			fmt.Printf("--> Identified %v APIs\n", len(apis))
+			fmt.Println("--> Fetching and cleaning APIs objects")
+
+			for i, api := range apis {
+				fullAPI, err := c.FetchAPI(api.APIID)
+				if err != nil {
+					fmt.Println(err)
+					return
 				}
+				apis[i] = fullAPI
 			}
-			if len(newAPIs) == 0{
-				fmt.Println("Selected API IDs were not found.")
-				return
-			}
-			apis = newAPIs
 		}
 
 		fmt.Printf("--> Fetched %v APIs\n", len(apis))
@@ -150,6 +168,8 @@ var dumpCmd = &cobra.Command{
 			apiFiles[i] = fname
 		}
 
+
+
 		// If we have selected Policies specified we're going to check if we're importing all the necessary APIs
 		if len(wantedPolicies) >0 {
 			for _, policy := range cleanPolicyObjects{
@@ -161,7 +181,7 @@ var dumpCmd = &cobra.Command{
 						}
 					}
 					if !found {
-						fmt.Println("!!! Policy ",policy.ID," has access rights of API ID ",accesRights.APIID," and that API ID it's not imported. It might cause some problems in the future." )
+						fmt.Println("--> [WARNING] Policy ",policy.ID," has access rights over API ID ",accesRights.APIID," and that API it's not imported. It might cause some problems in the future." )
 					}
 				}
 			}
@@ -180,7 +200,7 @@ var dumpCmd = &cobra.Command{
 							}
 						}
 						if !found {
-							fmt.Println("!!! Api ",api.APIID," has the Policy  ",id, " as a OIDC issuer policy and it's not imported. It might cause some problems in the future." )
+							fmt.Println("--> [WARNING] Api ",api.APIID," has the Policy ",id, " as an OIDC issuer policy and that policy is not imported. It might cause some problems in the future." )
 						}
 					}
 				}
@@ -255,6 +275,6 @@ func init() {
 	dumpCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
 	dumpCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
-	dumpCmd.Flags().StringSliceP("policies","p",[]string{},"Specific Policies ids to dump")
-	dumpCmd.Flags().StringSliceP("apis","a",[]string{},"Specific Apis ids to dump")
+	dumpCmd.Flags().StringSlice("policies",[]string{},"Specific Policies ids to dump")
+	dumpCmd.Flags().StringSlice("apis",[]string{},"Specific Apis ids to dump")
 }
