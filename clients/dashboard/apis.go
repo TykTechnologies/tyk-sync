@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"
@@ -32,11 +31,11 @@ func (c *Client) SetInsecureTLS(val bool) {
 	c.InsecureSkipVerify = val
 }
 
-func (c *Client) GetActiveID(def *apidef.APIDefinition) string {
+func (c *Client) GetActiveID(def *objects.DBApiDefinition) string {
 	return def.Id.Hex()
 }
 
-func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
+func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
@@ -93,8 +92,8 @@ func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
 	}
 
 	// Create
-	asDBDef := objects.DBApiDefinition{APIDefinition: *def}
-	c.fixDBDef(&asDBDef)
+	asDBDef := def
+	c.fixDBDef(asDBDef)
 
 	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
 		JSON: asDBDef,
@@ -191,7 +190,7 @@ func (c *Client) FetchAPI(apiID string) (objects.DBApiDefinition, error) {
 	return api, nil
 }
 
-func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
+func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
@@ -267,7 +266,7 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	}
 
 	// Update
-	asDBDef := objects.DBApiDefinition{APIDefinition: *def}
+	asDBDef := objects.DBApiDefinition{APIDefinition: def.APIDefinition}
 	c.fixDBDef(&asDBDef)
 
 	updatePath := urljoin.Join(c.url, endpointAPIs, def.Id.Hex())
@@ -299,10 +298,10 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	return nil
 }
 
-func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
+func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
 	deleteAPIs := []string{}
-	updateAPIs := []apidef.APIDefinition{}
-	createAPIs := []apidef.APIDefinition{}
+	updateAPIs := []objects.DBApiDefinition{}
+	createAPIs := []objects.DBApiDefinition{}
 
 	// Fetch the running API list
 	fullPath := urljoin.Join(c.url, endpointAPIs)

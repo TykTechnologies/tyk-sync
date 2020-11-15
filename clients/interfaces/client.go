@@ -2,13 +2,12 @@ package interfaces
 
 import (
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk/apidef"
 )
 
 type APIManagementClient interface {
-	CreateAPI(def *apidef.APIDefinition) (string, error)
+	CreateAPI(def *objects.DBApiDefinition) (string, error)
 	FetchAPIs() ([]objects.DBApiDefinition, error)
-	UpdateAPI(def *apidef.APIDefinition) error
+	UpdateAPI(def *objects.DBApiDefinition) error
 	DeleteAPI(id string) error
 }
 
@@ -19,6 +18,6 @@ type CertificateManagementClient interface {
 type UniversalClient interface {
 	APIManagementClient
 	CertificateManagementClient
-	GetActiveID(def *apidef.APIDefinition) string
+	GetActiveID(def *objects.DBApiDefinition) string
 	SetInsecureTLS(bool)
 }

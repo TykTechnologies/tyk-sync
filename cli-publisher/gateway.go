@@ -2,9 +2,9 @@ package cli_publisher
 
 import (
 	"errors"
+
 	"github.com/TykTechnologies/tyk-sync/clients/gateway"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk/apidef"
 )
 
 type GatewayPublisher struct {
@@ -12,7 +12,7 @@ type GatewayPublisher struct {
 	Hostname string
 }
 
-func (p *GatewayPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
+func (p *GatewayPublisher) Create(apiDef *objects.DBApiDefinition) (string, error) {
 	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
 	if err != nil {
 		return "", err
@@ -21,7 +21,7 @@ func (p *GatewayPublisher) Create(apiDef *apidef.APIDefinition) (string, error) 
 	return c.CreateAPI(apiDef)
 }
 
-func (p *GatewayPublisher) Update(apiDef *apidef.APIDefinition) error {
+func (p *GatewayPublisher) Update(apiDef *objects.DBApiDefinition) error {
 	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func (p *GatewayPublisher) Reload() error {
 	return c.Reload()
 }
 
-func (p *GatewayPublisher) Sync(apiDefs []apidef.APIDefinition) error {
+func (p *GatewayPublisher) Sync(apiDefs []objects.DBApiDefinition) error {
 	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
 	if err != nil {
 		return err

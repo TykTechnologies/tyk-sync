@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/TykTechnologies/tyk/apidef"
+
 	"gopkg.in/mgo.v2/bson"
 
 	"encoding/json"
@@ -150,19 +150,8 @@ var dumpCmd = &cobra.Command{
 		dir, _ := cmd.Flags().GetString("target")
 		apiFiles := make([]string, len(apis))
 		for i, api := range apis {
-			type DumpAPIHelper struct{
-				apidef.APIDefinition
-				HookReferences       []interface{} `json:"hook_references"`
-				UserGroupOwners      []bson.ObjectId `json:"user_group_owners"`
-				UserOwners           []bson.ObjectId `json:"user_owners"`
-			}
-			helper := DumpAPIHelper{
-				api.APIDefinition,
-				api.HookReferences,
-				api.UserGroupOwners,
-				api.UserOwners,
-			}
-			j, jerr := json.MarshalIndent(helper, "", "  ")
+
+			j, jerr := json.MarshalIndent(api, "", "  ")
 			if jerr != nil {
 				fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
 				return

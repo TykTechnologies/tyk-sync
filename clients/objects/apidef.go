@@ -5,8 +5,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func NewDefinition() *apidef.APIDefinition {
-	return &apidef.APIDefinition{}
+func NewDefinition() *DBApiDefinition {
+	return &DBApiDefinition{}
 }
 
 type DBApiDefinition struct {

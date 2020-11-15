@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"
@@ -36,7 +35,7 @@ type APIMessage struct {
 	Message string `json:"message"`
 }
 
-type APISList []apidef.APIDefinition
+type APISList []objects.DBApiDefinition
 
 func NewGatewayClient(url, secret string) (*Client, error) {
 	return &Client{
@@ -49,7 +48,7 @@ func (c *Client) SetInsecureTLS(val bool) {
 	c.InsecureSkipVerify = val
 }
 
-func (c *Client) GetActiveID(def *apidef.APIDefinition) string {
+func (c *Client) GetActiveID(def *objects.DBApiDefinition) string {
 	return def.APIID
 }
 
@@ -80,13 +79,13 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 
 	retList := make([]objects.DBApiDefinition, len(apis))
 	for i, api := range apis {
-		retList[i] = objects.DBApiDefinition{APIDefinition: api}
+		retList[i] = api
 	}
 
 	return retList, nil
 }
 
-func (c *Client) CreateAPI(def *apidef.APIDefinition) (string, error) {
+func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
@@ -185,7 +184,7 @@ func (c *Client) Reload() error {
 	return nil
 }
 
-func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
+func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
@@ -250,10 +249,10 @@ func (c *Client) UpdateAPI(def *apidef.APIDefinition) error {
 	return nil
 }
 
-func (c *Client) Sync(apiDefs []apidef.APIDefinition) error {
+func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
 	deleteAPIs := []string{}
-	updateAPIs := []apidef.APIDefinition{}
-	createAPIs := []apidef.APIDefinition{}
+	updateAPIs := []objects.DBApiDefinition{}
+	createAPIs := []objects.DBApiDefinition{}
 
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 

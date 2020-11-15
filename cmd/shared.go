@@ -3,18 +3,18 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/TykTechnologies/tyk-sync/cli-publisher"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
-	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
 )
 
 var isGateway bool
 
-func doGitFetchCycle(getter tyk_vcs.Getter) ([]apidef.APIDefinition, []objects.Policy, error) {
+func doGitFetchCycle(getter tyk_vcs.Getter) ([]objects.DBApiDefinition, []objects.Policy, error) {
 	err := getter.FetchRepo()
 	if err != nil {
 		return nil, nil, err
@@ -129,7 +129,7 @@ func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
 	return tyk_vcs.NewGGetter(args[0], branch, auth)
 }
 
-func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []objects.Policy, error) {
+func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []objects.Policy, error) {
 
 	getter, err := NewGetter(cmd, args)
 	if err != nil {
@@ -147,7 +147,7 @@ func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []obj
 	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
 		return defs, pols, nil
 	}
-	filteredAPIS := []apidef.APIDefinition{}
+	filteredAPIS := []objects.DBApiDefinition{}
 	filteredPolicies := []objects.Policy{}
 
 	if len(wantedAPIs) > 0 {
