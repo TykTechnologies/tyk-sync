@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"
@@ -35,7 +36,7 @@ type APIMessage struct {
 	Message string `json:"message"`
 }
 
-type APISList []objects.DBApiDefinition
+type APISList []apidef.APIDefinition
 
 func NewGatewayClient(url, secret string) (*Client, error) {
 	return &Client{
@@ -78,8 +79,8 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 	}
 
 	retList := make([]objects.DBApiDefinition, len(apis))
-	for i, api := range apis {
-		retList[i] = api
+	for i := range apis {
+		retList[i] = objects.DBApiDefinition{APIDefinition:&apis[i]}
 	}
 
 	return retList, nil
@@ -122,7 +123,7 @@ func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 
 	// Create
 	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
-		JSON: def,
+		JSON: def.APIDefinition,
 		Headers: map[string]string{
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
@@ -185,30 +186,11 @@ func (c *Client) Reload() error {
 }
 
 func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
-	fullPath := urljoin.Join(c.url, endpointAPIs)
 
-	ro := &grequests.RequestOptions{
-		Headers: map[string]string{
-			"x-tyk-authorization": c.secret,
-			"content-type":        "application/json",
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	}
-
-	resp, err := grequests.Get(fullPath, ro)
+	apis, err := c.FetchAPIs()
 	if err != nil {
 		return err
 	}
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("API Returned error: %v", resp.String())
-	}
-
-	apis := APISList{}
-	if err := resp.JSON(&apis); err != nil {
-		return err
-	}
-
 	found := false
 	for _, api := range apis {
 		if api.APIID == def.APIID {
@@ -227,7 +209,7 @@ func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 
 	updatePath := urljoin.Join(c.url, endpointAPIs, def.APIID)
 	uResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
-		JSON: def,
+		JSON: def.APIDefinition,
 		Headers: map[string]string{
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
@@ -254,29 +236,13 @@ func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
 	updateAPIs := []objects.DBApiDefinition{}
 	createAPIs := []objects.DBApiDefinition{}
 
-	fullPath := urljoin.Join(c.url, endpointAPIs)
 
-	ro := &grequests.RequestOptions{
-		Headers: map[string]string{
-			"x-tyk-authorization": c.secret,
-			"content-type":        "application/json",
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	}
 
-	resp, err := grequests.Get(fullPath, ro)
+	apis, err := c.FetchAPIs()
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("API Returned error: %v", resp.String())
-	}
-
-	apis := APISList{}
-	if err := resp.JSON(&apis); err != nil {
-		return err
-	}
 
 	GWIDMap := map[string]int{}
 	GitIDMap := map[string]int{}
@@ -337,6 +303,7 @@ func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
 	for _, api := range updateAPIs {
 		fmt.Printf("SYNC Updating: %v\n", api.APIID)
 		if err := c.UpdateAPI(&api); err != nil {
+			fmt.Println("ERR:",err)
 			return err
 		}
 	}

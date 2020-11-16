@@ -195,7 +195,7 @@ func processSync(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("Using publisher: %v\n", publisher.Name())
 
-	if len(pols) > 0 {
+	if len(pols) > 0 && !isGateway {
 		fmt.Println("Processing Policies...")
 		if err := publisher.SyncPolicies(pols); err != nil {
 			return err
@@ -250,24 +250,26 @@ func processPublish(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	for i, d := range pols {
-		if cmd.Use == "publish" {
-			fmt.Printf("Creating Policy %v: %v\n", i, d.Name)
-			id, err := publisher.CreatePolicy(&d)
-			if err != nil {
-				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
-			} else {
-				fmt.Printf("--> Status: OK, ID:%v\n", id)
+	if !isGateway{
+		for i, d := range pols {
+			if cmd.Use == "publish" {
+				fmt.Printf("Creating Policy %v: %v\n", i, d.Name)
+				id, err := publisher.CreatePolicy(&d)
+				if err != nil {
+					fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+				} else {
+					fmt.Printf("--> Status: OK, ID:%v\n", id)
+				}
 			}
-		}
 
-		if cmd.Use == "update" {
-			fmt.Printf("Updating Policy %v: %v\n", i, d.Name)
-			err := publisher.UpdatePolicy(&d)
-			if err != nil {
-				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
-			} else {
-				fmt.Printf("--> Status: OK, ID:%v\n", d.Name)
+			if cmd.Use == "update" {
+				fmt.Printf("Updating Policy %v: %v\n", i, d.Name)
+				err := publisher.UpdatePolicy(&d)
+				if err != nil {
+					fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+				} else {
+					fmt.Printf("--> Status: OK, ID:%v\n", d.Name)
+				}
 			}
 		}
 	}
