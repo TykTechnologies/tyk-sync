@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk-sync/tyk-swagger"
 	"github.com/TykTechnologies/tyk/apidef"
@@ -15,12 +17,11 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
-	"io/ioutil"
 )
 
 type Getter interface {
 	FetchRepo() error
-	FetchAPIDef(spec *TykSourceSpec) ([]apidef.APIDefinition, error)
+	FetchAPIDef(spec *TykSourceSpec) ([]objects.DBApiDefinition, error)
 	FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error)
 	FetchTykSpec() (*TykSourceSpec, error)
 }
@@ -126,18 +127,18 @@ func (gg *FSGetter) FetchTykSpec() (*TykSourceSpec, error) {
 	return fetchSpec(gg.fs)
 }
 
-func (gg *FSGetter) FetchAPIDef(spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
+func (gg *FSGetter) FetchAPIDef(spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
 	return fetchAPIDefinitions(gg.fs, spec)
 }
 
-func (gg *GitGetter) FetchAPIDef(spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
+func (gg *GitGetter) FetchAPIDef(spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
 	if gg.r == nil {
 		return nil, errors.New("no repository in memory, fetch repo first")
 	}
 	return fetchAPIDefinitions(gg.fs, spec)
 }
 
-func fetchAPIDefinitions(fs billy.Filesystem, spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
+func fetchAPIDefinitions(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
 	switch spec.Type {
 	case TYPE_APIDEF:
 		return fetchAPIDefinitionsDirect(fs, spec)
@@ -148,9 +149,9 @@ func fetchAPIDefinitions(fs billy.Filesystem, spec *TykSourceSpec) ([]apidef.API
 	}
 }
 
-func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
+func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
 	defNames := spec.Files
-	defs := make([]apidef.APIDefinition, len(defNames))
+	defs := make([]objects.DBApiDefinition, len(defNames))
 	for i, defInfo := range defNames {
 		defFile, err := fs.Open(defInfo.File)
 		if err != nil {
@@ -162,10 +163,15 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]apid
 			return nil, err
 		}
 
-		ad := apidef.APIDefinition{}
+		ad := objects.DBApiDefinition{}
 		err = json.Unmarshal(rawDef, &ad)
-		if err != nil {
-			return nil, err
+		if err != nil || (ad.APIDefinition == nil){
+			def := apidef.APIDefinition{}
+			errSecondUnmarshal := json.Unmarshal(rawDef, &def)
+			if errSecondUnmarshal != nil {
+				return nil, err
+			}
+			ad.APIDefinition = &def
 		}
 
 		if defInfo.APIID != "" {
@@ -180,17 +186,17 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]apid
 			ad.OrgID = defInfo.ORGID
 		}
 
+
 		defs[i] = ad
 	}
 
 	fmt.Printf("Fetched %v definitions\n", len(defs))
-
 	return defs, nil
 }
 
-func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec) ([]apidef.APIDefinition, error) {
+func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
 	oaiNames := spec.Files
-	defs := make([]apidef.APIDefinition, len(oaiNames))
+	defs := make([]objects.DBApiDefinition, len(oaiNames))
 
 	for i, oaiInfo := range oaiNames {
 		oaiFile, err := fs.Open(oaiInfo.File)

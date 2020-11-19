@@ -2,13 +2,13 @@ package cli_publisher
 
 import (
 	"fmt"
+
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk/apidef"
 )
 
 type MockPublisher struct{}
 
-func (mp MockPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
+func (mp MockPublisher) Create(apiDef *objects.DBApiDefinition) (string, error) {
 	newID := "654321"
 	fmt.Printf("Creating API ID: %v (on: %v to: %v)\n",
 		newID,
@@ -17,7 +17,7 @@ func (mp MockPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
 	return newID, nil
 }
 
-func (mp MockPublisher) Update(apiDef *apidef.APIDefinition) error {
+func (mp MockPublisher) Update(apiDef *objects.DBApiDefinition) error {
 	fmt.Printf("Updating API ID: %v (on: %v to: %v)\n",
 		apiDef.APIID,
 		apiDef.Proxy.ListenPath,
@@ -26,7 +26,7 @@ func (mp MockPublisher) Update(apiDef *apidef.APIDefinition) error {
 	return nil
 }
 
-func (mp MockPublisher) Sync(apiDef []apidef.APIDefinition) error {
+func (mp MockPublisher) Sync(apiDef []objects.DBApiDefinition) error {
 	return nil
 }
 

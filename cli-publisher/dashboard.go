@@ -5,7 +5,6 @@ import (
 
 	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk/apidef"
 )
 
 type DashboardPublisher struct {
@@ -14,7 +13,7 @@ type DashboardPublisher struct {
 	OrgOverride string
 }
 
-func (p *DashboardPublisher) enforceOrgID(apiDef *apidef.APIDefinition) *apidef.APIDefinition {
+func (p *DashboardPublisher) enforceOrgID(apiDef *objects.DBApiDefinition) *objects.DBApiDefinition {
 	if p.OrgOverride != "" {
 		fmt.Println("org override detected, setting.")
 		apiDef.OrgID = p.OrgOverride
@@ -32,7 +31,7 @@ func (p *DashboardPublisher) enforceOrgIDForPolicy(pol *objects.Policy) *objects
 	return pol
 }
 
-func (p *DashboardPublisher) Create(apiDef *apidef.APIDefinition) (string, error) {
+func (p *DashboardPublisher) Create(apiDef *objects.DBApiDefinition) (string, error) {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return "", err
@@ -44,7 +43,7 @@ func (p *DashboardPublisher) Create(apiDef *apidef.APIDefinition) (string, error
 	return c.CreateAPI(p.enforceOrgID(apiDef))
 }
 
-func (p *DashboardPublisher) Update(apiDef *apidef.APIDefinition) error {
+func (p *DashboardPublisher) Update(apiDef *objects.DBApiDefinition) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
@@ -56,7 +55,7 @@ func (p *DashboardPublisher) Update(apiDef *apidef.APIDefinition) error {
 	return c.UpdateAPI(p.enforceOrgID(apiDef))
 }
 
-func (p *DashboardPublisher) Sync(apiDefs []apidef.APIDefinition) error {
+func (p *DashboardPublisher) Sync(apiDefs []objects.DBApiDefinition) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
@@ -67,7 +66,7 @@ func (p *DashboardPublisher) Sync(apiDefs []apidef.APIDefinition) error {
 	}
 
 	if p.OrgOverride != "" {
-		fixedDefs := make([]apidef.APIDefinition, len(apiDefs))
+		fixedDefs := make([]objects.DBApiDefinition, len(apiDefs))
 		for i, a := range apiDefs {
 			newDef := a
 			newDef.OrgID = p.OrgOverride

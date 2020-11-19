@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"
@@ -133,21 +134,24 @@ func (s *SwaggerAST) ConvertIntoApiVersion(versionName string) (apidef.VersionIn
 	return versionInfo, nil
 }
 
-func newBlankDBDashDefinition() *apidef.APIDefinition {
+func newBlankDBDashDefinition() *objects.DBApiDefinition {
 	EmptyMW := apidef.MiddlewareSection{
 		Pre:  make([]apidef.MiddlewareDefinition, 0),
 		Post: make([]apidef.MiddlewareDefinition, 0),
 	}
-	return &apidef.APIDefinition{
+	def := &apidef.APIDefinition{
 		ConfigData:         map[string]interface{}{},
 		ResponseProcessors: make([]apidef.ResponseProcessor, 0),
 		AllowedIPs:         make([]string, 0),
 		CustomMiddleware:   EmptyMW,
 		Tags:               make([]string, 0),
 	}
+	return &objects.DBApiDefinition{
+		APIDefinition:  def,
+	}
 }
 
-func CreateDefinitionFromSwagger(s *SwaggerAST, orgId string, versionName string) (*apidef.APIDefinition, error) {
+func CreateDefinitionFromSwagger(s *SwaggerAST, orgId string, versionName string) (*objects.DBApiDefinition, error) {
 	ad := newBlankDBDashDefinition()
 	ad.Name = s.Info.Title
 	ad.Active = true

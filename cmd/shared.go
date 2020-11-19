@@ -3,18 +3,18 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/TykTechnologies/tyk-sync/cli-publisher"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
-	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
 )
 
 var isGateway bool
 
-func doGitFetchCycle(getter tyk_vcs.Getter) ([]apidef.APIDefinition, []objects.Policy, error) {
+func doGitFetchCycle(getter tyk_vcs.Getter) ([]objects.DBApiDefinition, []objects.Policy, error) {
 	err := getter.FetchRepo()
 	if err != nil {
 		return nil, nil, err
@@ -129,7 +129,7 @@ func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
 	return tyk_vcs.NewGGetter(args[0], branch, auth)
 }
 
-func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []objects.Policy, error) {
+func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []objects.Policy, error) {
 
 	getter, err := NewGetter(cmd, args)
 	if err != nil {
@@ -147,7 +147,7 @@ func doGetData(cmd *cobra.Command, args []string) ([]apidef.APIDefinition, []obj
 	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
 		return defs, pols, nil
 	}
-	filteredAPIS := []apidef.APIDefinition{}
+	filteredAPIS := []objects.DBApiDefinition{}
 	filteredPolicies := []objects.Policy{}
 
 	if len(wantedAPIs) > 0 {
@@ -195,7 +195,7 @@ func processSync(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("Using publisher: %v\n", publisher.Name())
 
-	if len(pols) > 0 {
+	if len(pols) > 0 && !isGateway {
 		fmt.Println("Processing Policies...")
 		if err := publisher.SyncPolicies(pols); err != nil {
 			return err
@@ -250,24 +250,26 @@ func processPublish(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	for i, d := range pols {
-		if cmd.Use == "publish" {
-			fmt.Printf("Creating Policy %v: %v\n", i, d.Name)
-			id, err := publisher.CreatePolicy(&d)
-			if err != nil {
-				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
-			} else {
-				fmt.Printf("--> Status: OK, ID:%v\n", id)
+	if !isGateway{
+		for i, d := range pols {
+			if cmd.Use == "publish" {
+				fmt.Printf("Creating Policy %v: %v\n", i, d.Name)
+				id, err := publisher.CreatePolicy(&d)
+				if err != nil {
+					fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+				} else {
+					fmt.Printf("--> Status: OK, ID:%v\n", id)
+				}
 			}
-		}
 
-		if cmd.Use == "update" {
-			fmt.Printf("Updating Policy %v: %v\n", i, d.Name)
-			err := publisher.UpdatePolicy(&d)
-			if err != nil {
-				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
-			} else {
-				fmt.Printf("--> Status: OK, ID:%v\n", d.Name)
+			if cmd.Use == "update" {
+				fmt.Printf("Updating Policy %v: %v\n", i, d.Name)
+				err := publisher.UpdatePolicy(&d)
+				if err != nil {
+					fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+				} else {
+					fmt.Printf("--> Status: OK, ID:%v\n", d.Name)
+				}
 			}
 		}
 	}
