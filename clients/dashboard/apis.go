@@ -128,7 +128,6 @@ func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 		}
 	}
 
-
 	return status.Meta, nil
 
 }
@@ -162,7 +161,7 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 }
 
 func (c *Client) FetchAPI(apiID string) (objects.DBApiDefinition, error) {
-	api :=  objects.DBApiDefinition{}
+	api := objects.DBApiDefinition{}
 	fullPath := urljoin.Join(c.url, endpointAPIs, apiID)
 
 	ro := &grequests.RequestOptions{
@@ -181,7 +180,6 @@ func (c *Client) FetchAPI(apiID string) (objects.DBApiDefinition, error) {
 	if resp.StatusCode != 200 {
 		return api, fmt.Errorf("API %v Returned error: %v for %v", apiID, resp.String(), fullPath)
 	}
-
 
 	if err := resp.JSON(&api); err != nil {
 		return api, err
@@ -266,8 +264,8 @@ func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 	}
 
 	// Update
-	asDBDef := objects.DBApiDefinition{APIDefinition: def.APIDefinition}
-	c.fixDBDef(&asDBDef)
+	asDBDef := def
+	c.fixDBDef(asDBDef)
 
 	updatePath := urljoin.Join(c.url, endpointAPIs, def.Id.Hex())
 	updateResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
