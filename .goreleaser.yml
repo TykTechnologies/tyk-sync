@@ -4,7 +4,8 @@ before:
     - go mod download
       
 builds:
-  - env:
+  - binary: tyk-sync
+    env:
       - CGO_ENABLED=0
     goarch:
       - amd64
@@ -24,6 +25,14 @@ nfpms:
       - rpm
     bindir: "/opt/tyk-sync"
 
+dockers:
+  - binaries:
+      - tyk-sync
+    image_templates:
+      - "tykio/tyk-sync:{{ .Tag }}"
+    goarch: amd64
+    dockerfile: Dockerfile
+    
 archives:
 - replacements:
     linux: Linux
@@ -34,7 +43,7 @@ checksum:
   name_template: 'checksums.txt'
     
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: "{{ .Tag }}"
 
 changelog:
   sort: asc
