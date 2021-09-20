@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type APIResponse struct {
@@ -122,7 +122,7 @@ func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 
 	// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
 	if retainedIDs {
-		def.Id = bson.ObjectIdHex(status.Meta)
+		def.Id = apidef.ObjectIdHex(status.Meta)
 		if err := c.UpdateAPI(def); err != nil {
 			fmt.Printf("Problem trying to retain API ID: %v\n", err)
 		}
