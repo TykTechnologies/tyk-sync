@@ -4,12 +4,11 @@ go 1.13
 
 require (
 	github.com/TykTechnologies/gojsonschema v0.0.0-20170222154038-dcb3e4bb7990 // indirect
-	github.com/TykTechnologies/tyk v2.9.4+incompatible
+	github.com/TykTechnologies/tyk v1.9.2-0.20210915075010-bc5243e1fdae
 	github.com/clbanning/mxj v1.8.4 // indirect
 	github.com/franela/goblin v0.0.0-20201006155558-6240afcb2eb7 // indirect
 	github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8 // indirect
-	github.com/hashicorp/terraform v0.12.24 // indirect
-	github.com/jensneuse/graphql-go-tools v0.0.0-20200729071830-f7096b267150
+	github.com/jensneuse/graphql-go-tools v1.20.2
 	github.com/kataras/go-errors v0.0.3
 	github.com/levigross/grequests v0.0.0-20190908174114-253788527a1a
 	github.com/lonelycode/go-uuid v0.0.0-20141202165402-ed3ca8a15a93 // indirect
@@ -28,3 +27,5 @@ require (
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1
 )
+
+replace github.com/jensneuse/graphql-go-tools => github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20210909091849-83a2f375a915
