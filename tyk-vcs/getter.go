@@ -9,7 +9,6 @@ import (
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk-sync/tyk-swagger"
 	"github.com/TykTechnologies/tyk/apidef"
-	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -179,7 +178,7 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]obje
 		}
 
 		if defInfo.DBID != "" {
-			ad.Id = bson.ObjectIdHex(defInfo.DBID)
+			ad.Id = apidef.ObjectIdHex(defInfo.DBID)
 		}
 
 		if defInfo.ORGID != "" {
@@ -227,7 +226,7 @@ func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec) ([]obj
 		}
 
 		if oaiInfo.DBID != "" {
-			ad.Id = bson.ObjectIdHex(oaiInfo.DBID)
+			ad.Id = apidef.ObjectIdHex(oaiInfo.DBID)
 		}
 
 		if oaiInfo.OAS.OverrideListenPath != "" {
