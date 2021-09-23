@@ -7,13 +7,4 @@
 # ./pr.zsh -repos tyk-sync -title releng: latest releng -branch releng/updates
 # m4 -E -DxREPO=tyk-sync
 
-
-if command -V systemctl >/dev/null 2>&1; then
-    if [ ! -f /lib/systemd/system/tyk-sync.service ]; then
-        cp /opt/tyk-sync/install/inits/systemd/system/tyk-sync.service /lib/systemd/system/tyk-sync.service
-    fi
-else
-    if [ ! -f /etc/init.d/tyk-sync ]; then
-        cp /opt/tyk-sync/install/inits/sysv/init.d/tyk-sync /etc/init.d/tyk-sync
-    fi
-fi
+echo "post trans"
