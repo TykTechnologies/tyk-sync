@@ -126,10 +126,6 @@ nfpms:
         dst: "/opt/share/docs/tyk-sync/README.md"
       - src: "install/*"
         dst: "/opt/tyk-sync/install"
-      - src: install/inits/systemd/system/tyk-sync.service
-        dst: /lib/systemd/system/tyk-sync.service
-      - src: install/inits/sysv/init.d/tyk-sync
-        dst: /etc/init.d/tyk-sync
     scripts:
       preinstall: "install/before_install.sh"
       postinstall: "install/post_install.sh"
