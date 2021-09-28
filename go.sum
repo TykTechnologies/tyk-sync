@@ -29,13 +29,14 @@ github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20210909091849-83a2f375a915
 github.com/TykTechnologies/leakybucket v0.0.0-20170301023702-71692c943e3c/go.mod h1:GnHUbsQx+ysI10osPhUdTmsxcE7ef64cVp38Fdyd7e0=
 github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465/go.mod h1:sqH/SPFr11m9cahie7ulBuBX9TOhfBX1sp+qf9jh3Vg=
 github.com/TykTechnologies/openid2go v0.0.0-20200312160651-00c254a52b19/go.mod h1:rGlqNE4CvxZIeiHp0mgrw+/jdGSjJzkZ0n78hhHMdfM=
-github.com/TykTechnologies/tyk v1.9.2-0.20210915075010-bc5243e1fdae h1:CntCL1+Zn8c8DJ5sx8aP8/p+opcfYA5UrctgbX35tfI=
-github.com/TykTechnologies/tyk v1.9.2-0.20210915075010-bc5243e1fdae/go.mod h1:qw4ubH5l/UIITV+edgdRjhEqfd/iP4lLZgm1v41Ce4I=
+github.com/TykTechnologies/tyk v1.9.2-0.20210927183513-bf57ff1a29e6 h1:otRIeDJbvoFS2VTtltrx2IzRm9ANXVmu7IWVkvQ08IE=
+github.com/TykTechnologies/tyk v1.9.2-0.20210927183513-bf57ff1a29e6/go.mod h1:ErVH5f57DrjKYKBQYOTlx/RGqppuCmba6D9l7GIR664=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/agnivade/levenshtein v1.0.3/go.mod h1:4SFRZbbXWLF4MU1T9Qg0pGgH3Pjs+t6ie5efyrwRJXs=
 github.com/agnivade/levenshtein v1.1.0/go.mod h1:veldBMzWxcCG2ZvUTKD2kJNRdCk5hVbJomOvKkmgYbo=
 github.com/agnivade/levenshtein v1.1.1 h1:QY8M92nrzkmr798gCo3kmMyqXFzdQVpxLlGPRBij0P8=
 github.com/agnivade/levenshtein v1.1.1/go.mod h1:veldBMzWxcCG2ZvUTKD2kJNRdCk5hVbJomOvKkmgYbo=
+github.com/akutz/memconn v0.1.0/go.mod h1:Jo8rI7m0NieZyLI5e2CDlRdRqRRB4S7Xp77ukDjH+Fw=
 github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 h1:uSoVVbwJiQipAclBbw+8quDsfcvFjOpI5iCf4p/cqCs=
 github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7/go.mod h1:6zEj6s6u/ghQa61ZWa/C2Aw3RkjiTBOix7dkqa1VLIs=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
