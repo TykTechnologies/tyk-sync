@@ -4,3 +4,4 @@ pre/
 tyk-sync
 dist/
 *.key
+.idea/

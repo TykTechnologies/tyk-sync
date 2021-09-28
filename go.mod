@@ -3,7 +3,7 @@ module github.com/TykTechnologies/tyk-sync
 go 1.13
 
 require (
-	github.com/TykTechnologies/tyk v1.9.2-0.20210915075010-bc5243e1fdae
+	github.com/TykTechnologies/tyk v1.9.2-0.20210927183513-bf57ff1a29e6
 	github.com/franela/goblin v0.0.0-20201006155558-6240afcb2eb7 // indirect
 	github.com/jensneuse/graphql-go-tools v1.20.2
 	github.com/kataras/go-errors v0.0.3
