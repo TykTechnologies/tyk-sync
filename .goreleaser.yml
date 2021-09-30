@@ -128,8 +128,6 @@ nfpms:
         dst: "/opt/tyk-sync/install"
     scripts:
       preinstall: "install/before_install.sh"
-      postinstall: "install/post_install.sh"
-      postremove: "install/post_remove.sh"
     bindir: "/opt/tyk-sync"
     overrides:
       rpm:
@@ -140,8 +138,6 @@ nfpms:
         replacements:
           arm: arm64
     rpm:
-      scripts:
-        posttrans: install/post_trans.sh
       signature:
         key_file: tyk.io.signing.key
     deb:
