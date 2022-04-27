@@ -107,7 +107,7 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 	if keyFile != "" {
 		sshKey, errSsh := ioutil.ReadFile(keyFile)
 		if errSsh != nil {
-			fmt.Println("Error reading ",keyFile," for github key:",errSsh)
+			fmt.Println("Error reading ", keyFile, " for github key:", errSsh)
 		}
 		auth = []byte(sshKey)
 	}
@@ -117,7 +117,7 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 }
 
 func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
-	filePath, _ :=  cmd.Flags().GetString("path")
+	filePath, _ := cmd.Flags().GetString("path")
 	if filePath != "" {
 		return tyk_vcs.NewFSGetter(filePath)
 	}
@@ -141,8 +141,8 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 		return nil, nil, err
 	}
 
-	wantedPolicies , _ := cmd.Flags().GetStringSlice("policies")
-	wantedAPIs , _ := cmd.Flags().GetStringSlice("apis")
+	wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
+	wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
 
 	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
 		return defs, pols, nil
@@ -153,9 +153,9 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 	if len(wantedAPIs) > 0 {
 		filteredAPIS = defs[:]
 		newL := 0
-		for _, apiID := range wantedAPIs{
+		for _, apiID := range wantedAPIs {
 			for _, api := range filteredAPIS {
-				if apiID  != api.APIID {
+				if apiID != api.APIID {
 					continue
 				}
 				filteredAPIS[newL] = api
@@ -166,11 +166,11 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 	}
 
 	if len(wantedPolicies) > 0 {
-		filteredPolicies=pols[:]
+		filteredPolicies = pols[:]
 		newL := 0
-		for _, polID := range wantedPolicies{
+		for _, polID := range wantedPolicies {
 			for _, pol := range filteredPolicies {
-				if !((polID  == pol.ID) || (polID == pol.MID.Hex())) {
+				if !((polID == pol.ID) || (polID == pol.MID)) {
 					continue
 				}
 				filteredPolicies[newL] = pol
@@ -250,7 +250,7 @@ func processPublish(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if !isGateway{
+	if !isGateway {
 		for i, d := range pols {
 			if cmd.Use == "publish" {
 				fmt.Printf("Creating Policy %v: %v\n", i, d.Name)

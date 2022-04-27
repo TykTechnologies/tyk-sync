@@ -50,7 +50,7 @@ func (c *Client) CreatePolicy(pol *objects.Policy) (string, error) {
 	}
 
 	for _, ePol := range existingPols {
-		if ePol.MID.Hex() == pol.MID.Hex() {
+		if ePol.MID == pol.MID {
 			return "", UsePolUpdateError
 		}
 
@@ -145,7 +145,7 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 		return err
 	}
 
-	if pol.MID.Hex() == "" && pol.ID == "" {
+	if pol.MID == "" && pol.ID == "" {
 		return errors.New("--> Can't update policy without an ID or explicit (legacy) ID")
 	}
 
@@ -158,7 +158,7 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 			break
 		}
 
-		if ePol.MID.Hex() == pol.MID.Hex() {
+		if ePol.MID == pol.MID {
 			found = true
 			break
 		}
@@ -168,7 +168,7 @@ func (c *Client) UpdatePolicy(pol *objects.Policy) error {
 		return UseCreateError
 	}
 
-	fullPath := urljoin.Join(c.url, endpointPolicies, pol.MID.Hex())
+	fullPath := urljoin.Join(c.url, endpointPolicies, pol.MID)
 
 	ro := &grequests.RequestOptions{
 		JSON: pol,
@@ -220,7 +220,7 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 		if pol.ID != "" {
 			DashIDMap[pol.ID] = i
 		} else {
-			DashIDMap[pol.MID.Hex()] = i
+			DashIDMap[pol.MID] = i
 		}
 	}
 
@@ -228,8 +228,8 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 	for i, pol := range pols {
 		if pol.ID != "" {
 			GitIDMap[pol.ID] = i
-		} else if pol.MID.Hex() != "" {
-			GitIDMap[pol.MID.Hex()] = i
+		} else if pol.MID != "" {
+			GitIDMap[pol.MID] = i
 		} else {
 			created := fmt.Sprintf("temp-pol-%v", uuid.NewV4().String())
 			GitIDMap[created] = i
@@ -251,7 +251,7 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 	for key, i := range DashIDMap {
 		_, ok := GitIDMap[key]
 		if !ok {
-			deletePols = append(deletePols, ePols[i].MID.Hex())
+			deletePols = append(deletePols, ePols[i].MID)
 		}
 	}
 

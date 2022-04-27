@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jensneuse/graphql-go-tools/pkg/graphql"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type AccessSpec struct {
@@ -50,7 +49,7 @@ type FieldLimits struct {
 }
 
 type Policy struct {
-	MID                bson.ObjectId               `bson:"_id,omitempty" json:"_id"`
+	MID                string                      `bson:"_id,omitempty" json:"_id"`
 	ID                 string                      `bson:"id,omitempty" json:"id"`
 	Name               string                      `bson:"name" json:"name"`
 	OrgID              string                      `bson:"org_id" json:"org_id"`
