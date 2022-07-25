@@ -25,6 +25,13 @@ func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
 	if def.HookReferences == nil {
 		def.HookReferences = make([]interface{}, 0)
 	}
+
+	if def.IsOAS && def.OAS != nil {
+		tykExt := def.OAS.GetTykExtension()
+		if tykExt != nil && def.Id != "" {
+			tykExt.Info.DBID = def.Id
+		}
+	}
 }
 
 func (c *Client) SetInsecureTLS(val bool) {
@@ -123,6 +130,9 @@ func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 	// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
 	if retainedIDs {
 		def.Id = apidef.ObjectIdHex(status.Meta)
+		if def.OAS != nil {
+
+		}
 		if err := c.UpdateAPI(def); err != nil {
 			fmt.Printf("Problem trying to retain API ID: %v\n", err)
 		}
@@ -189,6 +199,7 @@ func (c *Client) FetchAPI(apiID string) (objects.DBApiDefinition, error) {
 }
 
 func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
+
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
@@ -267,9 +278,19 @@ func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 	asDBDef := def
 	c.fixDBDef(asDBDef)
 
-	updatePath := urljoin.Join(c.url, endpointAPIs, def.Id.Hex())
+	//data, _ := json.Marshal(asDBDef)
+	//fmt.Println(string(data))
+	endpoint := endpointAPIs
+	var payload interface{}
+	payload = asDBDef
+	if def.IsOAS {
+		endpoint = endpointOASAPIs
+		payload = asDBDef.OAS
+	}
+
+	updatePath := urljoin.Join(c.url, endpoint, def.Id.Hex())
 	updateResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
-		JSON: asDBDef,
+		JSON: payload,
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
@@ -281,7 +302,7 @@ func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 	}
 
 	if updateResp.StatusCode != 200 {
-		return fmt.Errorf("API Returned error: %v", updateResp.String())
+		return fmt.Errorf("API Updating Returned error: %v", updateResp.String())
 	}
 
 	var status APIResponse
