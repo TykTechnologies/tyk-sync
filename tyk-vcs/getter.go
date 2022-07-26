@@ -27,31 +27,31 @@ type Getter interface {
 
 type BaseGetter struct {
 	Getter
-	fs        billy.Filesystem
+	fs billy.Filesystem
 }
 
 type GitGetter struct {
 	*BaseGetter
 	Getter
-	repo      string
-	branch    string
-	key       []byte
-	fs        billy.Filesystem
-	r         *git.Repository
+	repo   string
+	branch string
+	key    []byte
+	fs     billy.Filesystem
+	r      *git.Repository
 }
 
 type FSGetter struct {
 	*BaseGetter
 	Getter
-	fs        billy.Filesystem
+	fs billy.Filesystem
 }
 
 func NewGGetter(repo, branch string, key []byte) (*GitGetter, error) {
 	gh := &GitGetter{
-		repo:      repo,
-		branch:    branch,
-		key:       key,
-		fs:        memfs.New(),
+		repo:   repo,
+		branch: branch,
+		key:    key,
+		fs:     memfs.New(),
 	}
 
 	return gh, nil
@@ -59,7 +59,7 @@ func NewGGetter(repo, branch string, key []byte) (*GitGetter, error) {
 
 func NewFSGetter(filePath string) (*FSGetter, error) {
 	gh := &FSGetter{
-		fs:        osfs.New(filePath),
+		fs: osfs.New(filePath),
 	}
 
 	return gh, nil
@@ -164,7 +164,7 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]obje
 
 		ad := objects.DBApiDefinition{}
 		err = json.Unmarshal(rawDef, &ad)
-		if err != nil || (ad.APIDefinition == nil){
+		if err != nil || (ad.APIDefinition == nil) {
 			def := apidef.APIDefinition{}
 			errSecondUnmarshal := json.Unmarshal(rawDef, &def)
 			if errSecondUnmarshal != nil {
@@ -184,7 +184,6 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]obje
 		if defInfo.ORGID != "" {
 			ad.OrgID = defInfo.ORGID
 		}
-
 
 		defs[i] = ad
 	}
@@ -258,7 +257,7 @@ func (gg *GitGetter) FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error
 	return fetchPolicies(gg.fs, spec)
 }
 
-func fetchPolicies(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.Policy, error)  {
+func fetchPolicies(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.Policy, error) {
 	defNames := spec.Policies
 	defs := make([]objects.Policy, len(defNames))
 	for i, defInfo := range defNames {

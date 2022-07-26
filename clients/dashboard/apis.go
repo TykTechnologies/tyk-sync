@@ -130,9 +130,6 @@ func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 	// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
 	if retainedIDs {
 		def.Id = apidef.ObjectIdHex(status.Meta)
-		if def.OAS != nil {
-
-		}
 		if err := c.UpdateAPI(def); err != nil {
 			fmt.Printf("Problem trying to retain API ID: %v\n", err)
 		}

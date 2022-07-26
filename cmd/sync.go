@@ -40,6 +40,6 @@ func init() {
 	syncCmd.Flags().StringP("org", "o", "", "org ID override")
 	syncCmd.Flags().StringP("path", "p", "", "Source directory for definition files (optional)")
 	syncCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
-	syncCmd.Flags().StringSlice("policies",[]string{},"Specific Policies ids to sync")
-	syncCmd.Flags().StringSlice("apis",[]string{},"Specific Apis ids to sync")
+	syncCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to sync")
+	syncCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to sync")
 }
