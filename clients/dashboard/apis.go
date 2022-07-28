@@ -275,8 +275,6 @@ func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 	asDBDef := def
 	c.fixDBDef(asDBDef)
 
-	//data, _ := json.Marshal(asDBDef)
-	//fmt.Println(string(data))
 	endpoint := endpointAPIs
 	var payload interface{}
 	payload = asDBDef
