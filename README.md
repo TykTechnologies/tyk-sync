@@ -136,7 +136,7 @@ The command provides output to identify which actions have been taken. If using 
 automatically hot-reloaded.
 
 
-## Example: Getting current Tyk Sync version
+## Example: Getting the current Tyk Sync version
 
 In order to get the current Tyk Sync version, we need to run the version command.
 
