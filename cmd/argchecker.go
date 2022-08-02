@@ -26,4 +26,3 @@ func verifyArguments(cmd *cobra.Command) error {
 	}
 	return nil
 }
-

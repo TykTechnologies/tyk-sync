@@ -80,7 +80,7 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 
 	retList := make([]objects.DBApiDefinition, len(apis))
 	for i := range apis {
-		retList[i] = objects.DBApiDefinition{APIDefinition:&apis[i]}
+		retList[i] = objects.DBApiDefinition{APIDefinition: &apis[i]}
 	}
 
 	return retList, nil
@@ -236,13 +236,10 @@ func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
 	updateAPIs := []objects.DBApiDefinition{}
 	createAPIs := []objects.DBApiDefinition{}
 
-
-
 	apis, err := c.FetchAPIs()
 	if err != nil {
 		return err
 	}
-
 
 	GWIDMap := map[string]int{}
 	GitIDMap := map[string]int{}
@@ -303,7 +300,7 @@ func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
 	for _, api := range updateAPIs {
 		fmt.Printf("SYNC Updating: %v\n", api.APIID)
 		if err := c.UpdateAPI(&api); err != nil {
-			fmt.Println("ERR:",err)
+			fmt.Println("ERR:", err)
 			return err
 		}
 	}

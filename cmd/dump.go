@@ -57,36 +57,33 @@ var dumpCmd = &cobra.Command{
 		}
 
 		fmt.Println("> Fetching policies")
-		wantedPolicies , _ := cmd.Flags().GetStringSlice("policies")
-		wantedAPIs , _ := cmd.Flags().GetStringSlice("apis")
-
+		wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
+		wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
 
 		policies := []objects.Policy{}
 		apis := []objects.DBApiDefinition{}
 		var errPoliciesFetch error
 		var errApisFetch error
 
-
 		//building the api def objs from wantedAPIs
-		for _, APIID := range wantedAPIs{
-			api :=  objects.DBApiDefinition{APIDefinition: &apidef.APIDefinition{}}
+		for _, APIID := range wantedAPIs {
+			api := objects.DBApiDefinition{APIDefinition: &apidef.APIDefinition{}}
 			api.APIID = APIID
 			apis = append(apis, api)
 		}
 
 		//building the policies obj from wantedAPIs
-		for _,wantedPolicy := range wantedPolicies{
-			if !bson.IsObjectIdHex(wantedPolicy){
+		for _, wantedPolicy := range wantedPolicies {
+			if !bson.IsObjectIdHex(wantedPolicy) {
 				fmt.Printf("Invalid selected policy ID: %s.\n", wantedPolicy)
 				return
 			}
 			pol := objects.Policy{
-				ID: wantedPolicy,
+				ID:  wantedPolicy,
 				MID: bson.ObjectIdHex(wantedPolicy),
 			}
-			policies = append(policies,pol)
+			policies = append(policies, pol)
 		}
-
 
 		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
 			fmt.Println("> Fetching policies ")
@@ -105,12 +102,10 @@ var dumpCmd = &cobra.Command{
 			}
 		}
 
-
-
 		fmt.Printf("--> Identified %v policies\n", len(policies))
 		if len(wantedPolicies) > 0 {
 			fmt.Println("--> Fetching and cleaning policy objects")
-		}else{
+		} else {
 			fmt.Println("--> Cleaning policy objects")
 		}
 		// A bug exists which causes decoding of the access rights to break,
@@ -132,7 +127,7 @@ var dumpCmd = &cobra.Command{
 		}
 		fmt.Printf("--> Fetched %v Policies\n", len(cleanPolicyObjects))
 
-		if len(wantedAPIs) >0 {
+		if len(wantedAPIs) > 0 {
 			fmt.Printf("--> Identified %v APIs\n", len(apis))
 			fmt.Println("--> Fetching and cleaning APIs objects")
 
@@ -168,39 +163,37 @@ var dumpCmd = &cobra.Command{
 			apiFiles[i] = fname
 		}
 
-
-
 		// If we have selected Policies specified we're going to check if we're importing all the necessary APIs
-		if len(wantedPolicies) >0 {
-			for _, policy := range cleanPolicyObjects{
-				for _, accesRights := range policy.AccessRights{
+		if len(wantedPolicies) > 0 {
+			for _, policy := range cleanPolicyObjects {
+				for _, accesRights := range policy.AccessRights {
 					found := false
-					for _, api := range apis{
+					for _, api := range apis {
 						if api.APIID == accesRights.APIID {
 							found = true
 						}
 					}
 					if !found {
-						fmt.Println("--> [WARNING] Policy ",policy.ID," has access rights over API ID ",accesRights.APIID," and that API it's not imported. It might cause some problems in the future." )
+						fmt.Println("--> [WARNING] Policy ", policy.ID, " has access rights over API ID ", accesRights.APIID, " and that API it's not imported. It might cause some problems in the future.")
 					}
 				}
 			}
 		}
 		// If we have selected APIs specified we're going to check if we're importing all the necessary policies
-		if len(wantedAPIs) >0 {
+		if len(wantedAPIs) > 0 {
 			//checking selected APIs  -  Policies integrity
-			for _, api := range apis{
-				for _, provider := range api.OpenIDOptions.Providers{
-					for _, id := range provider.ClientIDs{
+			for _, api := range apis {
+				for _, provider := range api.OpenIDOptions.Providers {
+					for _, id := range provider.ClientIDs {
 						found := false
-						for _, policy := range cleanPolicyObjects{
+						for _, policy := range cleanPolicyObjects {
 							if policy.ID == id {
-								found=true
+								found = true
 								break
 							}
 						}
 						if !found {
-							fmt.Println("--> [WARNING] Api ",api.APIID," has the Policy ",id, " as an OIDC issuer policy and that policy is not imported. It might cause some problems in the future." )
+							fmt.Println("--> [WARNING] Api ", api.APIID, " has the Policy ", id, " as an OIDC issuer policy and that policy is not imported. It might cause some problems in the future.")
 						}
 					}
 				}
@@ -275,6 +268,6 @@ func init() {
 	dumpCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
 	dumpCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
-	dumpCmd.Flags().StringSlice("policies",[]string{},"Specific Policies ids to dump")
-	dumpCmd.Flags().StringSlice("apis",[]string{},"Specific Apis ids to dump")
+	dumpCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to dump")
+	dumpCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to dump")
 }
