@@ -147,7 +147,7 @@ func newBlankDBDashDefinition() *objects.DBApiDefinition {
 		Tags:               make([]string, 0),
 	}
 	return &objects.DBApiDefinition{
-		APIDefinition:  def,
+		APIDefinition: def,
 	}
 }
 

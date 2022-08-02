@@ -10,7 +10,7 @@ import (
 var publishCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "publish API definitions from a Git repo or file system to a gateway or dashboard",
-	Long:  `Publish API definitions from a Git repo to a gateway or dashboard, this
+	Long: `Publish API definitions from a Git repo to a gateway or dashboard, this
 	will not update existing APIs, and if it detects a collision, will stop.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		verificationError := verifyArguments(cmd)
@@ -38,6 +38,6 @@ func init() {
 	publishCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	publishCmd.Flags().StringP("path", "p", "", "Source directory for definition files (optional)")
 	publishCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
-	publishCmd.Flags().StringSlice("policies",[]string{},"Specific Policies ids to publish")
-	publishCmd.Flags().StringSlice("apis",[]string{},"Specific Apis ids to publish")
+	publishCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to publish")
+	publishCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to publish")
 }
