@@ -283,3 +283,52 @@ func processPublish(cmd *cobra.Command, args []string) error {
 	fmt.Println("Done")
 	return nil
 }
+
+func processDelete(cmd *cobra.Command, args []string) error {
+	publisher, err := getPublisher(cmd, args)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Using publisher: %v\n", publisher.Name())
+
+	apis, _ := cmd.Flags().GetStringSlice("apis")
+	pols, _ := cmd.Flags().GetStringSlice("policies")
+
+	failed := false
+	for i, apiID := range apis {
+		fmt.Printf("Deleting API %v: %v\n", i, apiID)
+		err := publisher.Delete(apiID)
+		if err != nil {
+			fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+			failed = true
+		} else {
+			fmt.Printf("--> Status: OK, ID:%v\n", apiID)
+		}
+	}
+
+	if !isGateway {
+		for i, polID := range pols {
+			fmt.Printf("Deleting Policy %v: %v\n", i, polID)
+			err := publisher.DeletePolicy(polID)
+			if err != nil {
+				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+				failed = true
+			} else {
+				fmt.Printf("--> Status: OK, ID:%v\n", polID)
+			}
+		}
+	}
+
+	if isGateway {
+		if err := publisher.Reload(); err != nil {
+			return err
+		}
+	}
+
+	if failed {
+		return errors.New("delete command failed")
+	}
+
+	fmt.Println("Done")
+	return nil
+}
