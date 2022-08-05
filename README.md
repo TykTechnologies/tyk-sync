@@ -71,11 +71,12 @@ Usage:
   tyk-sync [command]
 
 Available Commands:
+  delete      Delete API and/or policy definitions from a gateway or dashboard
   dump        Dump will extract policies and APIs from a target (dashboard)
   help        Help about any command
   publish     publish API definitions from a Git repo or file system to a gateway or dashboard
   sync        Synchronise a github repo or file system with a gateway
-  update      A brief description of your command
+  update      Update a dashboard or gateway with APIs and policies
 
 Flags:
   -h, --help   help for tyk-sync

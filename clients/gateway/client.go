@@ -179,7 +179,7 @@ func (c *Client) Reload() error {
 	}
 
 	if status.Status != "ok" {
-		fmt.Errorf("API request completed, but with error: %v", status.Message)
+		return fmt.Errorf("API request completed, but with error: %v", status.Message)
 	}
 
 	return nil
