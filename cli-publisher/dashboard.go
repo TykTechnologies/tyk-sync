@@ -55,6 +55,18 @@ func (p *DashboardPublisher) Update(apiDef *objects.DBApiDefinition) error {
 	return c.UpdateAPI(p.enforceOrgID(apiDef))
 }
 
+func (p *DashboardPublisher) Delete(id string) error {
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	if err != nil {
+		return err
+	}
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+
+	return c.DeleteAPI(id)
+}
+
 func (p *DashboardPublisher) Sync(apiDefs []objects.DBApiDefinition) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
@@ -108,6 +120,17 @@ func (p *DashboardPublisher) UpdatePolicy(pol *objects.Policy) error {
 		p.OrgOverride = c.OrgID
 	}
 	return c.UpdatePolicy(p.enforceOrgIDForPolicy(pol))
+}
+
+func (p *DashboardPublisher) DeletePolicy(id string) error {
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	if err != nil {
+		return err
+	}
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+	return c.DeletePolicy(id)
 }
 
 func (p *DashboardPublisher) SyncPolicies(pols []objects.Policy) error {

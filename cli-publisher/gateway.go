@@ -30,6 +30,15 @@ func (p *GatewayPublisher) Update(apiDef *objects.DBApiDefinition) error {
 	return c.UpdateAPI(apiDef)
 }
 
+func (p *GatewayPublisher) Delete(id string) error {
+	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
+	if err != nil {
+		return err
+	}
+
+	return c.DeleteAPI(id)
+}
+
 func (p *GatewayPublisher) Name() string {
 	return "Gateway Publisher"
 }
@@ -57,6 +66,10 @@ func (p *GatewayPublisher) CreatePolicy(pol *objects.Policy) (string, error) {
 }
 
 func (p *GatewayPublisher) UpdatePolicy(pol *objects.Policy) error {
+	return errors.New("Policy handling not supported by Gateway publisher")
+}
+
+func (p *GatewayPublisher) DeletePolicy(id string) error {
 	return errors.New("Policy handling not supported by Gateway publisher")
 }
 
