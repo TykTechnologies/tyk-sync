@@ -10,9 +10,9 @@ import (
 	"os"
 	"path"
 
-	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
+	"github.com/dmayo3/tyk-sync/clients/dashboard"
+	"github.com/dmayo3/tyk-sync/clients/objects"
+	tyk_vcs "github.com/dmayo3/tyk-sync/tyk-vcs"
 	"github.com/spf13/cobra"
 )
 

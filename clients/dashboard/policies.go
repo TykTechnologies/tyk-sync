@@ -3,7 +3,7 @@ package dashboard
 import (
 	"fmt"
 
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/dmayo3/tyk-sync/clients/objects"
 	"github.com/kataras/go-errors"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"

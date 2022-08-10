@@ -1,4 +1,4 @@
-module github.com/TykTechnologies/tyk-sync
+module github.com/dmayo3/tyk-sync
 
 go 1.13
 

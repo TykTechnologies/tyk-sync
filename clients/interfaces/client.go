@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/dmayo3/tyk-sync/clients/objects"
 )
 
 type APIManagementClient interface {

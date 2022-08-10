@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/TykTechnologies/tyk-sync/cli-publisher"
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
+	"github.com/dmayo3/tyk-sync/cli-publisher"
+	"github.com/dmayo3/tyk-sync/clients/objects"
+	"github.com/dmayo3/tyk-sync/tyk-vcs"
 	"github.com/spf13/cobra"
 )
 
