@@ -1,12 +1,12 @@
-# Tyk-Sync
+# Tyk Sync
 
 ![Unstable packages](https://github.com/TykTechnologies/tyk-sync/workflows/Unstable%20packages/badge.svg)
 
 ## What is it?
 
-Tyk-Sync is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
+Tyk Sync is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
 
-About `tyk-git` - that was project's originally name and recently we have decided to change it to `tyk-sync` since it syncs to files as well as git repos.
+*Note: the project was originally called `tyk-git` however this was changed to `tyk-sync` as it evolved and can now synchronise to files not just git repos.*
 
 ## Features
 
@@ -23,18 +23,18 @@ the file system, it will integrate with any VCS.
 
 ### Sync
 
-Tyk-Sync tries to be clever about what APIs and Policies to update and which to create, it will actually base all
+Tyk Sync tries to be clever about what APIs and Policies to update and which to create, it will actually base all
 ID matching on the API ID and the masked Policy ID, so it can identify the same object across installations. Tyk has
-a tendency to generate fresh IDs for all new Objects, so Tyk-Sync gets around this by using portable IDs and ensuring
+a tendency to generate fresh IDs for all new Objects, so Tyk Sync gets around this by using portable IDs and ensuring
 the necessary portable IDs are set when using the `dump` command.
 
-This means that Tyk-Sync can be used to back-up your most important API Gateway configurations as code, and to deploy
+This means that Tyk Sync can be used to back-up your most important API Gateway configurations as code, and to deploy
 those configurations to any target and ensure that API IDs and Policy IDs will remain consistent, ensuring that any
 dependent tokens continue to have access to your services.
 
 ### Prerequisites:
 
-- Tyk-Sync was built using Go 1.10. The minimum Go version required to install is 1.7.
+- Tyk Sync was built using Go 1.10. The minimum Go version required to install is 1.7.
 - In order for policy ID matching to work correctly, your Dashboard must have `allow_explicit_policy_id: true` and `enable_duplicate_slugs: true`.
 - In order for policy ID matching to work correctly, your Gateway must have `policies.allow_explicit_policy_id: true`.
 - It is assumed you have a Tyk CE or Tyk Pro installation.
@@ -50,7 +50,7 @@ This should make the `tyk-sync` command available to your console.
 
 ### Docker:
 
-To install particular version of `tyk-sync` via docker image please run the command bellow with appropriate version you want to use. All available versions could be found on Tyk Sync Docker Hub page here: https://hub.docker.com/r/tykio/tyk-sync/tags
+To install a particular version of Tyk Sync via docker image please run the following command stating the version you want to use. A list of all available versions can be found on the Tyk Sync Docker Hub page: https://hub.docker.com/r/tykio/tyk-sync/tags
 ```
 docker pull tykio/tyk-sync:{version_id}
 ```
