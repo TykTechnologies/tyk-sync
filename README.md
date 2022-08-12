@@ -6,7 +6,7 @@
 
 Tyk Sync is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
 
-About `tyk-git` - that was project's originally name and recently we have decided to change it to `tyk-sync` since it syncs to files as well as git repos.
+*Note: the project was originally called `tyk-git` however this was changed to `tyk-sync` as it evolved and can now synchronise to files not just git repos.*
 
 ## Features
 
@@ -50,7 +50,7 @@ This should make the `tyk-sync` command available to your console.
 
 ### Docker:
 
-To install particular version of Tyk Sync via docker image please run the command bellow with appropriate version you want to use. All available versions could be found on Tyk Sync Docker Hub page here: https://hub.docker.com/r/tykio/tyk-sync/tags
+To install a particular version of Tyk Sync via docker image please run the following command stating the version you want to use. A list of all available versions can be found on the Tyk Sync Docker Hub page: https://hub.docker.com/r/tykio/tyk-sync/tags
 ```
 docker pull tykio/tyk-sync:{version_id}
 ```
