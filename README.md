@@ -76,6 +76,7 @@ Available Commands:
   publish     publish API definitions from a Git repo or file system to a gateway or dashboard
   sync        Synchronise a github repo or file system with a gateway
   update      A brief description of your command
+  version     This command will show the current Tyk-Sync version
 
 Flags:
   -h, --help   help for tyk-sync
@@ -133,3 +134,13 @@ SYNC Updating Policy: Test policy 1
 
 The command provides output to identify which actions have been taken. If using a Tyk Gateway, the Gateway will be
 automatically hot-reloaded.
+
+
+## Example: Check the currently installed version of Tyk Sync
+
+To check the current Tyk Sync version, we need to run the version command:
+
+```
+tyk-sync version
+v1.2.2
+```
