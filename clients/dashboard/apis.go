@@ -3,6 +3,8 @@ package dashboard
 import (
 	"fmt"
 
+	"github.com/clarketm/json"
+
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
@@ -102,8 +104,13 @@ func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 	asDBDef := def
 	c.fixDBDef(asDBDef)
 
+	data, err := json.Marshal(asDBDef)
+	if err != nil {
+		return "", err
+	}
+
 	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
-		JSON: asDBDef,
+		JSON: data,
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},
@@ -283,9 +290,14 @@ func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 		payload = asDBDef.OAS
 	}
 
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
 	updatePath := urljoin.Join(c.url, endpoint, def.Id.Hex())
 	updateResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
-		JSON: payload,
+		JSON: data,
 		Headers: map[string]string{
 			"Authorization": c.secret,
 		},

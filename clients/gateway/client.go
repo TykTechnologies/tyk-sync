@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/clarketm/json"
+
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
@@ -121,9 +123,14 @@ func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
 		}
 	}
 
+	data, err := json.Marshal(def.APIDefinition)
+	if err != nil {
+		return "", err
+	}
+
 	// Create
 	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
-		JSON: def.APIDefinition,
+		JSON: data,
 		Headers: map[string]string{
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
@@ -207,9 +214,14 @@ func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
 		return errors.New("API ID must be set")
 	}
 
+	data, err := json.Marshal(def.APIDefinition)
+	if err != nil {
+		return err
+	}
+
 	updatePath := urljoin.Join(c.url, endpointAPIs, def.APIID)
 	uResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
-		JSON: def.APIDefinition,
+		JSON: data,
 		Headers: map[string]string{
 			"x-tyk-authorization": c.secret,
 			"content-type":        "application/json",
