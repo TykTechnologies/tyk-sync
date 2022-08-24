@@ -3,7 +3,7 @@ package dashboard
 import (
 	"fmt"
 
-	"github.com/clarketm/json"
+	"encoding/json"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"

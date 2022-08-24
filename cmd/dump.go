@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/TykTechnologies/tyk/apidef"
 
 	"gopkg.in/mgo.v2/bson"
 
@@ -67,7 +66,7 @@ var dumpCmd = &cobra.Command{
 
 		//building the api def objs from wantedAPIs
 		for _, APIID := range wantedAPIs {
-			api := objects.DBApiDefinition{APIDefinition: &apidef.APIDefinition{}}
+			api := objects.DBApiDefinition{APIDefinition: &objects.APIDefinition{}}
 			api.APIID = APIID
 			apis = append(apis, api)
 		}

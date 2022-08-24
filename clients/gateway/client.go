@@ -4,10 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/clarketm/json"
+	"encoding/json"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"
@@ -38,7 +37,7 @@ type APIMessage struct {
 	Message string `json:"message"`
 }
 
-type APISList []apidef.APIDefinition
+type APISList []objects.APIDefinition
 
 func NewGatewayClient(url, secret string) (*Client, error) {
 	return &Client{
