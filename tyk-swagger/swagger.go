@@ -139,13 +139,13 @@ func newBlankDBDashDefinition() *objects.DBApiDefinition {
 		Pre:  make([]apidef.MiddlewareDefinition, 0),
 		Post: make([]apidef.MiddlewareDefinition, 0),
 	}
-	def := &apidef.APIDefinition{
-		ConfigData:         map[string]interface{}{},
-		ResponseProcessors: make([]apidef.ResponseProcessor, 0),
-		AllowedIPs:         make([]string, 0),
-		CustomMiddleware:   EmptyMW,
-		Tags:               make([]string, 0),
-	}
+
+	def := &objects.APIDefinition{}
+	def.ConfigData = map[string]interface{}{}
+	def.ResponseProcessors = make([]apidef.ResponseProcessor, 0)
+	def.AllowedIPs = make([]string, 0)
+	def.CustomMiddleware = EmptyMW
+	def.Tags = make([]string, 0)
 	return &objects.DBApiDefinition{
 		APIDefinition: def,
 	}

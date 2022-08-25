@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk-sync/tyk-swagger"
+	tyk_swagger "github.com/TykTechnologies/tyk-sync/tyk-swagger"
 	"github.com/TykTechnologies/tyk/apidef"
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
@@ -165,7 +165,7 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]obje
 		ad := objects.DBApiDefinition{}
 		err = json.Unmarshal(rawDef, &ad)
 		if err != nil || (ad.APIDefinition == nil) {
-			def := apidef.APIDefinition{}
+			def := objects.APIDefinition{}
 			errSecondUnmarshal := json.Unmarshal(rawDef, &def)
 			if errSecondUnmarshal != nil {
 				return nil, err
