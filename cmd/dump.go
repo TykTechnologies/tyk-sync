@@ -2,8 +2,7 @@ package cmd
 
 import (
 	"fmt"
-
-	"gopkg.in/mgo.v2/bson"
+	"sync"
 
 	"encoding/json"
 	"io/ioutil"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/TykTechnologies/tyk-sync/helpers"
 	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
 	"github.com/spf13/cobra"
 )
@@ -21,8 +21,8 @@ var dumpCmd = &cobra.Command{
 	Use:   "dump",
 	Short: "Dump will extract policies and APIs from a target (dashboard)",
 	Long: `Dump will extract policies and APIs from a target (dashboard) and
-	place them in a directory of your choosing. It will also generate a spec file
-	that can be used for sync.`,
+    place them in a directory of your choosing. It will also generate a spec file
+    that can be used for sync.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dbString, _ := cmd.Flags().GetString("dashboard")
 
@@ -55,36 +55,115 @@ var dumpCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		fmt.Println("> Fetching policies")
-		wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
-		wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
+		wantedAPIsIDs, _ := cmd.Flags().GetStringSlice("apis")
+		wantedPoliciesIDs, _ := cmd.Flags().GetStringSlice("policies")
+		wantedTags, _ := cmd.Flags().GetStringSlice("tags")
+		wantedCategories, _ := cmd.Flags().GetStringSlice("categories")
 
-		policies := []objects.Policy{}
-		apis := []objects.DBApiDefinition{}
+		//maps that will keep track of already stored policies and apis (avoiding repeated apis and policies)
+		storedPoliciesIds := map[string]bool{}
+		storedAPIsIds := map[string]bool{}
+
 		var errPoliciesFetch error
 		var errApisFetch error
 
-		//building the api def objs from wantedAPIs
-		for _, APIID := range wantedAPIs {
-			api := objects.DBApiDefinition{APIDefinition: &objects.APIDefinition{}}
-			api.APIID = APIID
-			apis = append(apis, api)
+		//arrays that will store the full information about the policies and apis
+		var policies []objects.Policy
+		var apis []objects.DBApiDefinition
+
+		//variables to add concurrency support
+		var wg sync.WaitGroup
+		var l sync.Mutex
+
+		//list of collected errors (we may change this to a channel of type error)
+		var errList []error
+		//looking for apis by their respective IDs
+		if len(wantedAPIsIDs) > 0 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				fmt.Println("--> Fetching APIs objects by IDs")
+				apisByIds, err := helpers.LookForApiIDs(wantedAPIsIDs, c, storedAPIsIds)
+				if err != nil {
+					l.Lock()
+					errList = append(errList, err)
+					l.Unlock()
+					return
+				}
+				l.Lock()
+				apis = append(apis, apisByIds...)
+				l.Unlock()
+			}()
 		}
 
-		//building the policies obj from wantedAPIs
-		for _, wantedPolicy := range wantedPolicies {
-			if !bson.IsObjectIdHex(wantedPolicy) {
-				fmt.Printf("Invalid selected policy ID: %s.\n", wantedPolicy)
-				return
-			}
-			pol := objects.Policy{
-				ID:  wantedPolicy,
-				MID: bson.ObjectIdHex(wantedPolicy),
-			}
-			policies = append(policies, pol)
+		//looking for policies by their respective IDs
+		if len(wantedPoliciesIDs) > 0 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				fmt.Println("--> Fetching and cleaning Policies objects by IDs")
+				policiesByIds, err := helpers.LookForPoliciesIDs(wantedPoliciesIDs, c, storedPoliciesIds)
+				if err != nil {
+					l.Lock()
+					errList = append(errList, err)
+					l.Unlock()
+					return
+				}
+				l.Lock()
+				policies = append(policies, policiesByIds...)
+				l.Unlock()
+			}()
+		}
+		//looking for APIs policies by their respective tags
+		if len(wantedTags) > 0 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				fmt.Println("--> Fetching and cleaning APIs and Policies by tags")
+				policiesByTags, apisByTags, err := helpers.LookForTags(wantedTags, c, storedPoliciesIds, storedAPIsIds)
+				if err != nil {
+					l.Lock()
+					errList = append(errList, err)
+					l.Unlock()
+					return
+				}
+				l.Lock()
+				policies = append(policies, policiesByTags...)
+				apis = append(apis, apisByTags...)
+				l.Unlock()
+			}()
+		}
+		//looking for APIs by their respective categories
+		if len(wantedCategories) > 0 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				fmt.Println("--> Fetching and cleaning APIs and Policies by categories")
+				apisByCategories, err := helpers.LookForCategories(wantedCategories, c, storedAPIsIds)
+				if err != nil {
+					l.Lock()
+					errList = append(errList, err)
+					l.Unlock()
+					return
+				}
+				l.Lock()
+				apis = append(apis, apisByCategories...)
+				l.Unlock()
+			}()
 		}
 
-		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
+		wg.Wait()
+
+		//checking if there is any value in the error list
+		if len(errList) > 0 {
+			for _, err := range errList {
+				fmt.Println(err)
+			}
+			return
+		}
+
+		//if no IDs, tags or categories were specified, fetch all the apis and policies
+		if len(policies) == 0 && len(apis) == 0 {
 			fmt.Println("> Fetching policies ")
 
 			policies, errPoliciesFetch = c.FetchPolicies()
@@ -101,46 +180,8 @@ var dumpCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Printf("--> Identified %v policies\n", len(policies))
-		if len(wantedPolicies) > 0 {
-			fmt.Println("--> Fetching and cleaning policy objects")
-		} else {
-			fmt.Println("--> Cleaning policy objects")
-		}
-		// A bug exists which causes decoding of the access rights to break,
-		// so we should fetch individually
-		cleanPolicyObjects := make([]*objects.Policy, len(policies))
-		for i, p := range policies {
-			cp, err := c.FetchPolicy(p.MID.Hex())
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			// Make sure we retain IDs
-			if cp.ID == "" {
-				cp.ID = cp.MID.Hex()
-			}
-
-			cleanPolicyObjects[i] = cp
-		}
-		fmt.Printf("--> Fetched %v Policies\n", len(cleanPolicyObjects))
-
-		if len(wantedAPIs) > 0 {
-			fmt.Printf("--> Identified %v APIs\n", len(apis))
-			fmt.Println("--> Fetching and cleaning APIs objects")
-
-			for i, api := range apis {
-				fullAPI, err := c.FetchAPI(api.APIID)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				apis[i] = fullAPI
-			}
-		}
-
-		fmt.Printf("--> Fetched %v APIs\n", len(apis))
+		fmt.Printf("--> Identified  and fetched %v APIs\n", len(apis))
+		fmt.Printf("--> Identified and fetched %v Policies\n", len(policies))
 
 		dir, _ := cmd.Flags().GetString("target")
 		apiFiles := make([]string, len(apis))
@@ -163,8 +204,8 @@ var dumpCmd = &cobra.Command{
 		}
 
 		// If we have selected Policies specified we're going to check if we're importing all the necessary APIs
-		if len(wantedPolicies) > 0 {
-			for _, policy := range cleanPolicyObjects {
+		if len(wantedPoliciesIDs) > 0 || len(wantedTags) > 0 {
+			for _, policy := range policies {
 				for _, accesRights := range policy.AccessRights {
 					found := false
 					for _, api := range apis {
@@ -179,13 +220,13 @@ var dumpCmd = &cobra.Command{
 			}
 		}
 		// If we have selected APIs specified we're going to check if we're importing all the necessary policies
-		if len(wantedAPIs) > 0 {
+		if len(wantedAPIsIDs) > 0 || len(wantedTags) > 0 || len(wantedCategories) > 0 {
 			//checking selected APIs  -  Policies integrity
 			for _, api := range apis {
 				for _, provider := range api.OpenIDOptions.Providers {
 					for _, id := range provider.ClientIDs {
 						found := false
-						for _, policy := range cleanPolicyObjects {
+						for _, policy := range policies {
 							if policy.ID == id {
 								found = true
 								break
@@ -199,8 +240,8 @@ var dumpCmd = &cobra.Command{
 			}
 		}
 
-		policyFiles := make([]string, len(cleanPolicyObjects))
-		for i, pol := range cleanPolicyObjects {
+		policyFiles := make([]string, len(policies))
+		for i, pol := range policies {
 			if pol.ID == "" {
 				pol.ID = pol.MID.Hex()
 			}
@@ -269,4 +310,6 @@ func init() {
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
 	dumpCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to dump")
 	dumpCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to dump")
+	dumpCmd.Flags().StringSlice("tags", []string{}, "Specific Tags to dump (includes Apis and Policies)")
+	dumpCmd.Flags().StringSlice("categories", []string{}, "Specific Categories to dump (includes Apis and Policies)")
 }
