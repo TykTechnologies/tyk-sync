@@ -5,3 +5,6 @@ tyk-sync
 dist/
 *.key
 .idea/
+.tyk.json
+api-*
+policy-*

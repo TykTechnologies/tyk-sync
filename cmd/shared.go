@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
+	"sync"
 
-	"github.com/TykTechnologies/tyk-sync/cli-publisher"
+	cli_publisher "github.com/TykTechnologies/tyk-sync/cli-publisher"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
+	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
 	"github.com/spf13/cobra"
 )
 
@@ -130,7 +132,6 @@ func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
 }
 
 func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []objects.Policy, error) {
-
 	getter, err := NewGetter(cmd, args)
 	if err != nil {
 		return nil, nil, err
@@ -143,41 +144,188 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 
 	wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 	wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
+	wantedTags, _ := cmd.Flags().GetStringSlice("tags")
+	wantedCategories, _ := cmd.Flags().GetStringSlice("categories")
 
-	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
+	//if no flags are set, we want to publish everything
+	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 && len(wantedTags) == 0 && len(wantedCategories) == 0 {
 		return defs, pols, nil
 	}
+
+	storedPoliciesIds := map[string]bool{}
+	storedApisIds := map[string]bool{}
+
+	//variables to keep track of the number of filtered items
 	filteredAPIS := []objects.DBApiDefinition{}
 	filteredPolicies := []objects.Policy{}
 
+	//variables to support concurrency
+	var wg sync.WaitGroup
+	var l sync.Mutex
+
+	//filter APIs by ID
 	if len(wantedAPIs) > 0 {
-		filteredAPIS = defs[:]
-		newL := 0
-		for _, apiID := range wantedAPIs {
-			for _, api := range filteredAPIS {
-				if apiID != api.APIID {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, apiID := range wantedAPIs {
+				l.Lock()
+				if storedApisIds[apiID] {
+					l.Unlock()
 					continue
 				}
-				filteredAPIS[newL] = api
-				newL++
+				l.Unlock()
+				found := false
+				for _, api := range defs {
+					if apiID != api.APIID {
+						continue
+					}
+					l.Lock()
+					storedApisIds[apiID] = true
+					filteredAPIS = append(filteredAPIS, api)
+					l.Unlock()
+					fmt.Println("--> Found API with ID: ", api.Id)
+					found = true
+				}
+				if !found {
+					fmt.Println("--> No API found with ID: ", apiID)
+				}
 			}
-		}
-		filteredAPIS = filteredAPIS[:newL]
+
+		}()
 	}
 
+	//filter policies by ID
 	if len(wantedPolicies) > 0 {
-		filteredPolicies = pols[:]
-		newL := 0
-		for _, polID := range wantedPolicies {
-			for _, pol := range filteredPolicies {
-				if !((polID == pol.ID) || (polID == pol.MID.Hex())) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, polID := range wantedPolicies {
+				l.Lock()
+				if storedPoliciesIds[polID] {
+					l.Unlock()
 					continue
 				}
-				filteredPolicies[newL] = pol
-				newL++
+				l.Unlock()
+				found := false
+				for _, pol := range pols {
+					if !((polID == pol.ID) || (polID == pol.MID.Hex())) {
+						continue
+					}
+					l.Lock()
+					storedPoliciesIds[polID] = true
+					filteredPolicies = append(filteredPolicies, pol)
+					l.Unlock()
+					fmt.Println("--> Found Policy with ID: ", pol.Name)
+					found = true
+					break
+				}
+
+				if !found {
+					fmt.Println("--> No policiy found with ID:", polID)
+				}
 			}
-		}
-		filteredPolicies = filteredPolicies[:newL]
+
+		}()
+	}
+
+	//filter APIs and Policies by tags
+	if len(wantedTags) > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, tag := range wantedTags {
+				found := false
+				for _, api := range defs {
+					for _, apiTag := range api.Tags {
+						if tag == apiTag {
+							l.Lock()
+							//we can check this before creating the for loop, but users would never know
+							//if the policies they sent were found
+							if storedApisIds[api.APIID] {
+								l.Unlock()
+								found = true
+								break
+							}
+							storedApisIds[api.APIID] = true
+							filteredAPIS = append(filteredAPIS, api)
+							l.Unlock()
+							fmt.Println("--> Found API with ID: ", api.APIID)
+							found = true
+							break
+						}
+					}
+				}
+
+				if !found {
+					fmt.Println("--> No API found with tag:", tag)
+				}
+
+				found = false
+				for _, pol := range pols {
+					for _, polTag := range pol.Tags {
+						if tag == polTag {
+							l.Lock()
+							//we can check this before creating the for loop, but users would never know
+							//if the policies they sent were found
+							if storedPoliciesIds[pol.ID] {
+								l.Unlock()
+								found = true
+								break
+							}
+							storedPoliciesIds[pol.ID] = true
+							filteredPolicies = append(filteredPolicies, pol)
+							l.Unlock()
+							fmt.Println("--> Found Policy with ID: ", pol.ID)
+							found = true
+						}
+					}
+				}
+				if !found {
+					fmt.Println("--> No policy found with tag:", tag)
+				}
+			}
+		}()
+
+	}
+
+	//filter APIs by categories
+	if len(wantedCategories) > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, category := range wantedCategories {
+				found := false
+				for _, api := range defs {
+					//categories are stored in the api Name, after a '#' character
+					if strings.Contains(api.Name, "#"+category) {
+						l.Lock()
+						if storedApisIds[api.APIID] {
+							l.Unlock()
+							found = true
+							continue
+						}
+						storedApisIds[api.APIID] = true
+						filteredAPIS = append(filteredAPIS, api)
+						l.Unlock()
+						fmt.Println("--> Found API with ID: ", api.APIID)
+						found = true
+					}
+				}
+
+				if !found {
+					fmt.Println("--> No API found with category:", category)
+				}
+
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	//if no apis or policies were found, return an error
+	if len(filteredAPIS) == 0 && len(filteredPolicies) == 0 {
+		return nil, nil, errors.New("no APIs or Policies found with the given filters")
 	}
 
 	return filteredAPIS, filteredPolicies, nil

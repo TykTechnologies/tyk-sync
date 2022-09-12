@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 // syncCmd represents the sync command
@@ -42,4 +43,6 @@ func init() {
 	syncCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 	syncCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to sync")
 	syncCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to sync")
+	syncCmd.Flags().StringSlice("tags", []string{}, "Specific Apis and Policies tags to sync")
+	syncCmd.Flags().StringSlice("categories", []string{}, "Specific Apis categories to sync")
 }

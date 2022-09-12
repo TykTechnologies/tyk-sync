@@ -53,6 +53,7 @@ var dumpCmd = &cobra.Command{
 		c, err := dashboard.NewDashboardClient(dbString, secret, "")
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 
 		wantedAPIsIDs, _ := cmd.Flags().GetStringSlice("apis")

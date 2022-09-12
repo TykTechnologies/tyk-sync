@@ -16,8 +16,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 // updateCmd represents the update command
@@ -52,4 +53,6 @@ func init() {
 	updateCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 	updateCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to update")
 	updateCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to update")
+	updateCmd.Flags().StringSlice("tags", []string{}, "Specific Apis and Policies tags to update")
+	updateCmd.Flags().StringSlice("categories", []string{}, "Specific Apis categories to update")
 }
