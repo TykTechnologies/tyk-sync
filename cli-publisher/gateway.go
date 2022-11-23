@@ -12,22 +12,22 @@ type GatewayPublisher struct {
 	Hostname string
 }
 
-func (p *GatewayPublisher) Create(apiDef *objects.DBApiDefinition) (string, error) {
-	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
-	if err != nil {
-		return "", err
-	}
-
-	return c.CreateAPI(apiDef)
-}
-
-func (p *GatewayPublisher) Update(apiDef *objects.DBApiDefinition) error {
+func (p *GatewayPublisher) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
 	if err != nil {
 		return err
 	}
 
-	return c.UpdateAPI(apiDef)
+	return c.CreateAPIs(apiDefs)
+}
+
+func (p *GatewayPublisher) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
+	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
+	if err != nil {
+		return err
+	}
+
+	return c.UpdateAPIs(apiDefs)
 }
 
 func (p *GatewayPublisher) Name() string {
@@ -43,20 +43,20 @@ func (p *GatewayPublisher) Reload() error {
 	return c.Reload()
 }
 
-func (p *GatewayPublisher) Sync(apiDefs []objects.DBApiDefinition) error {
+func (p *GatewayPublisher) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
 	if err != nil {
 		return err
 	}
 
-	return c.Sync(apiDefs)
+	return c.SyncAPIs(apiDefs)
 }
 
-func (p *GatewayPublisher) CreatePolicy(pol *objects.Policy) (string, error) {
-	return "", errors.New("Policy handling not supported by Gateway publisher")
+func (p *GatewayPublisher) CreatePolicies(pols *[]objects.Policy) error {
+	return errors.New("Policy handling not supported by Gateway publisher")
 }
 
-func (p *GatewayPublisher) UpdatePolicy(pol *objects.Policy) error {
+func (p *GatewayPublisher) UpdatePolicies(pols *[]objects.Policy) error {
 	return errors.New("Policy handling not supported by Gateway publisher")
 }
 

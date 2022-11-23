@@ -13,37 +13,27 @@ type DashboardPublisher struct {
 	OrgOverride string
 }
 
-func (p *DashboardPublisher) enforceOrgID(apiDef *objects.DBApiDefinition) *objects.DBApiDefinition {
+func (p *DashboardPublisher) enforceOrgID(apiDefs *[]objects.DBApiDefinition) {
 	if p.OrgOverride != "" {
 		fmt.Println("org override detected, setting.")
-		apiDef.OrgID = p.OrgOverride
-	}
 
-	return apiDef
+		for _, apiDef := range *apiDefs {
+			apiDef.OrgID = p.OrgOverride
+		}
+	}
 }
 
-func (p *DashboardPublisher) enforceOrgIDForPolicy(pol *objects.Policy) *objects.Policy {
+func (p *DashboardPublisher) enforceOrgIDForPolicies(pols *[]objects.Policy) {
 	if p.OrgOverride != "" {
 		fmt.Println("org override detected, setting.")
-		pol.OrgID = p.OrgOverride
-	}
 
-	return pol
+		for _, pol := range *pols {
+			pol.OrgID = p.OrgOverride
+		}
+	}
 }
 
-func (p *DashboardPublisher) Create(apiDef *objects.DBApiDefinition) (string, error) {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
-	if err != nil {
-		return "", err
-	}
-	if p.OrgOverride == "" {
-		p.OrgOverride = c.OrgID
-	}
-
-	return c.CreateAPI(p.enforceOrgID(apiDef))
-}
-
-func (p *DashboardPublisher) Update(apiDef *objects.DBApiDefinition) error {
+func (p *DashboardPublisher) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
@@ -52,10 +42,24 @@ func (p *DashboardPublisher) Update(apiDef *objects.DBApiDefinition) error {
 		p.OrgOverride = c.OrgID
 	}
 
-	return c.UpdateAPI(p.enforceOrgID(apiDef))
+	p.enforceOrgID(apiDefs)
+	return c.CreateAPIs(apiDefs)
 }
 
-func (p *DashboardPublisher) Sync(apiDefs []objects.DBApiDefinition) error {
+func (p *DashboardPublisher) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	if err != nil {
+		return err
+	}
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+
+	p.enforceOrgID(apiDefs)
+	return c.UpdateAPIs(apiDefs)
+}
+
+func (p *DashboardPublisher) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
@@ -73,10 +77,10 @@ func (p *DashboardPublisher) Sync(apiDefs []objects.DBApiDefinition) error {
 			fixedDefs[i] = newDef
 		}
 
-		return c.Sync(fixedDefs)
+		return c.SyncAPIs(fixedDefs)
 	}
 
-	return c.Sync(apiDefs)
+	return c.SyncAPIs(apiDefs)
 }
 
 func (p *DashboardPublisher) Reload() error {
@@ -88,18 +92,7 @@ func (p *DashboardPublisher) Name() string {
 	return "Dashboard Publisher"
 }
 
-func (p *DashboardPublisher) CreatePolicy(pol *objects.Policy) (string, error) {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
-	if err != nil {
-		return "", err
-	}
-	if p.OrgOverride == "" {
-		p.OrgOverride = c.OrgID
-	}
-	return c.CreatePolicy(p.enforceOrgIDForPolicy(pol))
-}
-
-func (p *DashboardPublisher) UpdatePolicy(pol *objects.Policy) error {
+func (p *DashboardPublisher) CreatePolicies(pols *[]objects.Policy) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
 	if err != nil {
 		return err
@@ -107,7 +100,22 @@ func (p *DashboardPublisher) UpdatePolicy(pol *objects.Policy) error {
 	if p.OrgOverride == "" {
 		p.OrgOverride = c.OrgID
 	}
-	return c.UpdatePolicy(p.enforceOrgIDForPolicy(pol))
+
+	p.enforceOrgIDForPolicies(pols)
+	return c.CreatePolicies(pols)
+}
+
+func (p *DashboardPublisher) UpdatePolicies(pols *[]objects.Policy) error {
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	if err != nil {
+		return err
+	}
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+
+	p.enforceOrgIDForPolicies(pols)
+	return c.UpdatePolicies(pols)
 }
 
 func (p *DashboardPublisher) SyncPolicies(pols []objects.Policy) error {

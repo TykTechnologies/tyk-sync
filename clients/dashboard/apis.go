@@ -1,10 +1,8 @@
 package dashboard
 
 import (
-	"fmt"
-
 	"encoding/json"
-
+	"fmt"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/levigross/grequests"
@@ -42,108 +40,6 @@ func (c *Client) SetInsecureTLS(val bool) {
 
 func (c *Client) GetActiveID(def *objects.DBApiDefinition) string {
 	return def.Id.Hex()
-}
-
-func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
-	fullPath := urljoin.Join(c.url, endpointAPIs)
-
-	ro := &grequests.RequestOptions{
-		Params: map[string]string{"p": "-2"},
-		Headers: map[string]string{
-			"Authorization": c.secret,
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	}
-
-	resp, err := grequests.Get(fullPath, ro)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("API Returned error: %v for %v", resp.String(), fullPath)
-	}
-
-	apis := APISResponse{}
-	if err := resp.JSON(&apis); err != nil {
-		return "", err
-	}
-
-	retainedIDs := false
-
-	for _, api := range apis.Apis {
-		if api.APIID == def.APIID {
-			fmt.Println("Warning: API ID Exists")
-			return "", UseUpdateError
-		}
-
-		if api.Id == def.Id {
-			fmt.Println("Warning: Object ID Exists")
-			return "", UseUpdateError
-		}
-
-		if api.Slug == def.Slug {
-			fmt.Println("Warning: Slug Exists")
-			return "", UseUpdateError
-		}
-
-		if api.Proxy.ListenPath == def.Proxy.ListenPath {
-			if api.Domain == def.Domain {
-				fmt.Println("Warning: Listen Path Exists")
-				return "", UseUpdateError
-			}
-		}
-	}
-
-	if def.APIID != "" {
-		// Retain the API ID
-		retainedIDs = true
-	}
-
-	// Create
-	asDBDef := def
-	c.fixDBDef(asDBDef)
-
-	data, err := json.Marshal(asDBDef)
-	if err != nil {
-		return "", err
-	}
-
-	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
-		JSON: data,
-		Headers: map[string]string{
-			"Authorization": c.secret,
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	if createResp.StatusCode != 200 {
-		return "", fmt.Errorf("API Returned error: %v (code: %v)", createResp.String(), createResp.StatusCode)
-	}
-
-	var status APIResponse
-	if err := createResp.JSON(&status); err != nil {
-		return "", err
-	}
-
-	if status.Status != "OK" {
-		return "", fmt.Errorf("API request completed, but with error: %v", status.Message)
-	}
-
-	// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
-	if retainedIDs {
-		def.Id = apidef.ObjectIdHex(status.Meta)
-		if err := c.UpdateAPI(def); err != nil {
-			fmt.Printf("Problem trying to retain API ID: %v\n", err)
-		}
-	}
-
-	return status.Meta, nil
-
 }
 
 func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
@@ -202,129 +98,198 @@ func (c *Client) FetchAPI(apiID string) (objects.DBApiDefinition, error) {
 	return api, nil
 }
 
-func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
+func getAPIsIdentifiers(apiDefs *[]objects.DBApiDefinition) (map[string]*objects.DBApiDefinition, map[string]*objects.DBApiDefinition, map[string]*objects.DBApiDefinition, map[string]*objects.DBApiDefinition) {
+	apiids := make(map[string]*objects.DBApiDefinition)
+	ids := make(map[string]*objects.DBApiDefinition)
+	slugs := make(map[string]*objects.DBApiDefinition)
+	paths := make(map[string]*objects.DBApiDefinition)
 
-	fullPath := urljoin.Join(c.url, endpointAPIs)
-
-	ro := &grequests.RequestOptions{
-		Params: map[string]string{"p": "-2"},
-		Headers: map[string]string{
-			"Authorization": c.secret,
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
+	for _, apiDef := range *apiDefs {
+		apiids[apiDef.APIID] = &apiDef
+		ids[apiDef.Id.Hex()] = &apiDef
+		slugs[apiDef.Slug] = &apiDef
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
 	}
 
-	resp, err := grequests.Get(fullPath, ro)
+	return apiids, ids, slugs, paths
+}
+
+func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
+	existingAPIs, err := c.FetchAPIs()
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("API Returned error: %v for %v", resp.String(), fullPath)
-	}
+	apiids, ids, slugs, paths := getAPIsIdentifiers(&existingAPIs)
 
-	apis := APISResponse{}
-	if err := resp.JSON(&apis); err != nil {
-		return err
-	}
-
-	found := false
-	for _, api := range apis.Apis {
-		// For an update, prefer API IDs
-		if api.APIID == def.APIID {
-			// Lets make sure we target the internal ID of the matching API ID
-			def.Id = api.Id
-			found = true
-			break
+	retainAPIIdList := make([]objects.DBApiDefinition, 0)
+	for i, apiDef := range *apiDefs {
+		fmt.Printf("Creating API %v: %v\n", i, apiDef.Name)
+		if nil == apiids[apiDef.APIID] {
+			fmt.Println("Warning: API ID Exists")
+			return UseUpdateError
+		} else if nil == ids[apiDef.Id.Hex()] {
+			fmt.Println("Warning: Object ID Exists")
+			return UseUpdateError
+		} else if nil == slugs[apiDef.Slug] {
+			fmt.Println("Warning: Slug Exists")
+			return UseUpdateError
+		} else if nil == paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
+			fmt.Println("Warning: Listen Path Exists")
+			return UseUpdateError
 		}
 
-		// Dashboard uses it's own IDs
-		if api.Id == def.Id {
-			if def.APIID == "" {
-				def.APIID = api.APIID
-			}
-			found = true
-			break
+		// Create
+		asDBDef := &apiDef
+		c.fixDBDef(asDBDef)
+
+		data, err := json.Marshal(asDBDef)
+		if err != nil {
+			return err
 		}
 
-		// We can also match on the slug
-		if api.Slug == def.Slug {
-			if def.APIID == "" {
-				def.APIID = api.APIID
-			}
-			if def.Id == "" {
-				def.Id = api.Id
-			}
+		fullPath := urljoin.Join(c.url, endpointAPIs)
+		createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
+			JSON: data,
+			Headers: map[string]string{
+				"Authorization": c.secret,
+			},
+			InsecureSkipVerify: c.InsecureSkipVerify,
+		})
 
-			found = true
-			break
+		if err != nil {
+			return err
 		}
 
-		// We can also match on the listen_path
-		if api.Proxy.ListenPath == def.Proxy.ListenPath {
-			if def.APIID == "" {
-				def.APIID = api.APIID
-			}
-			if def.Id == "" {
-				def.Id = api.Id
-			}
-
-			found = true
-			break
+		if createResp.StatusCode != 200 {
+			return fmt.Errorf("API Returned error: %v (code: %v)", createResp.String(), createResp.StatusCode)
 		}
+
+		var status APIResponse
+		if err := createResp.JSON(&status); err != nil {
+			return err
+		}
+
+		if status.Status != "OK" {
+			return fmt.Errorf("API request completed, but with error: %v", status.Message)
+		}
+
+		// Update apiDef with its ID before adding it to the existing APIs list.
+		apiDef.Id = apidef.ObjectIdHex(status.Meta)
+
+		// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
+		if apiDef.APIID != "" {
+			retainAPIIdList = append(retainAPIIdList, apiDef)
+		}
+
+		// Add created API to existing API list.
+		apiids[apiDef.APIID] = &apiDef
+		ids[apiDef.Id.Hex()] = &apiDef
+		slugs[apiDef.Slug] = &apiDef
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+
+		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
 	}
 
-	if !found {
-		return UseCreateError
-	}
-
-	// Update
-	asDBDef := def
-	c.fixDBDef(asDBDef)
-
-	endpoint := endpointAPIs
-	var payload interface{}
-	payload = asDBDef
-	if def.IsOAS {
-		endpoint = endpointOASAPIs
-		payload = asDBDef.OAS
-	}
-
-	data, err := json.Marshal(payload)
-	if err != nil {
+	if err := c.UpdateAPIs(&retainAPIIdList); err != nil {
 		return err
-	}
-
-	updatePath := urljoin.Join(c.url, endpoint, def.Id.Hex())
-	updateResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
-		JSON: data,
-		Headers: map[string]string{
-			"Authorization": c.secret,
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	if updateResp.StatusCode != 200 {
-		return fmt.Errorf("API Updating Returned error: %v", updateResp.String())
-	}
-
-	var status APIResponse
-	if err := updateResp.JSON(&status); err != nil {
-		return err
-	}
-
-	if status.Status != "OK" {
-		return fmt.Errorf("API request completed, but with error: %v", status.Message)
 	}
 
 	return nil
 }
 
-func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
+func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
+	existingAPIs, err := c.FetchAPIs()
+	if err != nil {
+		return err
+	}
+
+	apiids, ids, slugs, paths := getAPIsIdentifiers(&existingAPIs)
+
+	for i, apiDef := range *apiDefs {
+		fmt.Printf("Updating API %v: %v\n", i, apiDef.Name)
+		if nil != apiids[apiDef.APIID] {
+			apiDef.APIID = apiids[apiDef.APIID].APIID
+		} else if nil == ids[apiDef.Id.Hex()] {
+			if apiDef.APIID == "" {
+				apiDef.APIID = ids[apiDef.Id.Hex()].APIID
+			}
+		} else if nil == slugs[apiDef.Slug] {
+			api := slugs[apiDef.Slug]
+			if apiDef.APIID == "" {
+				apiDef.APIID = api.APIID
+			}
+			if apiDef.Id == "" {
+				apiDef.Id = api.Id
+			}
+		} else if nil == paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
+			api := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]
+			if apiDef.APIID == "" {
+				apiDef.APIID = api.APIID
+			}
+			if apiDef.Id == "" {
+				apiDef.Id = api.Id
+			}
+		} else {
+			return UseCreateError
+		}
+
+		// Update
+		asDBDef := &apiDef
+		c.fixDBDef(asDBDef)
+
+		endpoint := endpointAPIs
+		var payload interface{}
+		payload = asDBDef
+		if apiDef.IsOAS {
+			endpoint = endpointOASAPIs
+			payload = asDBDef.OAS
+		}
+
+		data, err := json.Marshal(payload)
+		if err != nil {
+			return err
+		}
+
+		updatePath := urljoin.Join(c.url, endpoint, apiDef.Id.Hex())
+		updateResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
+			JSON: data,
+			Headers: map[string]string{
+				"Authorization": c.secret,
+			},
+			InsecureSkipVerify: c.InsecureSkipVerify,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if updateResp.StatusCode != 200 {
+			return fmt.Errorf("API Updating Returned error: %v", updateResp.String())
+		}
+
+		var status APIResponse
+		if err := updateResp.JSON(&status); err != nil {
+			return err
+		}
+
+		if status.Status != "OK" {
+			return fmt.Errorf("API request completed, but with error: %v", status.Message)
+		}
+
+		// Add updated API to existing API list.
+		apiids[apiDef.APIID] = &apiDef
+		ids[apiDef.Id.Hex()] = &apiDef
+		slugs[apiDef.Slug] = &apiDef
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+
+		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
+	}
+
+	return nil
+}
+
+func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	deleteAPIs := []string{}
 	updateAPIs := []objects.DBApiDefinition{}
 	createAPIs := []objects.DBApiDefinition{}
@@ -430,22 +395,18 @@ func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
 	}
 
 	// Do the updates
-	for _, api := range updateAPIs {
-		fmt.Printf("SYNC Updating: %v\n", api.Id.Hex())
-		if err := c.UpdateAPI(&api); err != nil {
-			return err
-		}
+	// TODO
+	//fmt.Printf("SYNC Updating: %v\n", api.Id.Hex())
+	if err := c.UpdateAPIs(&updateAPIs); err != nil {
+		return err
 	}
 
 	// Do the creates
-	for _, api := range createAPIs {
-		fmt.Printf("SYNC Creating: %v\n", api.Name)
-		var err error
-		var id string
-		if id, err = c.CreateAPI(&api); err != nil {
-			return err
-		}
-		fmt.Printf("--> ID: %v\n", id)
+	// TODO
+	//fmt.Printf("SYNC Creating: %v\n", api.Name)
+	//fmt.Printf("--> ID: %v\n", id)
+	if err := c.CreateAPIs(&createAPIs); err != nil {
+		return err
 	}
 
 	return nil

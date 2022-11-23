@@ -203,7 +203,7 @@ func processSync(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("Processing APIs...")
-	if err := publisher.Sync(defs); err != nil {
+	if err := publisher.SyncAPIs(defs); err != nil {
 		return err
 	}
 
@@ -228,56 +228,32 @@ func processPublish(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("Using publisher: %v\n", publisher.Name())
 
-	for i, d := range defs {
-		if cmd.Use == "publish" {
-			fmt.Printf("Creating API %v: %v\n", i, d.Name)
-			id, err := publisher.Create(&d)
-			if err != nil {
-				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
-			} else {
-				fmt.Printf("--> Status: OK, ID:%v\n", id)
-			}
-		}
+	if "publish" == cmd.Use {
+		err = publisher.CreateAPIs(&defs)
+	} else if "update" == cmd.Use {
+		err = publisher.UpdateAPIs(&defs)
+	}
 
-		if cmd.Use == "update" {
-			fmt.Printf("Updating API %v: %v\n", i, d.Name)
-			err := publisher.Update(&d)
-			if err != nil {
-				fmt.Printf("--> Status: FAIL, Error:%v\n", err)
-			} else {
-				fmt.Printf("--> Status: OK, ID:%v\n", d.APIID)
-			}
-		}
+	if err != nil {
+		fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+		fmt.Println("Failed to publish APIs")
+		return err
 	}
 
 	if !isGateway {
-		for i, d := range pols {
-			if cmd.Use == "publish" {
-				fmt.Printf("Creating Policy %v: %v\n", i, d.Name)
-				id, err := publisher.CreatePolicy(&d)
-				if err != nil {
-					fmt.Printf("--> Status: FAIL, Error:%v\n", err)
-				} else {
-					fmt.Printf("--> Status: OK, ID:%v\n", id)
-				}
-			}
-
-			if cmd.Use == "update" {
-				fmt.Printf("Updating Policy %v: %v\n", i, d.Name)
-				err := publisher.UpdatePolicy(&d)
-				if err != nil {
-					fmt.Printf("--> Status: FAIL, Error:%v\n", err)
-				} else {
-					fmt.Printf("--> Status: OK, ID:%v\n", d.Name)
-				}
-			}
+		if "publish" == cmd.Use {
+			err = publisher.CreatePolicies(&pols)
+		} else if "update" == cmd.Use {
+			err = publisher.UpdatePolicies(&pols)
 		}
+	} else {
+		err = publisher.Reload()
 	}
 
-	if isGateway {
-		if err := publisher.Reload(); err != nil {
-			return err
-		}
+	if err != nil {
+		fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+		fmt.Println("Failed to publish Policies")
+		return err
 	}
 
 	fmt.Println("Done")

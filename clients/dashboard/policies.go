@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/kataras/go-errors"
@@ -43,51 +44,75 @@ func (c *Client) FetchPolicies() ([]objects.Policy, error) {
 	return policies.Data, nil
 }
 
-func (c *Client) CreatePolicy(pol *objects.Policy) (string, error) {
+func getPoliciesIdentifiers(pols *[]objects.Policy) (map[string]*objects.Policy, map[string]*objects.Policy) {
+	mids := make(map[string]*objects.Policy)
+	ids := make(map[string]*objects.Policy)
+
+	for _, pol := range *pols {
+		mids[pol.MID.Hex()] = &pol
+		ids[pol.ID] = &pol
+	}
+
+	return mids, ids
+}
+
+func (c *Client) CreatePolicies(pols *[]objects.Policy) error {
 	existingPols, err := c.FetchPolicies()
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	for _, ePol := range existingPols {
-		if ePol.MID.Hex() == pol.MID.Hex() {
-			return "", UsePolUpdateError
+	mids, ids := getPoliciesIdentifiers(&existingPols)
+
+	for i, pol := range *pols {
+		fmt.Printf("Creating Policy %v: %v\n", i, pol.Name)
+		if nil == mids[pol.MID.Hex()] {
+			fmt.Println("Warning: Policy MID Exists")
+			return UseUpdateError
+		} else if nil == ids[pol.ID] {
+			fmt.Println("Warning: Policy ID Exists")
+			return UseUpdateError
 		}
 
-		if ePol.ID == pol.ID {
-			return "", UsePolUpdateError
+		fullPath := urljoin.Join(c.url, endpointPolicies)
+
+		ro := &grequests.RequestOptions{
+			JSON: pol,
+			Headers: map[string]string{
+				"Authorization": c.secret,
+			},
+			InsecureSkipVerify: c.InsecureSkipVerify,
 		}
+
+		resp, err := grequests.Post(fullPath, ro)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("API Returned error: %v", resp.String())
+		}
+
+		dbResp := APIResponse{}
+		if err := resp.JSON(&dbResp); err != nil {
+			return err
+		}
+
+		if dbResp.Status != "OK" {
+			return fmt.Errorf("API request completed, but with error: %v", dbResp.Message)
+		}
+
+		// Update pol with its ID before adding it to the existing policies list.
+		pol.MID = bson.ObjectId(dbResp.Meta)
+
+		// Add created Policy to existing policies
+		mids[pol.MID.Hex()] = &pol
+		ids[pol.ID] = &pol
+
+		fmt.Printf("--> Status: OK, ID:%v\n", dbResp.Meta)
 	}
 
-	fullPath := urljoin.Join(c.url, endpointPolicies)
-
-	ro := &grequests.RequestOptions{
-		JSON: pol,
-		Headers: map[string]string{
-			"Authorization": c.secret,
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	}
-
-	resp, err := grequests.Post(fullPath, ro)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("API Returned error: %v", resp.String())
-	}
-
-	dbResp := APIResponse{}
-	if err := resp.JSON(&dbResp); err != nil {
-		return "", err
-	}
-
-	if dbResp.Status != "OK" {
-		return "", fmt.Errorf("API request completed, but with error: %v", dbResp.Message)
-	}
-
-	return dbResp.Meta, nil
+	return nil
 }
 
 func (c *Client) DeletePolicy(id string) error {
@@ -139,61 +164,62 @@ func (c *Client) FetchPolicy(id string) (*objects.Policy, error) {
 	return &pol, nil
 }
 
-func (c *Client) UpdatePolicy(pol *objects.Policy) error {
+func (c *Client) UpdatePolicies(pols *[]objects.Policy) error {
 	existingPols, err := c.FetchPolicies()
 	if err != nil {
 		return err
 	}
 
-	if pol.MID.Hex() == "" && pol.ID == "" {
-		return errors.New("--> Can't update policy without an ID or explicit (legacy) ID")
-	}
+	mids, ids := getPoliciesIdentifiers(&existingPols)
 
-	found := false
-	for _, ePol := range existingPols {
-		if ePol.ID == pol.ID {
+	for i, pol := range *pols {
+		fmt.Printf("Updating Policy %v: %v\n", i, pol.Name)
+		if pol.MID.Hex() == "" && pol.ID == "" {
+			return errors.New("--> Can't update policy without an ID or explicit (legacy) ID")
+		}
+
+		if nil != mids[pol.MID.Hex()] {
+		} else if nil != ids[pol.ID] {
 			fmt.Println("--> Found policy using explicit ID, substituting remote ID for update")
-			pol.MID = ePol.MID
-			found = true
-			break
+
+			pol.MID = ids[pol.ID].MID
+		} else {
+			return UseCreateError
 		}
 
-		if ePol.MID.Hex() == pol.MID.Hex() {
-			found = true
-			break
+		fullPath := urljoin.Join(c.url, endpointPolicies, pol.MID.Hex())
+
+		ro := &grequests.RequestOptions{
+			JSON: pol,
+			Headers: map[string]string{
+				"Authorization": c.secret,
+			},
+			InsecureSkipVerify: c.InsecureSkipVerify,
 		}
-	}
 
-	if !found {
-		return UseCreateError
-	}
+		resp, err := grequests.Put(fullPath, ro)
+		if err != nil {
+			return err
+		}
 
-	fullPath := urljoin.Join(c.url, endpointPolicies, pol.MID.Hex())
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("API Returned error: %v", resp.String())
+		}
 
-	ro := &grequests.RequestOptions{
-		JSON: pol,
-		Headers: map[string]string{
-			"Authorization": c.secret,
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	}
+		dbResp := APIResponse{}
+		if err := resp.JSON(&dbResp); err != nil {
+			return err
+		}
 
-	resp, err := grequests.Put(fullPath, ro)
-	if err != nil {
-		return err
-	}
+		if dbResp.Status != "OK" {
+			return fmt.Errorf("API request completed, but with error: %v", dbResp.Message)
+		}
 
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("API Returned error: %v", resp.String())
-	}
+		// Add created Policy to existing policies
+		mids[pol.MID.Hex()] = &pol
+		ids[pol.ID] = &pol
 
-	dbResp := APIResponse{}
-	if err := resp.JSON(&dbResp); err != nil {
-		return err
-	}
-
-	if dbResp.Status != "OK" {
-		return fmt.Errorf("API request completed, but with error: %v", dbResp.Message)
+		fmt.Printf("--> Status: OK, ID:%v\n", dbResp.Meta)
 	}
 
 	return nil
@@ -276,26 +302,18 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 	}
 
 	// Do the updates
-	for _, pol := range updatePols {
-		fmt.Printf("SYNC Updating Policy: %v\n", pol.Name)
-		if err := c.UpdatePolicy(&pol); err != nil {
-			return err
-		}
+	// TODO
+	//fmt.Printf("SYNC Updating Policy: %v\n", pol.Name)
+	if err := c.UpdatePolicies(&pols); err != nil {
+		return err
 	}
 
 	// Do the creates
-	for _, pol := range createPols {
-		fmt.Printf("SYNC Creating Policy: %v\n", pol.Name)
-		var err error
-		var id string
-		if id, err = c.CreatePolicy(&pol); err != nil {
-			return err
-		}
-		intID := "new"
-		if pol.ID != "" {
-			intID = pol.ID
-		}
-		fmt.Printf("--> ID: %v (%v)\n", id, intID)
+	// TODO
+	//fmt.Printf("SYNC Creating Policy: %v\n", pol.Name)
+	//fmt.Printf("--> ID: %v (%v)\n", id, intID)
+	if err = c.CreatePolicies(&pols); err != nil {
+		return err
 	}
 
 	return nil
