@@ -2,10 +2,10 @@ package dashboard
 
 import (
 	"fmt"
-	"github.com/kataras/go-errors"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/kataras/go-errors"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"

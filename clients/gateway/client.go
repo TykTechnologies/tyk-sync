@@ -1,9 +1,10 @@
 package gateway
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+
+	"encoding/json"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/levigross/grequests"
