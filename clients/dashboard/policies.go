@@ -2,10 +2,10 @@ package dashboard
 
 import (
 	"fmt"
+	"github.com/kataras/go-errors"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/kataras/go-errors"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"
@@ -48,9 +48,9 @@ func getPoliciesIdentifiers(pols *[]objects.Policy) (map[string]*objects.Policy,
 	mids := make(map[string]*objects.Policy)
 	ids := make(map[string]*objects.Policy)
 
-	for _, pol := range *pols {
-		mids[pol.MID.Hex()] = &pol
-		ids[pol.ID] = &pol
+	for i, pol := range *pols {
+		mids[pol.MID.Hex()] = &(*pols)[i]
+		ids[pol.ID] = &(*pols)[i]
 	}
 
 	return mids, ids
@@ -66,10 +66,10 @@ func (c *Client) CreatePolicies(pols *[]objects.Policy) error {
 
 	for i, pol := range *pols {
 		fmt.Printf("Creating Policy %v: %v\n", i, pol.Name)
-		if nil == mids[pol.MID.Hex()] {
+		if nil != mids[pol.MID.Hex()] {
 			fmt.Println("Warning: Policy MID Exists")
 			return UseUpdateError
-		} else if nil == ids[pol.ID] {
+		} else if nil != ids[pol.ID] {
 			fmt.Println("Warning: Policy ID Exists")
 			return UseUpdateError
 		}
@@ -106,8 +106,8 @@ func (c *Client) CreatePolicies(pols *[]objects.Policy) error {
 		pol.MID = bson.ObjectId(dbResp.Meta)
 
 		// Add created Policy to existing policies
-		mids[pol.MID.Hex()] = &pol
-		ids[pol.ID] = &pol
+		mids[pol.MID.Hex()] = &(*pols)[i]
+		ids[pol.ID] = &(*pols)[i]
 
 		fmt.Printf("--> Status: OK, ID:%v\n", dbResp.Meta)
 	}
@@ -178,12 +178,11 @@ func (c *Client) UpdatePolicies(pols *[]objects.Policy) error {
 			return errors.New("--> Can't update policy without an ID or explicit (legacy) ID")
 		}
 
-		if nil != mids[pol.MID.Hex()] {
-		} else if nil != ids[pol.ID] {
+		if nil != ids[pol.ID] {
 			fmt.Println("--> Found policy using explicit ID, substituting remote ID for update")
 
 			pol.MID = ids[pol.ID].MID
-		} else {
+		} else if nil == mids[pol.MID.Hex()] {
 			return UseCreateError
 		}
 
@@ -215,9 +214,9 @@ func (c *Client) UpdatePolicies(pols *[]objects.Policy) error {
 			return fmt.Errorf("API request completed, but with error: %v", dbResp.Message)
 		}
 
-		// Add created Policy to existing policies
-		mids[pol.MID.Hex()] = &pol
-		ids[pol.ID] = &pol
+		// Add updated Policy to existing policies
+		mids[pol.MID.Hex()] = &(*pols)[i]
+		ids[pol.ID] = &(*pols)[i]
 
 		fmt.Printf("--> Status: OK, ID:%v\n", dbResp.Meta)
 	}
@@ -304,7 +303,7 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 	// Do the updates
 	// TODO
 	//fmt.Printf("SYNC Updating Policy: %v\n", pol.Name)
-	if err := c.UpdatePolicies(&pols); err != nil {
+	if err := c.UpdatePolicies(&updatePols); err != nil {
 		return err
 	}
 
@@ -312,7 +311,7 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 	// TODO
 	//fmt.Printf("SYNC Creating Policy: %v\n", pol.Name)
 	//fmt.Printf("--> ID: %v (%v)\n", id, intID)
-	if err = c.CreatePolicies(&pols); err != nil {
+	if err = c.CreatePolicies(&createPols); err != nil {
 		return err
 	}
 

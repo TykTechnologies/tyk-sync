@@ -104,11 +104,11 @@ func getAPIsIdentifiers(apiDefs *[]objects.DBApiDefinition) (map[string]*objects
 	slugs := make(map[string]*objects.DBApiDefinition)
 	paths := make(map[string]*objects.DBApiDefinition)
 
-	for _, apiDef := range *apiDefs {
-		apiids[apiDef.APIID] = &apiDef
-		ids[apiDef.Id.Hex()] = &apiDef
-		slugs[apiDef.Slug] = &apiDef
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+	for i, apiDef := range *apiDefs {
+		apiids[apiDef.APIID] = &(*apiDefs)[i]
+		ids[apiDef.Id.Hex()] = &(*apiDefs)[i]
+		slugs[apiDef.Slug] = &(*apiDefs)[i]
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &(*apiDefs)[i]
 	}
 
 	return apiids, ids, slugs, paths
@@ -125,16 +125,16 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 	retainAPIIdList := make([]objects.DBApiDefinition, 0)
 	for i, apiDef := range *apiDefs {
 		fmt.Printf("Creating API %v: %v\n", i, apiDef.Name)
-		if nil == apiids[apiDef.APIID] {
+		if nil != apiids[apiDef.APIID] {
 			fmt.Println("Warning: API ID Exists")
 			return UseUpdateError
-		} else if nil == ids[apiDef.Id.Hex()] {
+		} else if nil != ids[apiDef.Id.Hex()] {
 			fmt.Println("Warning: Object ID Exists")
 			return UseUpdateError
-		} else if nil == slugs[apiDef.Slug] {
+		} else if nil != slugs[apiDef.Slug] {
 			fmt.Println("Warning: Slug Exists")
 			return UseUpdateError
-		} else if nil == paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
+		} else if nil != paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
 			fmt.Println("Warning: Listen Path Exists")
 			return UseUpdateError
 		}
@@ -183,10 +183,10 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		}
 
 		// Add created API to existing API list.
-		apiids[apiDef.APIID] = &apiDef
-		ids[apiDef.Id.Hex()] = &apiDef
-		slugs[apiDef.Slug] = &apiDef
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+		apiids[apiDef.APIID] = &(*apiDefs)[i]
+		ids[apiDef.Id.Hex()] = &(*apiDefs)[i]
+		slugs[apiDef.Slug] = &(*apiDefs)[i]
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &(*apiDefs)[i]
 
 		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
 	}
@@ -209,12 +209,12 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 	for i, apiDef := range *apiDefs {
 		fmt.Printf("Updating API %v: %v\n", i, apiDef.Name)
 		if nil != apiids[apiDef.APIID] {
-			apiDef.APIID = apiids[apiDef.APIID].APIID
-		} else if nil == ids[apiDef.Id.Hex()] {
+			apiDef.Id = apiids[apiDef.APIID].Id
+		} else if nil != ids[apiDef.Id.Hex()] {
 			if apiDef.APIID == "" {
 				apiDef.APIID = ids[apiDef.Id.Hex()].APIID
 			}
-		} else if nil == slugs[apiDef.Slug] {
+		} else if nil != slugs[apiDef.Slug] {
 			api := slugs[apiDef.Slug]
 			if apiDef.APIID == "" {
 				apiDef.APIID = api.APIID
@@ -222,7 +222,7 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			if apiDef.Id == "" {
 				apiDef.Id = api.Id
 			}
-		} else if nil == paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
+		} else if nil != paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
 			api := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]
 			if apiDef.APIID == "" {
 				apiDef.APIID = api.APIID
@@ -278,10 +278,10 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		}
 
 		// Add updated API to existing API list.
-		apiids[apiDef.APIID] = &apiDef
-		ids[apiDef.Id.Hex()] = &apiDef
-		slugs[apiDef.Slug] = &apiDef
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+		apiids[apiDef.APIID] = &(*apiDefs)[i]
+		ids[apiDef.Id.Hex()] = &(*apiDefs)[i]
+		slugs[apiDef.Slug] = &(*apiDefs)[i]
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &(*apiDefs)[i]
 
 		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
 	}
