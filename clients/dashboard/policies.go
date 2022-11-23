@@ -301,18 +301,19 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 	}
 
 	// Do the updates
-	// TODO
-	//fmt.Printf("SYNC Updating Policy: %v\n", pol.Name)
 	if err := c.UpdatePolicies(&updatePols); err != nil {
 		return err
 	}
+	for _, pol := range updatePols {
+		fmt.Printf("SYNC Updated Policy: %v\n", pol.Name)
+	}
 
 	// Do the creates
-	// TODO
-	//fmt.Printf("SYNC Creating Policy: %v\n", pol.Name)
-	//fmt.Printf("--> ID: %v (%v)\n", id, intID)
 	if err = c.CreatePolicies(&createPols); err != nil {
 		return err
+	}
+	for _, pol := range createPols {
+		fmt.Printf("SYNC Created Policy: %v\n", pol.Name)
 	}
 
 	return nil

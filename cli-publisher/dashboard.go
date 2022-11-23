@@ -17,8 +17,8 @@ func (p *DashboardPublisher) enforceOrgID(apiDefs *[]objects.DBApiDefinition) {
 	if p.OrgOverride != "" {
 		fmt.Println("org override detected, setting.")
 
-		for _, apiDef := range *apiDefs {
-			apiDef.OrgID = p.OrgOverride
+		for i := range *apiDefs {
+			(*apiDefs)[i].OrgID = p.OrgOverride
 		}
 	}
 }
@@ -27,8 +27,8 @@ func (p *DashboardPublisher) enforceOrgIDForPolicies(pols *[]objects.Policy) {
 	if p.OrgOverride != "" {
 		fmt.Println("org override detected, setting.")
 
-		for _, pol := range *pols {
-			pol.OrgID = p.OrgOverride
+		for i := range *pols {
+			(*pols)[i].OrgID = p.OrgOverride
 		}
 	}
 }

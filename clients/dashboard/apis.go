@@ -296,28 +296,8 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	updateAPIs := []objects.DBApiDefinition{}
 	createAPIs := []objects.DBApiDefinition{}
 
-	// Fetch the running API list
-	fullPath := urljoin.Join(c.url, endpointAPIs)
-
-	ro := &grequests.RequestOptions{
-		Params: map[string]string{"p": "-2"},
-		Headers: map[string]string{
-			"Authorization": c.secret,
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	}
-
-	resp, err := grequests.Get(fullPath, ro)
+	existingAPIs, err := c.FetchAPIs()
 	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("API Returned error: %v", resp.String())
-	}
-
-	apis := APISResponse{}
-	if err := resp.JSON(&apis); err != nil {
 		return err
 	}
 
@@ -325,7 +305,7 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	GitIDMap := map[string]int{}
 
 	// Build the dash ID map
-	for i, api := range apis.Apis {
+	for i, api := range existingAPIs {
 		// Lets get a full list of existing IDs
 		if c.isCloud {
 			DashIDMap[api.Slug] = i
@@ -361,8 +341,8 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 		if ok {
 			// Make sure we are targeting the correct DB ID
 			api := apiDefs[index]
-			api.Id = apis.Apis[dashIndex].Id
-			api.APIID = apis.Apis[dashIndex].APIID
+			api.Id = existingAPIs[dashIndex].Id
+			api.APIID = existingAPIs[dashIndex].APIID
 			updateAPIs = append(updateAPIs, api)
 		}
 	}
@@ -372,7 +352,7 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 		_, ok := GitIDMap[key]
 		if !ok {
 			// Make sure we always target the DB ID
-			deleteAPIs = append(deleteAPIs, apis.Apis[dashIndex].Id.Hex())
+			deleteAPIs = append(deleteAPIs, existingAPIs[dashIndex].Id.Hex())
 		}
 	}
 
@@ -397,18 +377,19 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	}
 
 	// Do the updates
-	// TODO
-	//fmt.Printf("SYNC Updating: %v\n", api.Id.Hex())
 	if err := c.UpdateAPIs(&updateAPIs); err != nil {
 		return err
 	}
+	for _, apiDef := range updateAPIs {
+		fmt.Printf("SYNC Updated: %v\n", apiDef.Id.Hex())
+	}
 
 	// Do the creates
-	// TODO
-	//fmt.Printf("SYNC Creating: %v\n", api.Name)
-	//fmt.Printf("--> ID: %v\n", id)
 	if err := c.CreateAPIs(&createAPIs); err != nil {
 		return err
+	}
+	for _, apiDef := range createAPIs {
+		fmt.Printf("SYNC Created: %v\n", apiDef.Name)
 	}
 
 	return nil

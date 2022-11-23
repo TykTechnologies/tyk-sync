@@ -322,19 +322,20 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	}
 
 	// Do the updates
-	// TODO
-	//fmt.Printf("SYNC Updating: %v\n", api.APIID)
 	if err := c.UpdateAPIs(&updateAPIs); err != nil {
 		fmt.Println("ERR:", err)
 		return err
 	}
+	for _, apiDef := range updateAPIs {
+		fmt.Printf("SYNC Updated: %v\n", apiDef.APIID)
+	}
 
 	// Do the creates
-	// TODO
-	//	fmt.Printf("SYNC Creating: %v\n", api.Name)
-	//	fmt.Printf("--> ID: %v\n", id)
 	if err := c.CreateAPIs(&createAPIs); err != nil {
 		return err
+	}
+	for _, apiDef := range updateAPIs {
+		fmt.Printf("SYNC Created: %v\n", apiDef.Name)
 	}
 
 	return nil
