@@ -1,7 +1,5 @@
 # Tyk-Sync
 
-![Unstable packages](https://github.com/TykTechnologies/tyk-sync/workflows/Unstable%20packages/badge.svg)
-
 ## What is it?
 
 Tyk-Sync is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
