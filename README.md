@@ -34,11 +34,7 @@ dependent tokens continue to have access to your services.
 
 ### Prerequisites:
 
-<<<<<<< HEAD
-- Tyk-Sync was built using Go 1.10. The minimum Go version required to install is 1.7.
-=======
 - Tyk Sync was built using Go 1.16. The minimum Go version required to install is 1.16.
->>>>>>> 0dd535f (updating go version and apidef to 4.3 gateway (#91))
 - In order for policy ID matching to work correctly, your Dashboard must have `allow_explicit_policy_id: true` and `enable_duplicate_slugs: true`.
 - In order for policy ID matching to work correctly, your Gateway must have `policies.allow_explicit_policy_id: true`.
 - It is assumed you have a Tyk CE or Tyk Pro installation.
