@@ -105,7 +105,7 @@ func (c *Client) CreatePolicies(pols *[]objects.Policy) error {
 		}
 
 		// Update pol with its ID before adding it to the existing policies list.
-		pol.MID = bson.ObjectId(dbResp.Meta)
+		pol.MID = bson.ObjectIdHex(dbResp.Message)
 
 		// Add created Policy to existing policies
 		mids[pol.MID.Hex()] = &pol
