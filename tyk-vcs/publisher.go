@@ -6,11 +6,11 @@ import (
 
 type Publisher interface {
 	Name() string
-	Create(apiDef *objects.DBApiDefinition) (string, error)
-	Update(apiDef *objects.DBApiDefinition) error
-	Sync(apiDefs []objects.DBApiDefinition) error
-	CreatePolicy(*objects.Policy) (string, error)
-	UpdatePolicy(*objects.Policy) error
-	SyncPolicies([]objects.Policy) error
+	CreateAPIs(apiDefs *[]objects.DBApiDefinition) error
+	UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error
+	SyncAPIs(apiDefs []objects.DBApiDefinition) error
+	CreatePolicies(pols *[]objects.Policy) error
+	UpdatePolicies(pols *[]objects.Policy) error
+	SyncPolicies(pols []objects.Policy) error
 	Reload() error
 }

@@ -87,77 +87,87 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 	return retList, nil
 }
 
-func (c *Client) CreateAPI(def *objects.DBApiDefinition) (string, error) {
-	fullPath := urljoin.Join(c.url, endpointAPIs)
+func getAPIsIdentifiers(apiDefs *[]objects.DBApiDefinition) (map[string]*objects.DBApiDefinition, map[string]*objects.DBApiDefinition, map[string]*objects.DBApiDefinition) {
+	apiids := make(map[string]*objects.DBApiDefinition)
+	slugs := make(map[string]*objects.DBApiDefinition)
+	paths := make(map[string]*objects.DBApiDefinition)
 
-	ro := &grequests.RequestOptions{
-		Headers: map[string]string{
-			"x-tyk-authorization": c.secret,
-			"content-type":        "application/json",
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
+	for i, apiDef := range *apiDefs {
+		apiids[apiDef.APIID] = &(*apiDefs)[i]
+		slugs[apiDef.Slug] = &(*apiDefs)[i]
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &(*apiDefs)[i]
 	}
 
-	resp, err := grequests.Get(fullPath, ro)
+	return apiids, slugs, paths
+}
+
+func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
+	existingAPIs, err := c.FetchAPIs()
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("API Returned error: %v", resp.String())
-	}
+	apiids, slugs, paths := getAPIsIdentifiers(&existingAPIs)
 
-	apis := APISList{}
-	if err := resp.JSON(&apis); err != nil {
-		return "", err
-	}
-
-	for _, api := range apis {
-		if api.APIID == def.APIID {
-			return "", UseUpdateError
+	for i := range *apiDefs {
+		apiDef := (*apiDefs)[i]
+		fmt.Printf("Creating API %v: %v\n", i, apiDef.Name)
+		if thisAPI, ok := apiids[apiDef.APIID]; ok && thisAPI != nil {
+			fmt.Println("Warning: API ID Exists")
+			return UseUpdateError
+		} else if thisAPI, ok := slugs[apiDef.Slug]; ok && thisAPI != nil {
+			fmt.Println("Warning: Slug Exists")
+			return UseUpdateError
+		} else if thisAPI, ok := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]; ok && thisAPI != nil {
+			fmt.Println("Warning: Listen Path Exists")
+			return UseUpdateError
 		}
 
-		if api.Proxy.ListenPath == def.Proxy.ListenPath {
-			return "", UseUpdateError
+		data, err := json.Marshal(apiDef.APIDefinition)
+		if err != nil {
+			return err
 		}
+
+		// Create
+		fullPath := urljoin.Join(c.url, endpointAPIs)
+		createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
+			JSON: data,
+			Headers: map[string]string{
+				"x-tyk-authorization": c.secret,
+				"content-type":        "application/json",
+			},
+			InsecureSkipVerify: c.InsecureSkipVerify,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if createResp.StatusCode != 200 {
+			return fmt.Errorf("API Returned error: %v (code: %v)", createResp.String(), createResp.StatusCode)
+		}
+
+		var status APIMessage
+		if err := createResp.JSON(&status); err != nil {
+			return err
+		}
+
+		if status.Status != "ok" {
+			return fmt.Errorf("API request completed, but with error: %v", status.Message)
+		}
+
+		// initiate a reload
+		go c.Reload()
+
+		// Add updated API to existing API list.
+		apiids[apiDef.APIID] = &apiDef
+		slugs[apiDef.Slug] = &apiDef
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+
+		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
 	}
 
-	data, err := json.Marshal(def.APIDefinition)
-	if err != nil {
-		return "", err
-	}
-
-	// Create
-	createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
-		JSON: data,
-		Headers: map[string]string{
-			"x-tyk-authorization": c.secret,
-			"content-type":        "application/json",
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	if createResp.StatusCode != 200 {
-		return "", fmt.Errorf("API Returned error: %v (code: %v)", createResp.String(), createResp.StatusCode)
-	}
-
-	var status APIMessage
-	if err := createResp.JSON(&status); err != nil {
-		return "", err
-	}
-
-	if status.Status != "ok" {
-		return "", fmt.Errorf("API request completed, but with error: %v", status.Message)
-	}
-
-	// initiate a reload
-	go c.Reload()
-
-	return status.Key, nil
+	return nil
 }
 
 func (c *Client) Reload() error {
@@ -191,58 +201,63 @@ func (c *Client) Reload() error {
 	return nil
 }
 
-func (c *Client) UpdateAPI(def *objects.DBApiDefinition) error {
-
-	apis, err := c.FetchAPIs()
+func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
+	existingAPIs, err := c.FetchAPIs()
 	if err != nil {
 		return err
 	}
-	found := false
-	for _, api := range apis {
-		if api.APIID == def.APIID {
-			found = true
+
+	apiids, slugs, paths := getAPIsIdentifiers(&existingAPIs)
+
+	for i, apiDef := range *apiDefs {
+		fmt.Printf("Updating API %v: %v\n", i, apiDef.Name)
+		if nil == apiids[apiDef.APIID] {
+			return UseCreateError
 		}
+
+		// Update
+		if apiDef.APIID == "" {
+			return errors.New("API ID must be set")
+		}
+
+		data, err := json.Marshal(apiDef.APIDefinition)
+		if err != nil {
+			return err
+		}
+
+		updatePath := urljoin.Join(c.url, endpointAPIs, apiDef.APIID)
+		uResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
+			JSON: data,
+			Headers: map[string]string{
+				"x-tyk-authorization": c.secret,
+				"content-type":        "application/json",
+			},
+			InsecureSkipVerify: c.InsecureSkipVerify,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if uResp.StatusCode != 200 {
+			return fmt.Errorf("API Returned error: %v (code: %v)", uResp.String(), uResp.StatusCode)
+		}
+
+		// initiate a reload
+		go c.Reload()
+
+		// Add updated API to existing API list.
+		apiids[apiDef.APIID] = &(*apiDefs)[i]
+		slugs[apiDef.Slug] = &(*apiDefs)[i]
+		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &(*apiDefs)[i]
+
+		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
 	}
-
-	if !found {
-		return UseCreateError
-	}
-
-	// Update
-	if def.APIID == "" {
-		return errors.New("API ID must be set")
-	}
-
-	data, err := json.Marshal(def.APIDefinition)
-	if err != nil {
-		return err
-	}
-
-	updatePath := urljoin.Join(c.url, endpointAPIs, def.APIID)
-	uResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
-		JSON: data,
-		Headers: map[string]string{
-			"x-tyk-authorization": c.secret,
-			"content-type":        "application/json",
-		},
-		InsecureSkipVerify: c.InsecureSkipVerify,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	if uResp.StatusCode != 200 {
-		return fmt.Errorf("API Returned error: %v (code: %v)", uResp.String(), uResp.StatusCode)
-	}
-
-	// initiate a reload
-	go c.Reload()
 
 	return nil
 }
 
-func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
+func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	deleteAPIs := []string{}
 	updateAPIs := []objects.DBApiDefinition{}
 	createAPIs := []objects.DBApiDefinition{}
@@ -308,23 +323,20 @@ func (c *Client) Sync(apiDefs []objects.DBApiDefinition) error {
 	}
 
 	// Do the updates
-	for _, api := range updateAPIs {
-		fmt.Printf("SYNC Updating: %v\n", api.APIID)
-		if err := c.UpdateAPI(&api); err != nil {
-			fmt.Println("ERR:", err)
-			return err
-		}
+	if err := c.UpdateAPIs(&updateAPIs); err != nil {
+		fmt.Println("ERR:", err)
+		return err
+	}
+	for _, apiDef := range updateAPIs {
+		fmt.Printf("SYNC Updated: %v\n", apiDef.APIID)
 	}
 
 	// Do the creates
-	for _, api := range createAPIs {
-		fmt.Printf("SYNC Creating: %v\n", api.Name)
-		var err error
-		var id string
-		if id, err = c.CreateAPI(&api); err != nil {
-			return err
-		}
-		fmt.Printf("--> ID: %v\n", id)
+	if err := c.CreateAPIs(&createAPIs); err != nil {
+		return err
+	}
+	for _, apiDef := range updateAPIs {
+		fmt.Printf("SYNC Created: %v\n", apiDef.Name)
 	}
 
 	return nil

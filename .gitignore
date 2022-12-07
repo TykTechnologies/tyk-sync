@@ -5,3 +5,4 @@ tyk-sync
 dist/
 *.key
 .idea/
+vendor/
