@@ -49,9 +49,10 @@ func getPoliciesIdentifiers(pols *[]objects.Policy) (map[string]*objects.Policy,
 	mids := make(map[string]*objects.Policy)
 	ids := make(map[string]*objects.Policy)
 
-	for i, pol := range *pols {
-		mids[pol.MID.Hex()] = &(*pols)[i]
-		ids[pol.ID] = &(*pols)[i]
+	for i := range *pols {
+		pol := (*pols)[i]
+		mids[pol.MID.Hex()] = &pol
+		ids[pol.ID] = &pol
 	}
 
 	return mids, ids
@@ -65,7 +66,8 @@ func (c *Client) CreatePolicies(pols *[]objects.Policy) error {
 
 	mids, ids := getPoliciesIdentifiers(&existingPols)
 
-	for i, pol := range *pols {
+	for i := range *pols {
+		pol := (*pols)[i]
 		fmt.Printf("Creating Policy %v: %v\n", i, pol.Name)
 		if thisPol, ok := mids[pol.MID.Hex()]; ok && thisPol != nil {
 			fmt.Println("Warning: Policy MID Exists")
@@ -104,11 +106,11 @@ func (c *Client) CreatePolicies(pols *[]objects.Policy) error {
 		}
 
 		// Update pol with its ID before adding it to the existing policies list.
-		pol.MID = bson.ObjectId(dbResp.Meta)
+		pol.MID = bson.ObjectIdHex(dbResp.Message)
 
 		// Add created Policy to existing policies
-		mids[pol.MID.Hex()] = &(*pols)[i]
-		ids[pol.ID] = &(*pols)[i]
+		mids[pol.MID.Hex()] = &pol
+		ids[pol.ID] = &pol
 
 		fmt.Printf("--> Status: OK, ID:%v\n", dbResp.Meta)
 	}
@@ -173,7 +175,8 @@ func (c *Client) UpdatePolicies(pols *[]objects.Policy) error {
 
 	mids, ids := getPoliciesIdentifiers(&existingPols)
 
-	for i, pol := range *pols {
+	for i := range *pols {
+		pol := (*pols)[i]
 		fmt.Printf("Updating Policy %v: %v\n", i, pol.Name)
 		if pol.MID.Hex() == "" && pol.ID == "" {
 			return errors.New("--> Can't update policy without an ID or explicit (legacy) ID")
@@ -216,8 +219,8 @@ func (c *Client) UpdatePolicies(pols *[]objects.Policy) error {
 		}
 
 		// Add updated Policy to existing policies
-		mids[pol.MID.Hex()] = &(*pols)[i]
-		ids[pol.ID] = &(*pols)[i]
+		mids[pol.MID.Hex()] = &pol
+		ids[pol.ID] = &pol
 
 		fmt.Printf("--> Status: OK, ID:%v\n", dbResp.Meta)
 	}
