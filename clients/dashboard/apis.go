@@ -127,16 +127,16 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 	retainAPIIdList := make([]objects.DBApiDefinition, 0)
 	for i, apiDef := range *apiDefs {
 		fmt.Printf("Creating API %v: %v\n", i, apiDef.Name)
-		if nil != apiids[apiDef.APIID] {
+		if thisAPI, ok := apiids[apiDef.APIID]; ok && thisAPI != nil {
 			fmt.Println("Warning: API ID Exists")
 			return UseUpdateError
-		} else if nil != ids[apiDef.Id.Hex()] {
+		} else if thisAPI, ok := ids[apiDef.Id.Hex()]; ok && thisAPI != nil {
 			fmt.Println("Warning: Object ID Exists")
 			return UseUpdateError
-		} else if nil != slugs[apiDef.Slug] {
+		} else if thisAPI, ok := slugs[apiDef.Slug]; ok && thisAPI != nil {
 			fmt.Println("Warning: Slug Exists")
 			return UseUpdateError
-		} else if nil != paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
+		} else if thisAPI, ok := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]; ok && thisAPI != nil {
 			fmt.Println("Warning: Listen Path Exists")
 			return UseUpdateError
 		}
@@ -210,27 +210,25 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 
 	for i, apiDef := range *apiDefs {
 		fmt.Printf("Updating API %v: %v\n", i, apiDef.Name)
-		if nil != apiids[apiDef.APIID] {
-			apiDef.Id = apiids[apiDef.APIID].Id
-		} else if nil != ids[apiDef.Id.Hex()] {
+		if thisAPI, ok := apiids[apiDef.APIID]; ok && thisAPI != nil {
+			apiDef.Id = thisAPI.Id
+		} else if thisAPI, ok := ids[apiDef.Id.Hex()]; ok && thisAPI != nil {
 			if apiDef.APIID == "" {
-				apiDef.APIID = ids[apiDef.Id.Hex()].APIID
+				apiDef.APIID = thisAPI.APIID
 			}
-		} else if nil != slugs[apiDef.Slug] {
-			api := slugs[apiDef.Slug]
+		} else if thisAPI, ok := slugs[apiDef.Slug]; ok && thisAPI != nil {
 			if apiDef.APIID == "" {
-				apiDef.APIID = api.APIID
+				apiDef.APIID = thisAPI.APIID
 			}
 			if apiDef.Id == "" {
-				apiDef.Id = api.Id
+				apiDef.Id = thisAPI.Id
 			}
-		} else if nil != paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
-			api := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]
+		} else if thisAPI, ok := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]; ok && thisAPI != nil {
 			if apiDef.APIID == "" {
-				apiDef.APIID = api.APIID
+				apiDef.APIID = thisAPI.APIID
 			}
 			if apiDef.Id == "" {
-				apiDef.Id = api.Id
+				apiDef.Id = thisAPI.Id
 			}
 		} else {
 			return UseCreateError

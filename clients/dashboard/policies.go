@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
@@ -66,10 +67,10 @@ func (c *Client) CreatePolicies(pols *[]objects.Policy) error {
 
 	for i, pol := range *pols {
 		fmt.Printf("Creating Policy %v: %v\n", i, pol.Name)
-		if nil != mids[pol.MID.Hex()] {
+		if thisPol, ok := mids[pol.MID.Hex()]; ok && thisPol != nil {
 			fmt.Println("Warning: Policy MID Exists")
 			return UseUpdateError
-		} else if nil != ids[pol.ID] {
+		} else if thisPol, ok := ids[pol.ID]; ok && thisPol != nil {
 			fmt.Println("Warning: Policy ID Exists")
 			return UseUpdateError
 		}
@@ -178,11 +179,11 @@ func (c *Client) UpdatePolicies(pols *[]objects.Policy) error {
 			return errors.New("--> Can't update policy without an ID or explicit (legacy) ID")
 		}
 
-		if nil != ids[pol.ID] {
+		if thisPol, ok := ids[pol.ID]; ok && thisPol != nil {
 			fmt.Println("--> Found policy using explicit ID, substituting remote ID for update")
 
-			pol.MID = ids[pol.ID].MID
-		} else if nil == mids[pol.MID.Hex()] {
+			pol.MID = thisPol.MID
+		} else if thisPol, ok := mids[pol.MID.Hex()]; !ok || thisPol == nil {
 			return UseCreateError
 		}
 

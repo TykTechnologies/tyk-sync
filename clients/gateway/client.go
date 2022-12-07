@@ -111,13 +111,13 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 
 	for i, apiDef := range *apiDefs {
 		fmt.Printf("Creating API %v: %v\n", i, apiDef.Name)
-		if nil != apiids[apiDef.APIID] {
+		if thisAPI, ok := apiids[apiDef.APIID]; ok && thisAPI != nil {
 			fmt.Println("Warning: API ID Exists")
 			return UseUpdateError
-		} else if nil != slugs[apiDef.Slug] {
+		} else if thisAPI, ok := slugs[apiDef.Slug]; ok && thisAPI != nil {
 			fmt.Println("Warning: Slug Exists")
 			return UseUpdateError
-		} else if nil != paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] {
+		} else if thisAPI, ok := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]; ok && thisAPI != nil {
 			fmt.Println("Warning: Listen Path Exists")
 			return UseUpdateError
 		}
