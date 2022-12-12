@@ -387,7 +387,7 @@ jobs:
           --author 'Bender' \
           --author-icon 'https://hcoop.net/~alephnull/bender/bender-arms.jpg' \
           --author-link 'https://github.com/TykTechnologies/tyk-ci' \
-          --channel '#release' \
+          --channel '#service-release' \
           --color $colour \
           --fields '{"title": "Repo", "value": "${{ needs.goreleaser.outputs.pc }}", "short": false}' \
           --footer 'github-actions' \
