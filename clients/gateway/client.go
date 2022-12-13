@@ -232,6 +232,9 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 				"x-tyk-authorization": c.secret,
 				"content-type":        "application/json",
 			},
+			Params: map[string]string{
+				"accept_additional_properties": "true",
+			},
 			InsecureSkipVerify: c.InsecureSkipVerify,
 		})
 
