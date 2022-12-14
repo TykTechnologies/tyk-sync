@@ -263,6 +263,9 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			Headers: map[string]string{
 				"Authorization": c.secret,
 			},
+			Params: map[string]string{
+				"accept_additional_properties": "true",
+			},
 			InsecureSkipVerify: c.InsecureSkipVerify,
 		})
 
