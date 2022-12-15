@@ -25,5 +25,5 @@ type APIDefinition struct {
 	apidef.APIDefinition
 	Scopes                *apidef.Scopes                `json:"scopes,omitempty"`
 	AnalyticsPluginConfig *apidef.AnalyticsPluginConfig `json:"analytics_plugin,omitempty"`
-	ExternalOAuth         *apidef.ExternalOAuth         `json:"external_oauth"`
+	ExternalOAuth         *apidef.ExternalOAuth         `json:"external_oauth,omitempty"`
 }
