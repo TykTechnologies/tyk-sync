@@ -3,7 +3,7 @@ package objects
 import (
 	"time"
 
-	"github.com/jensneuse/graphql-go-tools/pkg/graphql"
+	"github.com/TykTechnologies/graphql-go-tools/pkg/graphql"
 	"gopkg.in/mgo.v2/bson"
 )
 

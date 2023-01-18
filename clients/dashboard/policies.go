@@ -1,15 +1,15 @@
 package dashboard
 
 import (
+	"errors"
 	"fmt"
 
-	"gopkg.in/mgo.v2/bson"
-
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/kataras/go-errors"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 	uuid "github.com/satori/go.uuid"
+	"gopkg.in/mgo.v2/bson"
+
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
 )
 
 type PoliciesData struct {
