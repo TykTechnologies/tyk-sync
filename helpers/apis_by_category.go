@@ -12,17 +12,17 @@ func GetApisByCategory(totalApis []objects.DBApiDefinition, wantedCategories []s
 
 	for _, wantedCategory := range wantedCategories {
 		var tempAPIs []objects.DBApiDefinition
-		fmt.Printf("--> Looking for APIs with category: %v", wantedCategory)
+		fmt.Printf("--> Looking for APIs with category: %v\n", wantedCategory)
 
 		for _, api := range totalApis {
-			// Categories are stored in the API name, so we need to check if the wanted category is in the API name
-			// with the following format: #category
+			// Categories are stored in the API name with the following format: #category
+			// We need to check if the wanted category is in the API name
 			if strings.Contains(api.APIDefinition.Name, "#"+wantedCategory) {
 				tempAPIs = append(tempAPIs, api)
 			}
 		}
 
-		fmt.Printf("--> Found %v apis with category: %v", len(tempAPIs), wantedCategory)
+		fmt.Printf("--> Found %v apis with category: %v\n", len(tempAPIs), wantedCategory)
 		if len(tempAPIs) == 0 {
 			return nil, fmt.Errorf("no APIs found with the provided category: %v", wantedCategory)
 		}

@@ -37,7 +37,7 @@ func GenerateApiFiles(cleanApis []objects.DBApiDefinition, cleanPolicies []objec
 					}
 				}
 				if !found {
-					fmt.Println("--> [WARNING] Api ", api.APIID, " has the Policy ", id, " as an OIDC issuer policy and that policy is not imported. It might cause some problems in the future.")
+					fmt.Println("--> [WARNING] Api ", api.APIID, " has the Policy ", id, " as an OIDC issuer policy and it isn't imported. It might cause some problems in the future.")
 				}
 			}
 		}
@@ -73,7 +73,7 @@ func GeneratePolicyFiles(cleanPolicies []objects.Policy, cleanApis []objects.DBA
 				}
 			}
 			if !found {
-				fmt.Println("--> [WARNING] policy ", pol.ID, " has access rights over API ID ", accesRights.APIID, " and that API it's not imported. It might cause some problems in the future.")
+				fmt.Println("--> [WARNING] policy ", pol.ID, " has access rights over API ID ", accesRights.APIID, " and that API is not imported. It might cause some problems in the future.")
 			}
 		}
 	}

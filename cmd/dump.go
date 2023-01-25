@@ -110,7 +110,7 @@ var dumpCmd = &cobra.Command{
 
 		// Let's filter Policies and APIs by categories.
 		if len(wantedCategories) > 0 {
-			fmt.Println("--> Filtering APIs and Policies by categories")
+			fmt.Println("--> Filtering APIs by categories")
 			tempFilteredApisByCategory, err := helpers.GetApisByCategory(totalApis, wantedCategories)
 			if err != nil {
 				fmt.Println("Error filtering APIs by categories:", err)
