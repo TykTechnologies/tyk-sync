@@ -11,6 +11,7 @@ import (
 type DummyPolicyParams struct {
 	PolicyID int
 	Tags     []string
+	ApiID    string
 }
 
 var (
@@ -18,7 +19,7 @@ var (
 	once      = false
 )
 
-func GenerateDummyPolicy(param DummyPolicyParams) objects.Policy {
+func GenerateObjectIds() {
 	// Generating random Object Ids
 	if !once {
 		for i := 1; i <= 5; i++ {
@@ -26,7 +27,10 @@ func GenerateDummyPolicy(param DummyPolicyParams) objects.Policy {
 		}
 		once = true
 	}
+}
 
+func GenerateDummyPolicy(param DummyPolicyParams) objects.Policy {
+	GenerateObjectIds()
 	dummyPolicy := objects.Policy{}
 
 	if param.PolicyID != 0 {
@@ -35,6 +39,14 @@ func GenerateDummyPolicy(param DummyPolicyParams) objects.Policy {
 
 	if len(param.Tags) > 0 {
 		dummyPolicy.Tags = param.Tags
+	}
+
+	if param.ApiID != "" {
+		dummyPolicy.AccessRights = map[string]objects.AccessDefinition{
+			param.ApiID: {
+				APIID: param.ApiID,
+			},
+		}
 	}
 
 	return dummyPolicy

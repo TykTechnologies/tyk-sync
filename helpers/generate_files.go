@@ -14,14 +14,14 @@ func GenerateApiFiles(cleanApis []objects.DBApiDefinition, cleanPolicies []objec
 	for i, api := range cleanApis {
 		j, jerr := json.MarshalIndent(api, "", "  ")
 		if jerr != nil {
-			return apiFiles, jerr
+			return nil, jerr
 		}
 
 		fname := fmt.Sprintf("api-%v.json", api.APIID)
 		p := path.Join(dir, fname)
 		err := os.WriteFile(p, j, 0644)
 		if err != nil {
-			return apiFiles, err
+			return nil, err
 		}
 		apiFiles[i] = fname
 
@@ -30,7 +30,6 @@ func GenerateApiFiles(cleanApis []objects.DBApiDefinition, cleanPolicies []objec
 			for _, id := range provider.ClientIDs {
 				found := false
 				for _, policy := range cleanPolicies {
-					fmt.Println("Checking policy ", policy.MID.Hex(), " against ", id)
 					if policy.MID.Hex() == id {
 						found = true
 						break

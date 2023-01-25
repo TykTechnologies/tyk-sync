@@ -6,8 +6,8 @@ func RemoveDuplicatesFromPolicies(policies []objects.Policy) []objects.Policy {
 	keys := make(map[string]bool)
 	list := []objects.Policy{}
 	for _, entry := range policies {
-		if _, value := keys[entry.ID]; !value {
-			keys[entry.ID] = true
+		if _, value := keys[entry.MID.Hex()]; !value {
+			keys[entry.MID.Hex()] = true
 			list = append(list, entry)
 		}
 	}

@@ -12,13 +12,22 @@ type DummyApiParams struct {
 	Category string
 	ApiID    string
 	Tags     []string
+	PolicyID string
 }
 
 func GenerateDummyApi(params DummyApiParams) objects.DBApiDefinition {
+	GenerateObjectIds()
 	dummyApi := objects.DBApiDefinition{
 		APIDefinition: &objects.APIDefinition{
 			APIDefinition: apidef.APIDefinition{
 				Name: "dummy-api",
+				OpenIDOptions: apidef.OpenIDOptions{
+					Providers: []apidef.OIDProviderConfig{
+						{
+							ClientIDs: make(map[string]string),
+						},
+					},
+				},
 			},
 		},
 	}
@@ -33,6 +42,14 @@ func GenerateDummyApi(params DummyApiParams) objects.DBApiDefinition {
 
 	if len(params.Tags) > 0 {
 		dummyApi.APIDefinition.Tags = params.Tags
+	}
+
+	if params.PolicyID != "" {
+		dummyApi.APIDefinition.OpenIDOptions.Providers = append(dummyApi.APIDefinition.OpenIDOptions.Providers, apidef.OIDProviderConfig{
+			ClientIDs: map[string]string{
+				params.PolicyID: params.PolicyID,
+			},
+		})
 	}
 
 	return dummyApi
