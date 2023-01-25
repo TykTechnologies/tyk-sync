@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"encoding/json"
 	"io/ioutil"
 	"os"
@@ -12,6 +10,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/TykTechnologies/tyk-sync/helpers"
 	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
 	"github.com/spf13/cobra"
 )
@@ -30,22 +29,15 @@ var dumpCmd = &cobra.Command{
 			fmt.Println("Dump requires a dashboard URL to be set")
 			return
 		}
-
-		flagVal, _ := cmd.Flags().GetString("secret")
-
-		sec := os.Getenv("TYKGIT_DB_SECRET")
-		if sec == "" && flagVal == "" {
-			fmt.Println("Please set TYKGIT_DB_SECRET, or set the --secret flag, to your dashboard user secret")
-			return
-		}
-
-		secret := ""
-		if sec != "" {
-			secret = sec
-		}
-
-		if flagVal != "" {
-			secret = flagVal
+		// Get secret from flags
+		secret, _ := cmd.Flags().GetString("secret")
+		if secret == "" {
+			// If not set, try env var
+			secret = os.Getenv("TYKGIT_DB_SECRET")
+			if secret == "" {
+				fmt.Println("Please set TYKGIT_DB_SECRET, or set the --secret flag, to your dashboard user secret")
+				return
+			}
 		}
 
 		fmt.Printf("Extracting APIs and Policies from %v\n", dbString)
@@ -55,171 +47,96 @@ var dumpCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 
+		wantedPoliciesByID, _ := cmd.Flags().GetStringSlice("policies")
+		wantedAPIsByID, _ := cmd.Flags().GetStringSlice("apis")
+		wantedTags, _ := cmd.Flags().GetStringSlice("tags")
+		wantedCategories, _ := cmd.Flags().GetStringSlice("categories")
+
 		fmt.Println("> Fetching policies")
-		wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
-		wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
+		totalPolicies, err := c.FetchPolicies()
+		if err != nil {
+			fmt.Println("Error fetching policies:", err)
+			return
+		}
+		fmt.Printf("--> Identified %v policies\n", len(totalPolicies))
+		fmt.Println("> Fetching APIs")
+		totalApis, err := c.FetchAPIs()
+		if err != nil {
+			fmt.Println("Error fetching apis:", err)
+			return
+		}
+		fmt.Printf("--> Identified %v APIs\n", len(totalApis))
 
-		policies := []objects.Policy{}
-		apis := []objects.DBApiDefinition{}
-		var errPoliciesFetch error
-		var errApisFetch error
-
-		//building the api def objs from wantedAPIs
-		for _, APIID := range wantedAPIs {
-			api := objects.DBApiDefinition{APIDefinition: &objects.APIDefinition{}}
-			api.APIID = APIID
-			apis = append(apis, api)
+		if len(totalPolicies) == 0 && len(totalApis) == 0 {
+			fmt.Println("No policies or APIs found")
+			return
 		}
 
-		//building the policies obj from wantedAPIs
-		for _, wantedPolicy := range wantedPolicies {
-			if !bson.IsObjectIdHex(wantedPolicy) {
-				fmt.Printf("Invalid selected policy ID: %s.\n", wantedPolicy)
-				return
-			}
-			pol := objects.Policy{
-				ID:  wantedPolicy,
-				MID: bson.ObjectIdHex(wantedPolicy),
-			}
-			policies = append(policies, pol)
-		}
-
-		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
-			fmt.Println("> Fetching policies ")
-
-			policies, errPoliciesFetch = c.FetchPolicies()
-			if errPoliciesFetch != nil {
-				fmt.Println(errPoliciesFetch)
-				return
-			}
-			fmt.Println("> Fetching APIs")
-
-			apis, errApisFetch = c.FetchAPIs()
+		// Let's first filter all the policies.
+		var filteredPolicies []objects.Policy
+		if len(wantedPoliciesByID) > 0 {
+			fmt.Println("--> Filtering policies by ID")
+			filteredPolicies, err = helpers.GetPoliciesByID(totalPolicies, wantedPoliciesByID)
 			if err != nil {
-				fmt.Println(errApisFetch)
+				fmt.Println("Error filtering Policies by ID:", err)
 				return
 			}
 		}
 
-		fmt.Printf("--> Identified %v policies\n", len(policies))
-		if len(wantedPolicies) > 0 {
-			fmt.Println("--> Fetching and cleaning policy objects")
-		} else {
-			fmt.Println("--> Cleaning policy objects")
-		}
-		// A bug exists which causes decoding of the access rights to break,
-		// so we should fetch individually
-		cleanPolicyObjects := make([]*objects.Policy, len(policies))
-		for i, p := range policies {
-			cp, err := c.FetchPolicy(p.MID.Hex())
+		// Let's filter all the APIs.
+		var filteredApis []objects.DBApiDefinition
+		if len(wantedAPIsByID) > 0 {
+			fmt.Println("--> Filtering APIs by ID")
+			filteredApis, err = helpers.GetApisByID(totalApis, wantedAPIsByID)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("Error filtering APIs by ID:", err)
+				return
+			}
+		}
+
+		// Let's filter APIs and Policies by tags.
+		if len(wantedTags) > 0 {
+			fmt.Println("--> Filtering APIs and Policies by tags")
+			tempFilteredPoliciesByTag, tempFilteredApisByTag, err := helpers.LookForTags(totalPolicies, totalApis, wantedTags)
+			if err != nil {
+				fmt.Println("Error filtering APIs and Policies by tags:", err)
 				return
 			}
 
-			// Make sure we retain IDs
-			if cp.ID == "" {
-				cp.ID = cp.MID.Hex()
-			}
+			filteredPolicies = append(filteredPolicies, tempFilteredPoliciesByTag...)
+			filteredApis = append(filteredApis, tempFilteredApisByTag...)
 
-			cleanPolicyObjects[i] = cp
-		}
-		fmt.Printf("--> Fetched %v Policies\n", len(cleanPolicyObjects))
-
-		if len(wantedAPIs) > 0 {
-			fmt.Printf("--> Identified %v APIs\n", len(apis))
-			fmt.Println("--> Fetching and cleaning APIs objects")
-
-			for i, api := range apis {
-				fullAPI, err := c.FetchAPI(api.APIID)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				apis[i] = fullAPI
-			}
 		}
 
-		fmt.Printf("--> Fetched %v APIs\n", len(apis))
+		// Let's filter Policies and APIs by categories.
+		if len(wantedCategories) > 0 {
+			fmt.Println("--> Filtering APIs and Policies by categories")
+			tempFilteredApisByCategory, err := helpers.GetApisByCategory(totalApis, wantedCategories)
+			if err != nil {
+				fmt.Println("Error filtering APIs by categories:", err)
+				return
+			}
 
+			filteredApis = append(filteredApis, tempFilteredApisByCategory...)
+		}
+
+		// Let's remove duplicates from the filtered policies.
+		cleanPolicies := helpers.RemoveDuplicatesFromPolicies(filteredPolicies)
+		cleanApis := helpers.RemoveDuplicatesFromApis(filteredApis)
+
+		// Generate JSON files for APIs - we also check if an imported API has a non-imported Policy
 		dir, _ := cmd.Flags().GetString("target")
-		apiFiles := make([]string, len(apis))
-		for i, api := range apis {
-
-			j, jerr := json.MarshalIndent(api, "", "  ")
-			if jerr != nil {
-				fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
-				return
-			}
-
-			fname := fmt.Sprintf("api-%v.json", api.APIID)
-			p := path.Join(dir, fname)
-			err := ioutil.WriteFile(p, j, 0644)
-			if err != nil {
-				fmt.Printf("Error writing file: %v\n", err)
-				return
-			}
-			apiFiles[i] = fname
+		apiFiles, err := helpers.GenerateApiFiles(cleanApis, cleanPolicies, dir)
+		if err != nil {
+			fmt.Println("Error generating API files:", err)
+			return
 		}
 
-		// If we have selected Policies specified we're going to check if we're importing all the necessary APIs
-		if len(wantedPolicies) > 0 {
-			for _, policy := range cleanPolicyObjects {
-				for _, accesRights := range policy.AccessRights {
-					found := false
-					for _, api := range apis {
-						if api.APIID == accesRights.APIID {
-							found = true
-						}
-					}
-					if !found {
-						fmt.Println("--> [WARNING] Policy ", policy.ID, " has access rights over API ID ", accesRights.APIID, " and that API it's not imported. It might cause some problems in the future.")
-					}
-				}
-			}
-		}
-		// If we have selected APIs specified we're going to check if we're importing all the necessary policies
-		if len(wantedAPIs) > 0 {
-			//checking selected APIs  -  Policies integrity
-			for _, api := range apis {
-				for _, provider := range api.OpenIDOptions.Providers {
-					for _, id := range provider.ClientIDs {
-						found := false
-						for _, policy := range cleanPolicyObjects {
-							if policy.ID == id {
-								found = true
-								break
-							}
-						}
-						if !found {
-							fmt.Println("--> [WARNING] Api ", api.APIID, " has the Policy ", id, " as an OIDC issuer policy and that policy is not imported. It might cause some problems in the future.")
-						}
-					}
-				}
-			}
-		}
-
-		policyFiles := make([]string, len(cleanPolicyObjects))
-		for i, pol := range cleanPolicyObjects {
-			if pol.ID == "" {
-				pol.ID = pol.MID.Hex()
-			}
-
-			j, jerr := json.MarshalIndent(pol, "", "  ")
-			if jerr != nil {
-				fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
-				return
-			}
-
-			fname := fmt.Sprintf("policy-%v.json", pol.ID)
-			p := path.Join(dir, fname)
-			err := ioutil.WriteFile(p, j, 0644)
-			if err != nil {
-				fmt.Printf("Error writing file: %v\n", err)
-				return
-			}
-
-			policyFiles[i] = fname
+		// Generate JSON files for Policies - we also check if an imported Policy has access over a non-imported API
+		policyFiles, err := helpers.GeneratePolicyFiles(cleanPolicies, cleanApis, dir)
+		if err != nil {
+			fmt.Println("Error generating Policy files:", err)
+			return
 		}
 
 		// Create a spec file
@@ -269,4 +186,6 @@ func init() {
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
 	dumpCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to dump")
 	dumpCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to dump")
+	dumpCmd.Flags().StringSlice("categories", []string{}, "Specific Apis categories to dump")
+	dumpCmd.Flags().StringSlice("tags", []string{}, "Specific Apis and Policies tags to dump")
 }

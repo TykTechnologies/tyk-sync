@@ -6,3 +6,6 @@ dist/
 *.key
 .idea/
 vendor/
+.tyk.json
+api-*
+policy-*
