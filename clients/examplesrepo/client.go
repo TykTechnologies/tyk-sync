@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	RepoRootUrl   = "https://raw.githubusercontent.com/TykTechnologies/tyk-examples/main/"
+	RepoRootUrl   = "https://raw.githubusercontent.com/TykTechnologies/tyk-examples/main"
 	RepoIndexFile = "repository.json"
 )
 
@@ -35,7 +35,6 @@ func NewExamplesClient(repoRootUrl string) (*ExamplesClient, error) {
 
 func (e *ExamplesClient) GetRepositoryIndex() (*RepositoryIndex, error) {
 	targetUrl := fmt.Sprintf("%s/%s", e.RepositoryRootUrl.String(), RepoIndexFile)
-	fmt.Println(targetUrl)
 	req, err := http.NewRequest(http.MethodGet, targetUrl, nil)
 	if err != nil {
 		return nil, err
