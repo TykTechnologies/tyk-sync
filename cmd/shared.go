@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"text/tabwriter"
+
+	"github.com/spf13/cobra"
 
 	"github.com/TykTechnologies/tyk-sync/cli-publisher"
+	"github.com/TykTechnologies/tyk-sync/clients/examplesrepo"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
-	"github.com/spf13/cobra"
 )
 
 var isGateway bool
@@ -258,4 +261,36 @@ func processPublish(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("Done")
 	return nil
+}
+
+func processExamplesList() error {
+	client, err := examplesrepo.NewExamplesClient(examplesrepo.RepoRootUrl)
+	if err != nil {
+		return err
+	}
+
+	index, err := client.GetRepositoryIndex()
+	if err != nil {
+		return err
+	}
+
+	if !examplesrepo.IndexHasExamples(index) {
+		fmt.Println("no examples found")
+		return nil
+	}
+
+	tabbedResultWriter := tabwriter.NewWriter(os.Stdout, 1, 1, 4, ' ', 0)
+	_, err = fmt.Fprintln(tabbedResultWriter, "LOCATION\tNAME\tDESCRIPTION")
+	if err != nil {
+		return err
+	}
+
+	for _, example := range examplesrepo.MergeExamples(index) {
+		_, err = fmt.Fprintf(tabbedResultWriter, "%s\t%s\t%s\n", example.Location, example.Name, example.Description)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tabbedResultWriter.Flush()
 }
