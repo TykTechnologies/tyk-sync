@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -294,3 +295,73 @@ func processExamplesList() error {
 
 	return tabbedResultWriter.Flush()
 }
+
+func processExampleDetails(cmd *cobra.Command) error {
+	location, err := cmd.Flags().GetString("location")
+	if err != nil {
+		return err
+	}
+
+	client, err := examplesrepo.NewExamplesClient(examplesrepo.RepoRootUrl)
+	if err != nil {
+		return err
+	}
+
+	examplesMap, err := client.GetAllExamplesAsLocationIndexedMap()
+	if err != nil {
+		return err
+	}
+
+	if len(examplesMap) == 0 {
+		fmt.Println("no examples found")
+		return nil
+	}
+
+	example, ok := examplesMap[location]
+	if !ok {
+		fmt.Printf("example with location '%s' could not be found", location)
+		return nil
+	}
+
+	fmt.Println(generateExampleDetailsString(example))
+	return nil
+}
+
+func generateExampleDetailsString(example examplesrepo.ExampleMetadata) string {
+	featuresString := strings.Builder{}
+	for i, feature := range example.Features {
+		isLastItem := i == len(example.Features)-1
+		var bulletPointFeature string
+		if isLastItem {
+			bulletPointFeature = fmt.Sprintf("- %s", feature)
+		} else {
+			bulletPointFeature = fmt.Sprintf("- %s\n", feature)
+		}
+
+		// string builder's Write always returns nil as err
+		_, _ = featuresString.Write([]byte(bulletPointFeature))
+	}
+	return fmt.Sprintf(
+		exampleDetailsTemplate,
+		example.Location,
+		example.Name,
+		example.Description,
+		featuresString.String(),
+		example.MinTykVersion,
+	)
+}
+
+var exampleDetailsTemplate = `LOCATION
+%s
+
+NAME
+%s
+
+DESCRIPTION
+%s
+
+FEATURES
+%s
+
+MIN TYK VERSION
+%s`

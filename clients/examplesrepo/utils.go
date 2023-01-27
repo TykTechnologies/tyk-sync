@@ -20,3 +20,17 @@ func MergeExamples(index *RepositoryIndex) []ExampleMetadata {
 
 	return examples
 }
+
+func ExamplesAsLocationIndexedMap(index *RepositoryIndex) map[string]ExampleMetadata {
+	examples := MergeExamples(index)
+	if len(examples) == 0 {
+		return nil
+	}
+
+	examplesMap := make(map[string]ExampleMetadata, len(examples))
+	for _, example := range examples {
+		examplesMap[example.Location] = example
+	}
+
+	return examplesMap
+}

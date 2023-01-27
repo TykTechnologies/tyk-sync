@@ -58,3 +58,34 @@ func TestMergeExamples(t *testing.T) {
 		assert.Equal(t, expectedExamples, examples)
 	})
 }
+
+func TestExamplesAsLocationIndexedMap(t *testing.T) {
+	t.Run("should return nil when no examples are available", func(t *testing.T) {
+		examplesMap := ExamplesAsLocationIndexedMap(nil)
+		assert.Nil(t, examplesMap)
+	})
+
+	t.Run("should successfully create an examples map", func(t *testing.T) {
+		udgExample1 := ExampleMetadata{
+			Location: "udg/example-1",
+		}
+
+		udgExample2 := ExampleMetadata{
+			Location: "udg/example-2",
+		}
+
+		index := RepositoryIndex{
+			Examples: ExamplesCategories{
+				UDG: []ExampleMetadata{
+					udgExample1,
+					udgExample2,
+				},
+			},
+		}
+
+		examplesMap := ExamplesAsLocationIndexedMap(&index)
+		assert.Len(t, examplesMap, 2)
+		assert.Equal(t, udgExample1, examplesMap[udgExample1.Location])
+		assert.Equal(t, udgExample2, examplesMap[udgExample2.Location])
+	})
+}
