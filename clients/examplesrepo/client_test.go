@@ -43,6 +43,22 @@ func TestExamplesClient_GetRepositoryIndex(t *testing.T) {
 	})
 }
 
+func TestExamplesClient_GetAllExamples(t *testing.T) {
+	successTestServer := createRepositoryTestServer(t, http.StatusOK)
+	t.Cleanup(func() {
+		successTestServer.Close()
+	})
+
+	t.Run("should successfully return all examples", func(t *testing.T) {
+		client, err := NewExamplesClient(successTestServer.URL)
+		require.NoError(t, err)
+
+		examples, err := client.GetAllExamples()
+		assert.Len(t, examples, len(repositoryIndexModel.Examples.UDG))
+		assert.Equal(t, repositoryIndexModel.Examples.UDG[0], examples[0])
+	})
+}
+
 func TestExamplesClient_GetAllExamplesAsLocationIndexedMap(t *testing.T) {
 	successTestServer := createRepositoryTestServer(t, http.StatusOK)
 	t.Cleanup(func() {

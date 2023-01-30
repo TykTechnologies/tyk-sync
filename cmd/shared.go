@@ -270,12 +270,12 @@ func processExamplesList() error {
 		return err
 	}
 
-	index, err := client.GetRepositoryIndex()
+	examples, err := client.GetAllExamples()
 	if err != nil {
 		return err
 	}
 
-	if !examplesrepo.IndexHasExamples(index) {
+	if len(examples) == 0 {
 		fmt.Println("no examples found")
 		return nil
 	}
@@ -286,7 +286,7 @@ func processExamplesList() error {
 		return err
 	}
 
-	for _, example := range examplesrepo.MergeExamples(index) {
+	for _, example := range examples {
 		_, err = fmt.Fprintf(tabbedResultWriter, "%s\t%s\t%s\n", example.Location, example.Name, example.Description)
 		if err != nil {
 			return err

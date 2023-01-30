@@ -64,6 +64,19 @@ func (e *ExamplesClient) GetRepositoryIndex() (*RepositoryIndex, error) {
 	return repositoryIndex, nil
 }
 
+func (e *ExamplesClient) GetAllExamples() ([]ExampleMetadata, error) {
+	index, err := e.GetRepositoryIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	if !IndexHasExamples(index) {
+		return nil, err
+	}
+
+	return MergeExamples(index), nil
+}
+
 func (e *ExamplesClient) GetAllExamplesAsLocationIndexedMap() (map[string]ExampleMetadata, error) {
 	repositoryIndex, err := e.GetRepositoryIndex()
 	if err != nil {
