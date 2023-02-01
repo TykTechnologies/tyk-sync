@@ -1,20 +1,23 @@
 package tyk_vcs
 
 import (
+	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const REPO string = "https://github.com/lonelycode/integration-test.git"
 
 func TestNewGGetter(t *testing.T) {
-	_, e := NewGGetter(REPO, "refs/heads/master", []byte{})
+	_, e := NewGGetter(REPO, "refs/heads/master", []byte{}, "")
 	if e != nil {
 		t.Fatal(e)
 	}
 }
 
 func TestGitGetter_FetchRepo(t *testing.T) {
-	g, e := NewGGetter(REPO, "refs/heads/master", []byte{})
+	g, e := NewGGetter(REPO, "refs/heads/master", []byte{}, "")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -26,7 +29,7 @@ func TestGitGetter_FetchRepo(t *testing.T) {
 }
 
 func TestGitGetter_FetchTykSpec(t *testing.T) {
-	g, e := NewGGetter(REPO, "refs/heads/master", []byte{})
+	g, e := NewGGetter(REPO, "refs/heads/master", []byte{}, "")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -47,7 +50,7 @@ func TestGitGetter_FetchTykSpec(t *testing.T) {
 }
 
 func TestGitGetter_FetchAPIDef(t *testing.T) {
-	g, e := NewGGetter(REPO, "refs/heads/master", []byte{})
+	g, e := NewGGetter(REPO, "refs/heads/master", []byte{}, "")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -79,7 +82,7 @@ func TestGitGetter_FetchAPIDef(t *testing.T) {
 }
 
 func TestGitGetter_FetchAPIDef_Swagger(t *testing.T) {
-	g, e := NewGGetter(REPO, "refs/heads/swagger-test", []byte{})
+	g, e := NewGGetter(REPO, "refs/heads/swagger-test", []byte{}, "")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -124,4 +127,23 @@ func TestGitGetter_FetchAPIDef_Swagger(t *testing.T) {
 	if ad.Proxy.ListenPath != ts.Files[0].OAS.OverrideListenPath {
 		t.Fatalf("Target Was not properly set, expected: %v, got %v", ad.Proxy.ListenPath, ts.Files[0].OAS.OverrideListenPath)
 	}
+}
+
+func TestGetFilepath(t *testing.T) {
+	t.Run("filepath without path segments", func(t *testing.T) {
+		fullPath := getFilepath(".tyk.json", "")
+		assert.Equal(t, ".tyk.json", fullPath)
+	})
+	t.Run("filepath with path segments", func(t *testing.T) {
+		fullPath := getFilepath(".tyk-json", "examples/udg/simple")
+		assert.Equal(t, filepath.Clean("examples/udg/simple/.tyk-json"), fullPath)
+	})
+	t.Run("filepath with multiple separators in path segments", func(t *testing.T) {
+		fullPath := getFilepath(".tyk-json", "examples////udg///simple////")
+		assert.Equal(t, filepath.Clean("examples/udg/simple/.tyk-json"), fullPath)
+	})
+	t.Run("filepath with multiple path segments", func(t *testing.T) {
+		fullPath := getFilepath(".tyk-json", "examples//udg//", "/simple")
+		assert.Equal(t, filepath.Clean("examples/udg/simple/.tyk-json"), fullPath)
+	})
 }

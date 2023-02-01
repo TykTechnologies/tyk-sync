@@ -11,6 +11,7 @@ import (
 
 const (
 	RepoRootUrl   = "https://raw.githubusercontent.com/TykTechnologies/tyk-examples/main"
+	RepoGitUrl    = "https://github.com/TykTechnologies/tyk-examples.git"
 	RepoIndexFile = "repository.json"
 )
 
