@@ -122,19 +122,19 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 
 func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
 	filePath, _ := cmd.Flags().GetString("path")
+	subdirectoryPath, _ := cmd.Flags().GetString("location")
 	if filePath != "" {
-		return tyk_vcs.NewFSGetter(filePath)
+		return tyk_vcs.NewFSGetter(filePath, subdirectoryPath)
 	}
 
 	if len(args) == 0 {
 		return nil, errors.New("must specify repo address to pull from as first argument")
 	}
 	auth, branch := getAuthAndBranch(cmd, args)
-	return tyk_vcs.NewGGetter(args[0], branch, auth)
+	return tyk_vcs.NewGGetter(args[0], branch, auth, subdirectoryPath)
 }
 
 func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []objects.Policy, error) {
-
 	getter, err := NewGetter(cmd, args)
 	if err != nil {
 		return nil, nil, err
@@ -294,6 +294,13 @@ func processExamplesList() error {
 	}
 
 	return tabbedResultWriter.Flush()
+}
+
+func processExamplePublish(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		args = append(args, examplesrepo.RepoGitUrl)
+	}
+	return processPublish(cmd, args)
 }
 
 func processExampleDetails(cmd *cobra.Command) error {
