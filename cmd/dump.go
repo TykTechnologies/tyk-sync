@@ -59,6 +59,7 @@ var dumpCmd = &cobra.Command{
 			return
 		}
 		fmt.Printf("--> Identified %v policies\n", len(totalPolicies))
+
 		fmt.Println("> Fetching APIs")
 		totalApis, err := c.FetchAPIs()
 		if err != nil {
@@ -71,9 +72,15 @@ var dumpCmd = &cobra.Command{
 			fmt.Println("No policies or APIs found")
 			return
 		}
+		var filteredPolicies []objects.Policy
+		var filteredApis []objects.DBApiDefinition
+		if len(wantedPoliciesByID) == 0 && len(wantedAPIsByID) == 0 && len(wantedTags) == 0 && len(wantedCategories) == 0 {
+			fmt.Println("No policies or APIs specified, will dump all")
+			filteredPolicies = totalPolicies
+			filteredApis = totalApis
+		}
 
 		// Let's first filter all the policies.
-		var filteredPolicies []objects.Policy
 		if len(wantedPoliciesByID) > 0 {
 			fmt.Println("--> Filtering policies by ID")
 			filteredPolicies, err = helpers.GetPoliciesByID(totalPolicies, wantedPoliciesByID)
@@ -84,7 +91,6 @@ var dumpCmd = &cobra.Command{
 		}
 
 		// Let's filter all the APIs.
-		var filteredApis []objects.DBApiDefinition
 		if len(wantedAPIsByID) > 0 {
 			fmt.Println("--> Filtering APIs by ID")
 			filteredApis, err = helpers.GetApisByID(totalApis, wantedAPIsByID)

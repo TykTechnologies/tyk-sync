@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 // publishCmd represents the publish command
@@ -40,4 +41,6 @@ func init() {
 	publishCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 	publishCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to publish")
 	publishCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to publish")
+	publishCmd.Flags().StringSlice("tags", []string{}, "Specific Tags to publish")
+	publishCmd.Flags().StringSlice("categories", []string{}, "Specific Categories to publish")
 }
