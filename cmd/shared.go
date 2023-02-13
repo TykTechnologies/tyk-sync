@@ -6,9 +6,10 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-
+	"text/tabwriter"
 
 	cli_publisher "github.com/TykTechnologies/tyk-sync/cli-publisher"
+	"github.com/TykTechnologies/tyk-sync/clients/examplesrepo"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk-sync/helpers"
 	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
