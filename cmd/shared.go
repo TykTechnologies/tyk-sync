@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+
 	cli_publisher "github.com/TykTechnologies/tyk-sync/cli-publisher"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk-sync/helpers"
@@ -120,19 +121,19 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 
 func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
 	filePath, _ := cmd.Flags().GetString("path")
+	subdirectoryPath, _ := cmd.Flags().GetString("location")
 	if filePath != "" {
-		return tyk_vcs.NewFSGetter(filePath)
+		return tyk_vcs.NewFSGetter(filePath, subdirectoryPath)
 	}
 
 	if len(args) == 0 {
 		return nil, errors.New("must specify repo address to pull from as first argument")
 	}
 	auth, branch := getAuthAndBranch(cmd, args)
-	return tyk_vcs.NewGGetter(args[0], branch, auth)
+	return tyk_vcs.NewGGetter(args[0], branch, auth, subdirectoryPath)
 }
 
 func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []objects.Policy, error) {
-
 	getter, err := NewGetter(cmd, args)
 	if err != nil {
 		return nil, nil, err
@@ -290,3 +291,112 @@ func processPublish(cmd *cobra.Command, args []string) error {
 	fmt.Println("Done")
 	return nil
 }
+
+func processExamplesList() error {
+	client, err := examplesrepo.NewExamplesClient(examplesrepo.RepoRootUrl)
+	if err != nil {
+		return err
+	}
+
+	examples, err := client.GetAllExamples()
+	if err != nil {
+		return err
+	}
+
+	if len(examples) == 0 {
+		fmt.Println("no examples found")
+		return nil
+	}
+
+	tabbedResultWriter := tabwriter.NewWriter(os.Stdout, 1, 1, 4, ' ', 0)
+	_, err = fmt.Fprintln(tabbedResultWriter, "LOCATION\tNAME\tDESCRIPTION")
+	if err != nil {
+		return err
+	}
+
+	for _, example := range examples {
+		_, err = fmt.Fprintf(tabbedResultWriter, "%s\t%s\t%s\n", example.Location, example.Name, example.Description)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tabbedResultWriter.Flush()
+}
+
+func processExamplePublish(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		args = append(args, examplesrepo.RepoGitUrl)
+	}
+	return processPublish(cmd, args)
+}
+
+func processExampleDetails(cmd *cobra.Command) error {
+	location, err := cmd.Flags().GetString("location")
+	if err != nil {
+		return err
+	}
+
+	client, err := examplesrepo.NewExamplesClient(examplesrepo.RepoRootUrl)
+	if err != nil {
+		return err
+	}
+
+	examplesMap, err := client.GetAllExamplesAsLocationIndexedMap()
+	if err != nil {
+		return err
+	}
+
+	if len(examplesMap) == 0 {
+		fmt.Println("no examples found")
+		return nil
+	}
+
+	example, ok := examplesMap[location]
+	if !ok {
+		fmt.Printf("example with location '%s' could not be found", location)
+		return nil
+	}
+
+	fmt.Println(generateExampleDetailsString(example))
+	return nil
+}
+
+func generateExampleDetailsString(example examplesrepo.ExampleMetadata) string {
+	featuresString := strings.Builder{}
+	for i, feature := range example.Features {
+		isLastItem := i == len(example.Features)-1
+		var bulletPointFeature string
+		if isLastItem {
+			bulletPointFeature = fmt.Sprintf("- %s", feature)
+		} else {
+			bulletPointFeature = fmt.Sprintf("- %s\n", feature)
+		}
+
+		// string builder's Write always returns nil as err
+		_, _ = featuresString.Write([]byte(bulletPointFeature))
+	}
+	return fmt.Sprintf(
+		exampleDetailsTemplate,
+		example.Location,
+		example.Name,
+		example.Description,
+		featuresString.String(),
+		example.MinTykVersion,
+	)
+}
+
+var exampleDetailsTemplate = `LOCATION
+%s
+
+NAME
+%s
+
+DESCRIPTION
+%s
+
+FEATURES
+%s
+
+MIN TYK VERSION
+%s`

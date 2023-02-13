@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	tyk_swagger "github.com/TykTechnologies/tyk-sync/tyk-swagger"
 	"github.com/TykTechnologies/tyk/apidef"
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
@@ -16,6 +15,9 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
+
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	tyk_swagger "github.com/TykTechnologies/tyk-sync/tyk-swagger"
 )
 
 type Getter interface {
@@ -33,33 +35,37 @@ type BaseGetter struct {
 type GitGetter struct {
 	*BaseGetter
 	Getter
-	repo   string
-	branch string
-	key    []byte
-	fs     billy.Filesystem
-	r      *git.Repository
+	repo             string
+	branch           string
+	key              []byte
+	fs               billy.Filesystem
+	r                *git.Repository
+	subdirectoryPath string
 }
 
 type FSGetter struct {
 	*BaseGetter
 	Getter
-	fs billy.Filesystem
+	fs               billy.Filesystem
+	subdirectoryPath string
 }
 
-func NewGGetter(repo, branch string, key []byte) (*GitGetter, error) {
+func NewGGetter(repo, branch string, key []byte, subdirectoryPath string) (*GitGetter, error) {
 	gh := &GitGetter{
-		repo:   repo,
-		branch: branch,
-		key:    key,
-		fs:     memfs.New(),
+		repo:             repo,
+		branch:           branch,
+		key:              key,
+		fs:               memfs.New(),
+		subdirectoryPath: subdirectoryPath,
 	}
 
 	return gh, nil
 }
 
-func NewFSGetter(filePath string) (*FSGetter, error) {
+func NewFSGetter(filePath string, subdirectoryPath string) (*FSGetter, error) {
 	gh := &FSGetter{
-		fs: osfs.New(filePath),
+		fs:               osfs.New(filePath),
+		subdirectoryPath: subdirectoryPath,
 	}
 
 	return gh, nil
@@ -94,8 +100,8 @@ func (gg *FSGetter) FetchRepo() error {
 	return nil
 }
 
-func fetchSpec(fs billy.Filesystem) (*TykSourceSpec, error) {
-	specFile, err := fs.Open(".tyk.json")
+func fetchSpec(fs billy.Filesystem, subdirectoryPath string) (*TykSourceSpec, error) {
+	specFile, err := fs.Open(getFilepath(".tyk.json", subdirectoryPath))
 	if err != nil {
 		fmt.Println(".tyk.json")
 		return nil, err
@@ -119,40 +125,40 @@ func (gg *GitGetter) FetchTykSpec() (*TykSourceSpec, error) {
 	if gg.r == nil {
 		return nil, errors.New("no repository in memory, fetch repo first")
 	}
-	return fetchSpec(gg.fs)
+	return fetchSpec(gg.fs, gg.subdirectoryPath)
 }
 
 func (gg *FSGetter) FetchTykSpec() (*TykSourceSpec, error) {
-	return fetchSpec(gg.fs)
+	return fetchSpec(gg.fs, gg.subdirectoryPath)
 }
 
 func (gg *FSGetter) FetchAPIDef(spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
-	return fetchAPIDefinitions(gg.fs, spec)
+	return fetchAPIDefinitions(gg.fs, spec, gg.subdirectoryPath)
 }
 
 func (gg *GitGetter) FetchAPIDef(spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
 	if gg.r == nil {
 		return nil, errors.New("no repository in memory, fetch repo first")
 	}
-	return fetchAPIDefinitions(gg.fs, spec)
+	return fetchAPIDefinitions(gg.fs, spec, gg.subdirectoryPath)
 }
 
-func fetchAPIDefinitions(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
+func fetchAPIDefinitions(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath string) ([]objects.DBApiDefinition, error) {
 	switch spec.Type {
 	case TYPE_APIDEF:
-		return fetchAPIDefinitionsDirect(fs, spec)
+		return fetchAPIDefinitionsDirect(fs, spec, subdirectoryPath)
 	case TYPE_OAI:
-		return fetchAPIDefinitionsFromOAI(fs, spec)
+		return fetchAPIDefinitionsFromOAI(fs, spec, subdirectoryPath)
 	default:
 		return nil, fmt.Errorf("Type must be '%v or '%v'", TYPE_APIDEF, TYPE_OAI)
 	}
 }
 
-func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
+func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath string) ([]objects.DBApiDefinition, error) {
 	defNames := spec.Files
 	defs := make([]objects.DBApiDefinition, len(defNames))
 	for i, defInfo := range defNames {
-		defFile, err := fs.Open(defInfo.File)
+		defFile, err := fs.Open(getFilepath(defInfo.File, subdirectoryPath))
 		if err != nil {
 			return nil, err
 		}
@@ -192,12 +198,12 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec) ([]obje
 	return defs, nil
 }
 
-func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.DBApiDefinition, error) {
+func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath string) ([]objects.DBApiDefinition, error) {
 	oaiNames := spec.Files
 	defs := make([]objects.DBApiDefinition, len(oaiNames))
 
 	for i, oaiInfo := range oaiNames {
-		oaiFile, err := fs.Open(oaiInfo.File)
+		oaiFile, err := fs.Open(getFilepath(oaiInfo.File, subdirectoryPath))
 		if err != nil {
 			return nil, err
 		}
@@ -247,21 +253,21 @@ func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec) ([]obj
 }
 
 func (gg *FSGetter) FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error) {
-	return fetchPolicies(gg.fs, spec)
+	return fetchPolicies(gg.fs, spec, gg.subdirectoryPath)
 }
 
 func (gg *GitGetter) FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error) {
 	if gg.r == nil {
 		return nil, errors.New("No repository in memory, fetch repo first")
 	}
-	return fetchPolicies(gg.fs, spec)
+	return fetchPolicies(gg.fs, spec, gg.subdirectoryPath)
 }
 
-func fetchPolicies(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.Policy, error) {
+func fetchPolicies(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath string) ([]objects.Policy, error) {
 	defNames := spec.Policies
 	defs := make([]objects.Policy, len(defNames))
 	for i, defInfo := range defNames {
-		defFile, err := fs.Open(defInfo.File)
+		defFile, err := fs.Open(getFilepath(defInfo.File, subdirectoryPath))
 		if err != nil {
 			fmt.Println(defInfo.File)
 			return nil, err
@@ -292,4 +298,12 @@ func fetchPolicies(fs billy.Filesystem, spec *TykSourceSpec) ([]objects.Policy, 
 	fmt.Printf("Fetched %v policies\n", len(defs))
 
 	return defs, nil
+}
+
+func getFilepath(file string, pathSegments ...string) string {
+	if len(pathSegments) == 0 {
+		return file
+	}
+	allSegments := append(pathSegments, file)
+	return filepath.Join(allSegments...)
 }
