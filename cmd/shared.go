@@ -159,57 +159,36 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 	filteredPolicies := []objects.Policy{}
 
 	if len(wantedAPIs) > 0 {
-		for _, apiID := range wantedAPIs {
-			for _, api := range defs {
-				if apiID != api.APIID {
-					continue
-				}
-				filteredAPIS = append(filteredAPIS, api)
-			}
+		apisById, err := helpers.GetApisByID(defs, wantedAPIs)
+		if err != nil {
+			return nil, nil, err
 		}
+		filteredAPIS = append(filteredAPIS, apisById...)
 	}
 
 	if len(wantedPolicies) > 0 {
-		for _, polID := range wantedPolicies {
-			for _, pol := range pols {
-				if !((polID == pol.ID) || (polID == pol.MID.Hex())) {
-					continue
-				}
-				filteredPolicies = append(filteredPolicies, pol)
-			}
+		polsById, err := helpers.GetPoliciesByID(pols, wantedPolicies)
+		if err != nil {
+			return nil, nil, err
 		}
+		filteredPolicies = append(filteredPolicies, polsById...)
 	}
 
 	if len(wantedTags) > 0 {
-		for _, api := range defs {
-			for _, tag := range wantedTags {
-				for _, apiTag := range api.Tags {
-					if apiTag == tag {
-						filteredAPIS = append(filteredAPIS, api)
-					}
-				}
-			}
+		polsByTag, apisByTag, err := helpers.LookForTags(pols, defs, wantedTags)
+		if err != nil {
+			return nil, nil, err
 		}
-
-		for _, pol := range pols {
-			for _, tag := range wantedTags {
-				for _, polTag := range pol.Tags {
-					if polTag == tag {
-						filteredPolicies = append(filteredPolicies, pol)
-					}
-				}
-			}
-		}
+		filteredAPIS = append(filteredAPIS, apisByTag...)
+		filteredPolicies = append(filteredPolicies, polsByTag...)
 	}
 
 	if len(wantedCategories) > 0 {
-		for _, api := range defs {
-			for _, cat := range wantedCategories {
-				if strings.Contains(api.Name, "#"+cat) {
-					filteredAPIS = append(filteredAPIS, api)
-				}
-			}
+		apisByCategory, err := helpers.GetApisByCategory(defs, wantedCategories)
+		if err != nil {
+			return nil, nil, err
 		}
+		filteredAPIS = append(filteredAPIS, apisByCategory...)
 	}
 
 	// Let's remove duplicates from the filtered policies.
