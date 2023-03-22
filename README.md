@@ -20,6 +20,7 @@ Tyk Sync is a command line tool and library to manage and synchronise a Tyk inst
 - Support for importing, converting and publishing Swagger (Open API Spec) files to Tyk.
 - Specialized support for Git. But since API and policy definitions can be read directly from
 the file system, it will integrate with any VCS.
+- Show and import [Tyk examples](https://github.com/TykTechnologies/tyk-examples)
 
 ### Sync
 
@@ -143,4 +144,48 @@ To check the current Tyk Sync version, we need to run the version command:
 ```
 tyk-sync version
 v1.2.2
+```
+
+## Example: Import Tyk example into Dashboard
+
+To list all available examples you need to run this command:
+```
+tyk-sync examples
+LOCATION           NAME                               DESCRIPTION
+udg/vat-checker    VAT number checker UDG             Simple REST API wrapped in GQL using Universal Data Graph that allows user to check validity of a VAT number and display some details about it.
+udg/geo-info       Geo information about the World    Countries GQL API extended with information from Restcountries
+```
+
+It's also possible to show more details about an example by using its location:
+```
+tyk-sync examples show --location="udg/vat-checker"
+LOCATION
+udg/vat-checker
+
+NAME
+VAT number checker UDG
+
+DESCRIPTION
+Simple REST API wrapped in GQL using Universal Data Graph that allows user to check validity of a VAT number and display some details about it.
+
+FEATURES
+- REST Datasource
+
+MIN TYK VERSION
+5.0
+```
+
+To publish it into the Dashboard you will need to use this command:
+```
+tyk-sync examples publish -d="http://localhost:3000" -s="b2d420ca5302442b6f20100f76de7d83" -l="udg/vat-checker"
+Fetched 1 definitions
+Fetched 0 policies
+Using publisher: Dashboard Publisher
+org override detected, setting.
+Creating API 0: vat-validation
+--> Status: OK, ID:726e705e6afc432742867e1bd898cb26
+Updating API 0: vat-validation
+--> Status: OK, ID:726e705e6afc432742867e1bd898cb26
+org override detected, setting.
+Done
 ```
