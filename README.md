@@ -45,9 +45,14 @@ dependent tokens continue to have access to your services.
 Currently the application is available via Go, Docker and in packagecloud, so to install via Go you must have Go installed and run:
 
  ```
- go get -u github.com/TykTechnologies/tyk-sync
+ go install github.com/TykTechnologies/tyk-sync@latest 
  ```
+ 
+ You can also download the binaries from the releases page.
+ 
 This should make the `tyk-sync` command available to your console.
+
+
 
 ### Docker:
 
