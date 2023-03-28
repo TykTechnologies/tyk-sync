@@ -48,7 +48,7 @@ Currently the application is available via Go, Docker and in packagecloud, so to
  go install github.com/TykTechnologies/tyk-sync@latest 
  ```
  
- You can also  or download the binaries from the releases page.
+ You can also download the binaries from the releases page.
  
 This should make the `tyk-sync` command available to your console.
 
