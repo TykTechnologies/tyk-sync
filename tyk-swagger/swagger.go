@@ -7,8 +7,8 @@ import (
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/gofrs/uuid"
 	"github.com/ongoingio/urljoin"
-	uuid "github.com/satori/go.uuid"
 )
 
 type DefinitionObjectFormatAST struct {
@@ -156,7 +156,12 @@ func CreateDefinitionFromSwagger(s *SwaggerAST, orgId string, versionName string
 	ad.Name = s.Info.Title
 	ad.Active = true
 	ad.UseKeylessAccess = true
-	ad.APIID = uuid.NewV4().String()
+	uid, err := uuid.NewV4()
+	if err != nil {
+		fmt.Println("error generating UUID", err)
+		return nil, err
+	}
+	ad.APIID = uid.String()
 	ad.OrgID = orgId
 
 	ad.VersionDefinition.Key = "version"

@@ -7,9 +7,9 @@ import (
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/gofrs/uuid"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
-	uuid "github.com/satori/go.uuid"
 )
 
 type APIResponse struct {
@@ -336,7 +336,12 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 			GitIDMap[def.Id.Hex()] = i
 			continue
 		} else {
-			created := fmt.Sprintf("temp-%v", uuid.NewV4().String())
+			uid, err := uuid.NewV4()
+			if err != nil {
+				fmt.Println("error generating UUID", err)
+				return err
+			}
+			created := fmt.Sprintf("temp-%v", uid.String())
 			GitIDMap[created] = i
 		}
 	}
