@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gofrs/uuid"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
-	uuid "github.com/satori/go.uuid"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
@@ -260,7 +260,12 @@ func (c *Client) SyncPolicies(pols []objects.Policy) error {
 		} else if pol.MID.Hex() != "" {
 			GitIDMap[pol.MID.Hex()] = i
 		} else {
-			created := fmt.Sprintf("temp-pol-%v", uuid.NewV4().String())
+			uid, err := uuid.NewV4()
+			if err != nil {
+				fmt.Println("error generating UUID", err)
+				return err
+			}
+			created := fmt.Sprintf("temp-pol-%v", uid.String())
 			GitIDMap[created] = i
 		}
 	}
