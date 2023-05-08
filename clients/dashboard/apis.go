@@ -1,15 +1,15 @@
 package dashboard
 
 import (
+	"encoding/json"
 	"fmt"
 
-	"encoding/json"
-
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/gofrs/uuid"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
+
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
 )
 
 type APIResponse struct {
@@ -182,7 +182,7 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		}
 
 		// Update apiDef with its ID before adding it to the existing APIs list.
-		apiDef.Id = apidef.ObjectIdHex(status.Meta)
+		apiDef.Id = model.ObjectIDHex(status.Meta)
 
 		// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
 		if apiDef.APIID != "" {
