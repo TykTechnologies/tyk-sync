@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -184,7 +184,7 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdire
 		}
 
 		if defInfo.DBID != "" {
-			ad.Id = apidef.ObjectIdHex(defInfo.DBID)
+			ad.Id = model.ObjectIDHex(defInfo.DBID)
 		}
 
 		if defInfo.ORGID != "" {
@@ -231,7 +231,7 @@ func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec, subdir
 		}
 
 		if oaiInfo.DBID != "" {
-			ad.Id = apidef.ObjectIdHex(oaiInfo.DBID)
+			ad.Id = model.ObjectIDHex(oaiInfo.DBID)
 		}
 
 		if oaiInfo.OAS.OverrideListenPath != "" {
