@@ -3,9 +3,9 @@ module github.com/TykTechnologies/tyk-sync
 go 1.19
 
 require (
-	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20230502085426-8383e403b64f
-	github.com/TykTechnologies/storage v1.0.2
-	github.com/TykTechnologies/tyk v1.9.2-0.20230508091715-84500cf67aa5
+	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20230511060858-40d3318e20b1
+	github.com/TykTechnologies/storage v1.0.6
+	github.com/TykTechnologies/tyk v1.9.2-0.20230615143257-934e9637102c
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/levigross/grequests v0.0.0-20190908174114-253788527a1a
 	github.com/ongoingio/urljoin v0.0.0-20140909071054-8d88f7c81c3c
