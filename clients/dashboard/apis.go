@@ -247,10 +247,6 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		endpoint := endpointAPIs
 		var payload interface{}
 		payload = asDBDef
-		if apiDef.IsOAS {
-			endpoint = endpointOASAPIs
-			payload = asDBDef.OAS
-		}
 
 		data, err := json.Marshal(payload)
 		if err != nil {

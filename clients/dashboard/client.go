@@ -20,7 +20,6 @@ type Client struct {
 
 const (
 	endpointAPIs     string = "/api/apis"
-	endpointOASAPIs  string = "/api/apis/oas"
 	endpointPolicies string = "/api/portal/policies"
 	endpointCerts    string = "/api/certs"
 	endpointUsers    string = "/api/users"
