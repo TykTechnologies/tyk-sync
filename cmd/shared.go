@@ -8,12 +8,12 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/spf13/cobra"
-
-	"github.com/TykTechnologies/tyk-sync/cli-publisher"
+	cli_publisher "github.com/TykTechnologies/tyk-sync/cli-publisher"
 	"github.com/TykTechnologies/tyk-sync/clients/examplesrepo"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
+	"github.com/TykTechnologies/tyk-sync/helpers"
+	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
+	"github.com/spf13/cobra"
 )
 
 var isGateway bool
@@ -147,44 +147,52 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 
 	wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 	wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
+	wantedCategories, _ := cmd.Flags().GetStringSlice("categories")
+	wantedTags, _ := cmd.Flags().GetStringSlice("tags")
 
-	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
+	if len(wantedPolicies) > 0 && len(wantedAPIs) > 0 && len(wantedCategories) > 0 && len(wantedTags) > 0 {
+		fmt.Println("No filters specified, will pull all data")
 		return defs, pols, nil
 	}
+
 	filteredAPIS := []objects.DBApiDefinition{}
 	filteredPolicies := []objects.Policy{}
 
 	if len(wantedAPIs) > 0 {
-		filteredAPIS = defs[:]
-		newL := 0
-		for _, apiID := range wantedAPIs {
-			for _, api := range filteredAPIS {
-				if apiID != api.APIID {
-					continue
-				}
-				filteredAPIS[newL] = api
-				newL++
-			}
+		apisById, err := helpers.GetApisByID(defs, wantedAPIs)
+		if err != nil {
+			return nil, nil, err
 		}
-		filteredAPIS = filteredAPIS[:newL]
+		filteredAPIS = append(filteredAPIS, apisById...)
 	}
 
 	if len(wantedPolicies) > 0 {
-		filteredPolicies = pols[:]
-		newL := 0
-		for _, polID := range wantedPolicies {
-			for _, pol := range filteredPolicies {
-				if !((polID == pol.ID) || (polID == pol.MID.Hex())) {
-					continue
-				}
-				filteredPolicies[newL] = pol
-				newL++
-			}
+		polsById, err := helpers.GetPoliciesByID(pols, wantedPolicies)
+		if err != nil {
+			return nil, nil, err
 		}
-		filteredPolicies = filteredPolicies[:newL]
+		filteredPolicies = append(filteredPolicies, polsById...)
 	}
 
-	return filteredAPIS, filteredPolicies, nil
+	if len(wantedTags) > 0 {
+		polsByTag, apisByTag, err := helpers.LookForTags(pols, defs, wantedTags)
+		if err != nil {
+			return nil, nil, err
+		}
+		filteredAPIS = append(filteredAPIS, apisByTag...)
+		filteredPolicies = append(filteredPolicies, polsByTag...)
+	}
+
+	if len(wantedCategories) > 0 {
+		apisByCategory, err := helpers.GetApisByCategory(defs, wantedCategories)
+		if err != nil {
+			return nil, nil, err
+		}
+		filteredAPIS = append(filteredAPIS, apisByCategory...)
+	}
+
+	// Let's remove duplicates from the filtered policies.
+	return helpers.RemoveDuplicatesFromApis(filteredAPIS), helpers.RemoveDuplicatesFromPolicies(filteredPolicies), nil
 }
 
 func processSync(cmd *cobra.Command, args []string) error {
