@@ -94,7 +94,7 @@ func (p *DashboardPublisher) Name() string {
 }
 
 func (p *DashboardPublisher) CreatePolicies(pols *[]objects.Policy) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (p *DashboardPublisher) CreatePolicies(pols *[]objects.Policy) error {
 }
 
 func (p *DashboardPublisher) UpdatePolicies(pols *[]objects.Policy) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (p *DashboardPublisher) UpdatePolicies(pols *[]objects.Policy) error {
 }
 
 func (p *DashboardPublisher) SyncPolicies(pols []objects.Policy) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
 		return err
 	}

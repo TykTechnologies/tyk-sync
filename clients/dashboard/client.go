@@ -33,17 +33,12 @@ var (
 	UseCreateError    error = errors.New("Object does not exist, use create()")
 )
 
-func NewDashboardClient(url, secret, orgID string, allowUnsafeOAS ...bool) (*Client, error) {
-	unsafeOAS := false
-	if len(allowUnsafeOAS) > 0 {
-		unsafeOAS = allowUnsafeOAS[0]
-	}
-
+func NewDashboardClient(url, secret, orgID string, allowUnsafeOAS bool) (*Client, error) {
 	client := &Client{
 		url:            url,
 		secret:         secret,
 		isCloud:        strings.Contains(url, "tyk.io"),
-		allowUnsafeOAS: unsafeOAS,
+		allowUnsafeOAS: allowUnsafeOAS,
 	}
 
 	if orgID == "" {
