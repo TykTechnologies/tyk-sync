@@ -8,9 +8,10 @@ import (
 )
 
 type DashboardPublisher struct {
-	Secret      string
-	Hostname    string
-	OrgOverride string
+	Secret         string
+	Hostname       string
+	OrgOverride    string
+	AllowUnsafeOAS bool
 }
 
 func (p *DashboardPublisher) enforceOrgID(apiDefs *[]objects.DBApiDefinition) {
@@ -34,7 +35,7 @@ func (p *DashboardPublisher) enforceOrgIDForPolicies(pols *[]objects.Policy) {
 }
 
 func (p *DashboardPublisher) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func (p *DashboardPublisher) CreateAPIs(apiDefs *[]objects.DBApiDefinition) erro
 }
 
 func (p *DashboardPublisher) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
 		return err
 	}
@@ -60,7 +61,7 @@ func (p *DashboardPublisher) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) erro
 }
 
 func (p *DashboardPublisher) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
-	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride)
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
 		return err
 	}

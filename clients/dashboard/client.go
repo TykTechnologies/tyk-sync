@@ -16,10 +16,12 @@ type Client struct {
 	isCloud            bool
 	InsecureSkipVerify bool
 	OrgID              string
+	allowUnsafeOAS     bool
 }
 
 const (
 	endpointAPIs     string = "/api/apis"
+	endpointOASAPIs  string = "/api/apis/oas"
 	endpointPolicies string = "/api/portal/policies"
 	endpointCerts    string = "/api/certs"
 	endpointUsers    string = "/api/users"
@@ -31,11 +33,17 @@ var (
 	UseCreateError    error = errors.New("Object does not exist, use create()")
 )
 
-func NewDashboardClient(url, secret, orgID string) (*Client, error) {
+func NewDashboardClient(url, secret, orgID string, allowUnsafeOAS ...bool) (*Client, error) {
+	unsafeOAS := false
+	if len(allowUnsafeOAS) > 0 {
+		unsafeOAS = allowUnsafeOAS[0]
+	}
+
 	client := &Client{
-		url:     url,
-		secret:  secret,
-		isCloud: strings.Contains(url, "tyk.io"),
+		url:            url,
+		secret:         secret,
+		isCloud:        strings.Contains(url, "tyk.io"),
+		allowUnsafeOAS: unsafeOAS,
 	}
 
 	if orgID == "" {

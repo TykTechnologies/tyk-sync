@@ -10,10 +10,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/TykTechnologies/tyk-sync/cli-publisher"
+	cli_publisher "github.com/TykTechnologies/tyk-sync/cli-publisher"
 	"github.com/TykTechnologies/tyk-sync/clients/examplesrepo"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/TykTechnologies/tyk-sync/tyk-vcs"
+	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
 )
 
 var isGateway bool
@@ -68,10 +68,13 @@ func getPublisher(cmd *cobra.Command, args []string) (tyk_vcs.Publisher, error) 
 
 		orgOverride, _ := cmd.Flags().GetString("org")
 
+		allowUnsafeOAS, _ := cmd.Flags().GetBool("allow-unsafe-oas")
+
 		newDashPublisher := &cli_publisher.DashboardPublisher{
-			Secret:      secret,
-			Hostname:    dbString,
-			OrgOverride: orgOverride,
+			Secret:         secret,
+			Hostname:       dbString,
+			OrgOverride:    orgOverride,
+			AllowUnsafeOAS: allowUnsafeOAS,
 		}
 
 		return newDashPublisher, nil
