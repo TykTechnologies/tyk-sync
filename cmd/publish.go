@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 // publishCmd represents the publish command
@@ -38,6 +39,7 @@ func init() {
 	publishCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	publishCmd.Flags().StringP("path", "p", "", "Source directory for definition files (optional)")
 	publishCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
+	publishCmd.Flags().Bool("allow-unsafe-oas", false, "Use classic API endpoints in dashboard for OAS APIs during publish")
 	publishCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to publish")
 	publishCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to publish")
 }
