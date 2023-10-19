@@ -50,7 +50,7 @@ var dumpCmd = &cobra.Command{
 
 		fmt.Printf("Extracting APIs and Policies from %v\n", dbString)
 
-		c, err := dashboard.NewDashboardClient(dbString, secret, "")
+		c, err := dashboard.NewDashboardClient(dbString, secret, "", false)
 		if err != nil {
 			fmt.Println(err)
 		}
