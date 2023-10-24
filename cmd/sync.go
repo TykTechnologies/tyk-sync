@@ -41,7 +41,7 @@ func init() {
 	syncCmd.Flags().StringP("org", "o", "", "org ID override")
 	syncCmd.Flags().StringP("path", "p", "", "Source directory for definition files (optional)")
 	syncCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
-	syncCmd.Flags().Bool("allow-unsafe-oas", false, "Use classic API endpoints in dashboard for OAS APIs during sync")
+	syncCmd.Flags().Bool("allow-unsafe-oas", false, "Use Tyk Classic endpoints in Tyk Dashboard API for Tyk OAS APIs (optional)")
 	syncCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to sync")
 	syncCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to sync")
 }

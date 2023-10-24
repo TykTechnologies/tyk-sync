@@ -39,7 +39,7 @@ func init() {
 	publishCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	publishCmd.Flags().StringP("path", "p", "", "Source directory for definition files (optional)")
 	publishCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
-	publishCmd.Flags().Bool("allow-unsafe-oas", false, "Use classic API endpoints in dashboard for OAS APIs during publish")
+	publishCmd.Flags().Bool("allow-unsafe-oas", false, "Use Tyk Classic endpoints in Tyk Dashboard API for Tyk OAS APIs (optional)")
 	publishCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to publish")
 	publishCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to publish")
 }
