@@ -101,11 +101,6 @@ jobs:
           path: |
             dist/*.rpm
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: payg
-          retention-days: 1
-          path: dist/*PAYG*
 
   upgrade-deb:
     runs-on: ubuntu-latest
@@ -179,7 +174,7 @@ jobs:
       - name: generate dockerfile
         run: |
           echo 'FROM ${{ matrix.distro }}
-          COPY tyk-sync*_x86_64.rpm /tyk-sync.rpm
+          COPY tyk-sync*.x86_64.rpm /tyk-sync.rpm
           RUN yum install --allowerasing -y curl
 
           RUN curl -s https://packagecloud.io/install/repositories/tyk/tyk-sync/script.rpm.sh | bash && yum install -y tyk-sync-1.2.0-1
