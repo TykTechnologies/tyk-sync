@@ -41,7 +41,6 @@ dockers:
   goos: linux
   dockerfile: ci/Dockerfile.std
   extra_files:
-    - "install/"
     - "README.md"
 
 # Build tykio/xDH_REPO, cloudsmith/xCOMPATIBILITY_NAME (arm64)
@@ -61,7 +60,6 @@ dockers:
   goos: linux
   dockerfile: ci/Dockerfile.std
   extra_files:
-    - "install/"
     - "README.md"
 
 
