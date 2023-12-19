@@ -22,44 +22,42 @@ on:
     branches:
       - master
       - release-**
-      - integration/**
-      - feature/**
-      - perf/**
     tags:
       - 'v*'
-
-env:
-  SLACK_CLI_TOKEN: ${{ secrets.BENDER_TOKEN }}
   
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
-
+    container: tykio/golang-cross:1.19-bullseye
+    env:
+      debvers: 'ubuntu/bionic ubuntu/focal ubuntu/jammy debian/bullseye debian/bookworm'
+      rpmvers: 'el/8 el/9 amazon/2023'
     outputs:
       tag: ${{ steps.targets.outputs.tag }}
-      upload: ${{ steps.targets.outputs.upload }}
-      pc: ${{ steps.targets.outputs.pc }}
 
     steps:
       - name: Checkout of tyk-sync
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ ! startsWith(github.ref, 'refs/tags') }}
+          fetch-depth: 1
 
-      - uses: docker/setup-qemu-action@v2
+      - name: Set git dafe.directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
-      - uses: docker/setup-buildx-action@v1
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
 
       - name: Login to DockerHub
         if: startsWith(github.ref, 'refs/tags')
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to Cloudsmith
         if: startsWith(github.ref, 'refs/tags')
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: docker.tyk.io
           username: ${{ secrets.CLOUDSMITH_USERNAME }}
@@ -74,44 +72,11 @@ jobs:
           PKG_SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
           bin/unlock-agent.sh
-          DOCKER_CFG_PATH="${DOCKER_CONFIG:-$HOME/.docker}/config.json"
-          jq '. + {"experimental": "enabled"}' "$DOCKER_CFG_PATH" > c.json && mv c.json "$DOCKER_CFG_PATH" || rm c.json
-          current_tag=${GITHUB_REF##*/}
-          echo "::set-output name=tag::${current_tag}"
-          if [[ $current_tag =~ .+-(qa|rc).* ]]; then
-                  echo "::set-output name=upload::true"
-                  echo "::set-output name=pc::tyk-sync-unstable"
-                  echo "::debug file=.goreleaser.yml::Pushing to unstable repos"
-          # From https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-          # If this is a public release, the tag is of the form vX.Y.Z where X, Y, Z ∈ ℤ
-          elif [[ $current_tag =~ v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*) ]]; then
-                  echo "::set-output name=upload::true"
-                  echo "::set-output name=pc::tyk-sync"
-                  echo "::debug file=.goreleaser.yml::Pushing to stable repos"
-          else
-                  echo "::set-output name=upload::false"
-                  echo "::debug file=.goreleaser.yml::No uploads"
-          fi
 
-      - name: Delete old release assets
-        if: startsWith(github.ref, 'refs/tags')
-        uses: mknejp/delete-release-assets@v1
-        with:
-          token: ${{ github.token }}
-          tag: ${{ github.ref }}
-          fail-if-no-assets: false
-          fail-if-no-release: false
-          assets: |
-            *.deb
-            *.rpm
-            *.tar.gz
-            *.txt.sig
-            *.txt
-
-      - uses: goreleaser/goreleaser-action@v2
+      - uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
-          args: release --rm-dist
+          args: release --clean -f ${{ matrix.goreleaser }} ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CGO_ENABLED: 0
@@ -119,6 +84,8 @@ jobs:
           NFPM_PAYG_PASSPHRASE: ${{ secrets.SIGNING_KEY_PASSPHRASE }}
           GPG_FINGERPRINT: 12B5D62C28F57592D1575BD51ED14C59E37DAC20
           PKG_SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          RPMVERS: ${{ env.debvers }}
+          DEBVERS: ${{ env.rpmvers }}
 
       - uses: actions/upload-artifact@v3
         with:
@@ -126,7 +93,6 @@ jobs:
           retention-days: 1
           path: |
             dist/*.deb
-            !dist/*PAYG*.deb
 
       - uses: actions/upload-artifact@v3
         with:
@@ -134,101 +100,12 @@ jobs:
           retention-days: 1
           path: |
             dist/*.rpm
-            !dist/*PAYG*.rpm
 
       - uses: actions/upload-artifact@v3
         with:
           name: payg
           retention-days: 1
           path: dist/*PAYG*
-
-  ci:
-    needs:
-      - goreleaser
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Shallow checkout of tyk-sync
-        uses: actions/checkout@v3.1.0
-        with:
-          fetch-depth: 1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2.0.2
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-          terraform_wrapper: false
-
-      - name: Get AWS creds from Terraform remote state
-        id: aws-creds
-        run: |
-          cd integration/terraform
-          terraform init -input=false
-          terraform refresh 2>&1 >/dev/null
-          eval $(terraform output -json tyk-sync | jq -r 'to_entries[] | [.key,.value] | join("=")')
-          region=$(terraform output region | xargs)
-          [ -z "$key" -o -z "$secret" -o -z "$region" ] && exit 1
-          echo "::set-output name=secret::$secret"
-          echo "::set-output name=key::$key"
-          echo "::set-output name=region::$region"
-
-      - name: Configure AWS credentials for use
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ steps.aws-creds.outputs.key }}
-          aws-secret-access-key: ${{ steps.aws-creds.outputs.secret }}
-          aws-region: ${{ steps.aws-creds.outputs.region }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: deb
-
-      - uses: docker/setup-qemu-action@v2
-
-      - uses: docker/setup-buildx-action@v1
-
-      - name: CI build
-        uses: docker/build-push-action@v2
-        with:
-          push: true
-          context: "."
-          file: Dockerfile.std
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/tyk-sync:${{ needs.goreleaser.outputs.tag }}
-            ${{ steps.login-ecr.outputs.registry }}/tyk-sync:${{ github.sha }}
-
-      - name: Tell gromit about new build
-        id: gromit
-        run: |
-          curl -fsSL -H "Authorization: ${{secrets.GROMIT_TOKEN}}" 'https://domu-kun.cloud.tyk.io/gromit/newbuild' \
-                 -X POST -d '{ "repo": "${{ github.repository}}", "ref": "${{ github.ref }}", "sha": "${{ github.sha }}" }' || true
-
-      - name: Tell integration channel
-        if: ${{ failure() }}
-        run: |
-          colour=bad
-          pretext=":boom: Could not add new build $${{ github.ref }} from ${{ github.repository }} to CD. Please review this run and correct it if needed. See https://github.com/TykTechnologies/tyk-ci/wiki/IntegrationEnvironment for what this is about."
-          curl https://raw.githubusercontent.com/rockymadden/slack-cli/master/src/slack -o /tmp/slack && chmod +x /tmp/slack
-          /tmp/slack chat send \
-          --actions '{"type": "button", "style": "primary", "text": "See log", "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
-          --author 'Bender' \
-          --author-icon 'https://hcoop.net/~alephnull/bender/bender-arms.jpg' \
-          --author-link 'https://github.com/TykTechnologies/tyk-ci' \
-          --channel '#service-integration' \
-          --color $colour \
-          --fields '{"title": "Repo", "value": "${{ github.repository }}", "short": false}' \
-          --footer 'github-actions' \
-          --footer-icon 'https://assets-cdn.github.com/images/modules/logos_page/Octocat.png' \
-          --image 'https://assets-cdn.github.com/images/modules/logos_page/Octocat.png' \
-          --pretext "$pretext" \
-          --text 'Commit message: ${{ github.event.head_commit.message }}' \
-          --title 'Failed to add new build for CD' \
-          --title-link 'https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
   upgrade-deb:
     runs-on: ubuntu-latest
@@ -240,24 +117,24 @@ jobs:
           - amd64
           - arm64
         distro:
-          - ubuntu:xenial
           - ubuntu:bionic
           - ubuntu:focal
-          - debian:stretch
-          - debian:buster
+          - ubuntu:jammy
+          - debian:bullseye
+          - debian:bookworm
 
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: deb
 
       - uses: docker/setup-qemu-action@v2
 
-      - uses: docker/setup-buildx-action@v1
+      - uses: docker/setup-buildx-action@v3
 
       - name: generate dockerfile
         run: |
@@ -270,7 +147,7 @@ jobs:
           RUN dpkg -i /tyk-sync.deb' > Dockerfile
 
       - name: install on ${{ matrix.distro }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: "."
           platforms: linux/${{ matrix.arch }}
@@ -284,19 +161,20 @@ jobs:
       fail-fast: false
       matrix:
         distro:
-          - ubi7/ubi:7.9
-          - ubi8/ubi:8.3
+          - amazonlinux:2023
+          - registry.access.redhat.com/ubi8/ubi
+          - registry.access.redhat.com/ubi9/ubi
 
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: rpm
 
-      - uses: docker/setup-buildx-action@v1
+      - uses: docker/setup-buildx-action@v3
 
       - name: generate dockerfile
         run: |
@@ -308,125 +186,9 @@ jobs:
           RUN rpm -Uvh /tyk-sync.rpm' > Dockerfile
 
       - name: install on ${{ matrix.distro }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: "."
           file: Dockerfile
           push: false
-
-  smoke-tests:
-    if: needs.goreleaser.outputs.upload == 'true'
-    needs:
-      - goreleaser
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3.1.0
-        with:
-          fetch-depth: 1
-
-      - name: Run tests
-        shell: bash
-        run: |
-          set -eaxo pipefail
-          if [ ! -d integration/smoke-tests ]; then
-             echo "::warning No smoke tests defined"
-             exit 0
-          fi
-          for d in integration/smoke-tests/*/
-          do
-              echo Attempting to test $d
-              if [ -d $d ]; then
-                  cd $d
-                  ./test.sh ${{ needs.goreleaser.outputs.tag }}
-                  cd -
-              fi
-          done
-
-
-  packagecloud:
-    if: needs.goreleaser.outputs.upload == 'true'
-    needs:
-      - smoke-tests
-      - goreleaser
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: deb
-          path: dist
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: rpm
-          path: dist
-
-      - name: Push to packagecloud
-        id: pc-push
-        uses: TykTechnologies/packagecloud-action@v1.1
-        env:
-          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
-        with:
-          repo: tyk/${{ needs.goreleaser.outputs.pc }}
-          dir: dist
-
-      - name: Tell release channel
-        if: always()
-        run: |
-          colour=bad
-          pretext=":boom: Failed to push packages to ${{ needs.gorelease.outputs.pc }} for $${{ github.ref }}. Please review this run and correct it if needed."
-          if [[ ${{ steps.pc-push.outcome }} == "success" ]]; then
-              colour=good
-              pretext="Please review the draft release at https://github.com/${{ github.repository }}/releases and delete if not required."
-          fi
-
-          curl https://raw.githubusercontent.com/rockymadden/slack-cli/master/src/slack -o /tmp/slack && chmod +x /tmp/slack
-          /tmp/slack chat send \
-          --actions '{"type": "button", "style": "primary", "text": "See log", "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
-          --author 'Bender' \
-          --author-icon 'https://hcoop.net/~alephnull/bender/bender-arms.jpg' \
-          --author-link 'https://github.com/TykTechnologies/tyk-ci' \
-          --channel '#service-release' \
-          --color $colour \
-          --fields '{"title": "Repo", "value": "${{ needs.goreleaser.outputs.pc }}", "short": false}' \
-          --footer 'github-actions' \
-          --footer-icon 'https://assets-cdn.github.com/images/modules/logos_page/Octocat.png' \
-          --image 'https://assets-cdn.github.com/images/modules/logos_page/Octocat.png' \
-          --pretext "$pretext" \
-          --text 'Commit message: ${{ github.event.head_commit.message }}' \
-          --title 'New version ${{ needs.goreleaser.outputs.tag }} for ${{ needs.goreleaser.outputs.pc }}' \
-          --title-link 'https://packagecloud.io/tyk/${{ needs.goreleaser.outputs.pc }}/'
-
-  # AWS updates only for stable releases
-  aws-mktplace-byol:
-    if: startsWith(github.ref, 'refs/tags/v3.0')
-    runs-on: ubuntu-latest
-    needs:
-      - smoke-tests
-    strategy:
-      matrix:
-        flavour:
-          - al2
-          - rhel
-
-    steps:
-      - name: Checkout tyk-sync
-        uses: actions/checkout@v3.1.0
-        with:
-          fetch-depth: 1
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: rpm
-          path: aws
-
-      - name: Packer build
-        working-directory: ./aws
-        run: |
-          export VERSION=${{ needs.goreleaser.outputs.tag }}
-          packer validate -var-file=${{ matrix.flavour }}.vars.json byol.pkr.hcl
-          packer build -var-file=${{ matrix.flavour }}.vars.json byol.pkr.hcl
-
-
 
