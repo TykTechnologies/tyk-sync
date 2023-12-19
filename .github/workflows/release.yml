@@ -183,7 +183,10 @@ jobs:
           RUN yum install --allowerasing -y curl
 
           RUN curl -s https://packagecloud.io/install/repositories/tyk/tyk-sync/script.rpm.sh | bash && yum install -y tyk-sync-1.2.0-1
-          RUN rpm -Uvh /tyk-sync.rpm' > Dockerfile
+          RUN curl https://keyserver.tyk.io/tyk.io.rpm.signing.key.2020 -o tyk-sync.key && rpm --import tyk-sync.key
+          RUN rpm --checksig tyk-sync.rpm
+
+          RUN rpm -Uvh --force tyk-sync.rpm' > Dockerfile
 
       - name: install on ${{ matrix.distro }}
         uses: docker/build-push-action@v5
