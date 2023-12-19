@@ -178,7 +178,7 @@ jobs:
 
       - name: generate dockerfile
         run: |
-          echo 'FROM registry.access.redhat.com/${{ matrix.distro }}
+          echo 'FROM ${{ matrix.distro }}
           COPY tyk-sync*_x86_64.rpm /tyk-sync.rpm
           RUN yum install -y curl
 
