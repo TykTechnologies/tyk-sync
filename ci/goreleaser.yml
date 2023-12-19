@@ -103,7 +103,6 @@ nfpms:
         key_file: tyk.io.signing.key
         type: origin
       lintian_overrides:
-        - statically-linked-binary
         - changelog-file-missing-in-native-package
 
 publishers:
