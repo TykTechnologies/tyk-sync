@@ -180,7 +180,7 @@ jobs:
         run: |
           echo 'FROM ${{ matrix.distro }}
           COPY tyk-sync*_x86_64.rpm /tyk-sync.rpm
-          RUN yum install -y curl
+          RUN yum install --allowerasing -y curl
 
           RUN curl -s https://packagecloud.io/install/repositories/tyk/tyk-sync/script.rpm.sh | bash && yum install -y tyk-sync-1.2.0-1
           RUN rpm -Uvh /tyk-sync.rpm' > Dockerfile
