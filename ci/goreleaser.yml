@@ -16,7 +16,7 @@
 builds:
   - id: std
     ldflags:
-      - -X main.VERSION={{.Version}} -X main.commit={{.FullCommit}} -X main.buildDate={{.Date}} -X main.builtBy=goreleaser
+      - -X github.com/TykTechnologies/tyk-sync/cmd.VERSION={{.Version}}
     goos:
       - linux
     goarch:
