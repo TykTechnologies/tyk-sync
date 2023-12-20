@@ -78,6 +78,7 @@ jobs:
           version: latest
           args: release --clean -f ci/goreleaser.yml  ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot' || '' }}
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NFPM_STD_PASSPHRASE: ${{ secrets.SIGNING_KEY_PASSPHRASE }}
           NFPM_PAYG_PASSPHRASE: ${{ secrets.SIGNING_KEY_PASSPHRASE }}
           GPG_FINGERPRINT: 12B5D62C28F57592D1575BD51ED14C59E37DAC20
