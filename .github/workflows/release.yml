@@ -82,8 +82,8 @@ jobs:
           NFPM_PAYG_PASSPHRASE: ${{ secrets.SIGNING_KEY_PASSPHRASE }}
           GPG_FINGERPRINT: 12B5D62C28F57592D1575BD51ED14C59E37DAC20
           PKG_SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-          RPMVERS: ${{ env.debvers }}
-          DEBVERS: ${{ env.rpmvers }}
+          RPMVERS: ${{ env.rpmvers }}
+          DEBVERS: ${{ env.debvers }}
           PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
 
       - uses: actions/upload-artifact@v3
