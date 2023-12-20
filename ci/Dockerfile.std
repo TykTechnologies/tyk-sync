@@ -4,7 +4,7 @@ RUN apt-get update \
  && apt-get dist-upgrade -y \
             curl ca-certificates apt-transport-https debian-archive-keyring gnupg
 
-RUN adduser --no-create-home --shell /bin/false --disabled-login tyk
+RUN adduser --no-create-home  --disabled-login tyk
 
 RUN rm -fv /usr/bin/passwd /usr/bin/adduser || true
 
