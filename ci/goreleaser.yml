@@ -19,6 +19,8 @@ builds:
       - -X github.com/TykTechnologies/tyk-sync/cmd.VERSION={{.Version}}
     goos:
       - linux
+      - darwin
+      - windows
     goarch:
       - amd64
       - arm64
@@ -120,8 +122,14 @@ checksum:
   disable: false
 
 archives:
-  - format: binary
-    allow_different_binary_count: true
+  - id: std
+    builds:
+      - std
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
 
 changelog:
   sort: asc
@@ -137,7 +145,6 @@ changelog:
     - '^minor:'
 
 release:
-  disable: true
   github:
     owner: TykTechnologies
     name: tyk-sync
