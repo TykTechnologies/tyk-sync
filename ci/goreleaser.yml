@@ -110,7 +110,7 @@ nfpms:
 publishers:
   - name: tyk-sync-unstable
     env:
-      - PACKAGECLOUD_TOKEN={{ .Env.PACKAGEVLOUD_TOKEN }}
+      - PACKAGECLOUD_TOKEN={{ .Env.PACKAGECLOUD_TOKEN }}
       - REPO=tyk/tyk-sync-unstable
       - RPMVERS={{ .Env.RPMVERS }}
       - DEBVERS={{ .Env.DEBVERS }}
