@@ -6,7 +6,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -154,7 +153,7 @@ var dumpCmd = &cobra.Command{
 
 			fname := fmt.Sprintf("api-%v.json", api.APIID)
 			p := path.Join(dir, fname)
-			err := ioutil.WriteFile(p, j, 0644)
+			err := os.WriteFile(p, j, 0644)
 			if err != nil {
 				fmt.Printf("Error writing file: %v\n", err)
 				return
@@ -213,7 +212,7 @@ var dumpCmd = &cobra.Command{
 
 			fname := fmt.Sprintf("policy-%v.json", pol.ID)
 			p := path.Join(dir, fname)
-			err := ioutil.WriteFile(p, j, 0644)
+			err := os.WriteFile(p, j, 0644)
 			if err != nil {
 				fmt.Printf("Error writing file: %v\n", err)
 				return
@@ -251,7 +250,7 @@ var dumpCmd = &cobra.Command{
 			fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
 			return
 		}
-		if err := ioutil.WriteFile(p, j, 0644); err != nil {
+		if err := os.WriteFile(p, j, 0644); err != nil {
 			fmt.Printf("Error writing file: %v\n", err)
 			return
 		}

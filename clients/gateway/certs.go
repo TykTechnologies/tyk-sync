@@ -5,13 +5,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
-	"github.com/ongoingio/urljoin"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"strings"
+
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/ongoingio/urljoin"
 )
 
 func (c *Client) CreateCertificate(cert []byte) (string, error) {
@@ -23,7 +23,7 @@ func (c *Client) CreateCertificate(cert []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = io.Copy(part, ioutil.NopCloser(bytes.NewReader(cert)))
+	_, err = io.Copy(part, io.NopCloser(bytes.NewReader(cert)))
 
 	err = writer.Close()
 	if err != nil {
@@ -40,7 +40,7 @@ func (c *Client) CreateCertificate(cert []byte) (string, error) {
 	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
 
-	rBody, _ := ioutil.ReadAll(resp.Body)
+	rBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("API Returned error: %v", string(rBody))
 	}

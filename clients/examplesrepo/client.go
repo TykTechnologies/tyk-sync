@@ -3,7 +3,7 @@ package examplesrepo
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -51,7 +51,7 @@ func (e *ExamplesClient) GetRepositoryIndex() (*RepositoryIndex, error) {
 		return nil, fmt.Errorf("example repository responded with unexpected status code: %d", resp.StatusCode)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

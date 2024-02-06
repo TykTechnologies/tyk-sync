@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -112,7 +111,7 @@ func getAuthAndBranch(cmd *cobra.Command, args []string) ([]byte, string) {
 	keyFile, _ := cmd.Flags().GetString("key")
 	var auth []byte
 	if keyFile != "" {
-		sshKey, errSsh := ioutil.ReadFile(keyFile)
+		sshKey, errSsh := os.ReadFile(keyFile)
 		if errSsh != nil {
 			fmt.Println("Error reading ", keyFile, " for github key:", errSsh)
 		}

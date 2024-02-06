@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 
 	"github.com/TykTechnologies/storage/persistent/model"
@@ -107,7 +107,7 @@ func fetchSpec(fs billy.Filesystem, subdirectoryPath string) (*TykSourceSpec, er
 		return nil, err
 	}
 
-	rawSpec, err := ioutil.ReadAll(specFile)
+	rawSpec, err := io.ReadAll(specFile)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdire
 			return nil, err
 		}
 
-		rawDef, err := ioutil.ReadAll(defFile)
+		rawDef, err := io.ReadAll(defFile)
 		if err != nil {
 			return nil, err
 		}
@@ -208,7 +208,7 @@ func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec, subdir
 			return nil, err
 		}
 
-		rawData, err := ioutil.ReadAll(oaiFile)
+		rawData, err := io.ReadAll(oaiFile)
 		if err != nil {
 			return nil, err
 		}
@@ -273,7 +273,7 @@ func fetchPolicies(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath st
 			return nil, err
 		}
 
-		rawDef, err := ioutil.ReadAll(defFile)
+		rawDef, err := io.ReadAll(defFile)
 		if err != nil {
 			return nil, err
 		}
