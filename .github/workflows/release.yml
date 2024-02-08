@@ -87,14 +87,14 @@ jobs:
           DEBVERS: ${{ env.debvers }}
           PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: deb
           retention-days: 1
           path: |
             dist/*.deb
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: rpm
           retention-days: 1
