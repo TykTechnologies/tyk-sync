@@ -1,6 +1,6 @@
 module github.com/TykTechnologies/tyk-sync
 
-go 1.19
+go 1.21
 
 require (
 	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20231017082933-70819d7e4c9b
