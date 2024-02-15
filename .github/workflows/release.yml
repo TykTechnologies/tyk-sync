@@ -23,15 +23,15 @@ on:
       - master
       - release-**
     tags:
-      - 'v*'
-  
+      - "v*"
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
-    container: tykio/golang-cross:1.19-bullseye
+    container: tykio/golang-cross:1.21-bullseye
     env:
-      debvers: 'ubuntu/bionic ubuntu/focal ubuntu/jammy debian/bullseye debian/bookworm'
-      rpmvers: 'el/8 el/9 amazon/2023'
+      debvers: "ubuntu/bionic ubuntu/focal ubuntu/jammy debian/bullseye debian/bookworm"
+      rpmvers: "el/8 el/9 amazon/2023"
     outputs:
       tag: ${{ steps.targets.outputs.tag }}
 
@@ -100,7 +100,6 @@ jobs:
           retention-days: 1
           path: |
             dist/*.rpm
-
 
   upgrade-deb:
     runs-on: ubuntu-latest
@@ -189,4 +188,3 @@ jobs:
           context: "."
           file: Dockerfile
           push: false
-
