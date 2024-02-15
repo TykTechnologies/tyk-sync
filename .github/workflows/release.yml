@@ -28,7 +28,7 @@ on:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
-    container: tykio/golang-cross:1.19-bullseye
+    container: tykio/golang-cross:1.21-bullseye
     env:
       debvers: 'ubuntu/bionic ubuntu/focal ubuntu/jammy debian/bullseye debian/bookworm'
       rpmvers: 'el/8 el/9 amazon/2023'
