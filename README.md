@@ -35,14 +35,14 @@ dependent tokens continue to have access to your services.
 
 ### Prerequisites:
 
-- Tyk Sync was built using Go 1.16. The minimum Go version required to install is 1.16.
+- Tyk Sync was built using Go [goVersion]. The minimum Go version required to install is [goVersion].
 - In order for policy ID matching to work correctly, your Dashboard must have `allow_explicit_policy_id: true` and `enable_duplicate_slugs: true`.
 - In order for policy ID matching to work correctly, your Gateway must have `policies.allow_explicit_policy_id: true`.
 - It is assumed you have a Tyk CE or Tyk Pro installation.
 
 ## Installation
 
-Currently the application is available via Go, Docker and in packagecloud, so to install via Go you must have Go installed and run:
+Currently, the application is available via Go, Docker and in packagecloud, so to install via Go you must have Go installed and run:
 
 ### Go:
 To install via Go you must have Go installed and run:
@@ -52,28 +52,34 @@ go install github.com/TykTechnologies/tyk-sync@latest
 ```
 
 >[NOTE]
->Tyk Sync was built using Go 1.19. The minimum Go version required to install is 1.19.
+>Tyk Sync was built using Go [goVersion]. The minimum Go version required to install is [goVersion].
 
 This should make the `tyk-sync` command available to your console.
 
 ### Docker:
 
 To install a particular version of Tyk Sync via docker image please run the following command stating the version you want to use. A list of all available versions can be found on the Tyk Sync Docker Hub page: https://hub.docker.com/r/tykio/tyk-sync/tags
-```
+
+```bash
 docker pull tykio/tyk-sync:{version_id}
 ```
+
 To run `tyk-sync` as a one-off command and display usage options please do:
-```
+
+```bash
 docker run -it --rm tykio/tyk-sync:{version_id} help
 ```
+
 Then the docker image `tyk-sync` can be used in the following way:
-```
+
+```bash
 docker run -it --rm tykio/tyk-sync:{version_id} [flags]
 docker run -it --rm tykio/tyk-sync:{version_id} [command]
 ```
+
 ## Usage
 
-```
+```bash
 Usage:
   tyk-sync [flags]
   tyk-sync [command]
@@ -98,7 +104,7 @@ Use "tyk-sync [command] --help" for more information about a command.
 First, we need to extract the data from our Tyk Dashboard, here we `dump` into ./tmp, let's assume this is a git-enabled
 directory
 
-```
+```bash
 tyk-sync dump -d="http://localhost:3000" -s="b2d420ca5302442b6f20100f76de7d83" -t="./tmp"
 Extracting APIs and Policies from http://localhost:3000
 > Fetching policies
@@ -112,7 +118,7 @@ Done.
 
 Next, let's push those changes back to the Git repo on the branch `my-test-branch`:
 
-```
+```bash
 cd tmp
 git add .
 git commit -m "My dashboard dump"
@@ -121,7 +127,7 @@ git push -u origin my-test-branch
 
 Now to restore this data directly from GitHub:
 
-```
+```bash
 tyk-sync sync -d="http://localhost:3010" -s="b2d420ca5302442b6f20100f76de7d83" -b="refs/heads/my-test-branch" https://github.com/myname/my-test.git
 Using publisher: Dashboard Publisher
 Fetched 3 definitions
@@ -144,20 +150,19 @@ SYNC Updating Policy: Test policy 1
 The command provides output to identify which actions have been taken. If using a Tyk Gateway, the Gateway will be
 automatically hot-reloaded.
 
-
 ## Example: Check the currently installed version of Tyk Sync
 
 To check the current Tyk Sync version, we need to run the version command:
 
-```
+```bash
 tyk-sync version
-v1.2.2
+v1.4.2
 ```
 
 ## Example: Import Tyk example into Dashboard
 
 To list all available examples you need to run this command:
-```
+```bash
 tyk-sync examples
 LOCATION           NAME                               DESCRIPTION
 udg/vat-checker    VAT number checker UDG             Simple REST API wrapped in GQL using Universal Data Graph that allows user to check validity of a VAT number and display some details about it.
@@ -165,7 +170,7 @@ udg/geo-info       Geo information about the World    Countries GQL API extended
 ```
 
 It's also possible to show more details about an example by using its location:
-```
+```bash
 tyk-sync examples show --location="udg/vat-checker"
 LOCATION
 udg/vat-checker
@@ -184,7 +189,7 @@ MIN TYK VERSION
 ```
 
 To publish it into the Dashboard you will need to use this command:
-```
+```bash
 tyk-sync examples publish -d="http://localhost:3000" -s="b2d420ca5302442b6f20100f76de7d83" -l="udg/vat-checker"
 Fetched 1 definitions
 Fetched 0 policies
@@ -197,3 +202,5 @@ Updating API 0: vat-validation
 org override detected, setting.
 Done
 ```
+
+[goVersion]: 1.21
