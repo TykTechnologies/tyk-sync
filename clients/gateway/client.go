@@ -19,7 +19,7 @@ type Client struct {
 }
 
 const (
-	endpointAPIs     string = "/tyk/apis/"
+	endpointAPIs     string = "/tyk/apis"
 	endpointCerts    string = "/tyk/certs"
 	reloadAPIs       string = "/tyk/reload/group"
 	endpointPolicies string = "/tyk/policies"
@@ -343,7 +343,7 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	if err := c.CreateAPIs(&createAPIs); err != nil {
 		return err
 	}
-	for _, apiDef := range updateAPIs {
+	for _, apiDef := range createAPIs {
 		fmt.Printf("SYNC Created: %v\n", apiDef.Name)
 	}
 
@@ -355,8 +355,7 @@ func (c *Client) DeleteAPI(id string) error {
 }
 
 func (c *Client) deleteAPI(id string) error {
-	delPath := urljoin.Join(c.url, endpointAPIs)
-	delPath += id
+	delPath := urljoin.Join(c.url, endpointAPIs, id)
 
 	delResp, err := grequests.Delete(delPath, &grequests.RequestOptions{
 		Headers: map[string]string{
