@@ -157,7 +157,6 @@ To check the current Tyk Sync version, we need to run the version command:
 
 ```bash
 tyk-sync version
-v1.4.2
 ```
 
 ## Example: Import Tyk example into Dashboard
