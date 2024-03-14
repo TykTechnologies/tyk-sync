@@ -91,7 +91,7 @@ Available Commands:
   help        Help about any command
   publish     publish API definitions from a Git repo or file system to a gateway or dashboard
   sync        Synchronise a github repo or file system with a gateway
-  update      A brief description of your command
+  update      Update a dashboard or gateway with APIs and policies
   version     This command will show the current Tyk-Sync version
 
 Flags:
