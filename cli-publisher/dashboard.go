@@ -73,6 +73,10 @@ func (p *DashboardPublisher) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	if p.OrgOverride != "" {
 		fixedDefs := make([]objects.DBApiDefinition, len(apiDefs))
 		for i, a := range apiDefs {
+			if a.APIDefinition == nil {
+				continue
+			}
+
 			newDef := a
 			newDef.OrgID = p.OrgOverride
 			fixedDefs[i] = newDef

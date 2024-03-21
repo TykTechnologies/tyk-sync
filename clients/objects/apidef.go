@@ -14,6 +14,7 @@ func NewDefinition() *DBApiDefinition {
 type DBApiDefinition struct {
 	*APIDefinition  `bson:"api_definition" json:"api_definition"`
 	OAS             *oas.OAS        `json:"oas,omitempty"`
+	Categories      []string        `bson:"categories" json:"categories,omitempty"`
 	HookReferences  []interface{}   `bson:"hook_references" json:"hook_references"`
 	IsSite          bool            `bson:"is_site" json:"is_site"`
 	SortBy          int             `bson:"sort_by" json:"sort_by"`

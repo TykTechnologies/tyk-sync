@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-
 	"gopkg.in/mgo.v2/bson"
 
 	"encoding/json"
@@ -63,14 +62,14 @@ var dumpCmd = &cobra.Command{
 		var errPoliciesFetch error
 		var errApisFetch error
 
-		//building the api def objs from wantedAPIs
+		// building the api def objs from wantedAPIs
 		for _, APIID := range wantedAPIs {
 			api := objects.DBApiDefinition{APIDefinition: &objects.APIDefinition{}}
 			api.APIID = APIID
 			apis = append(apis, api)
 		}
 
-		//building the policies obj from wantedAPIs
+		// building the policies obj from wantedAPIs
 		for _, wantedPolicy := range wantedPolicies {
 			if !bson.IsObjectIdHex(wantedPolicy) {
 				fmt.Printf("Invalid selected policy ID: %s.\n", wantedPolicy)
@@ -91,14 +90,21 @@ var dumpCmd = &cobra.Command{
 				fmt.Println(errPoliciesFetch)
 				return
 			}
+
 			fmt.Println("> Fetching APIs")
 
-			apis, errApisFetch = c.FetchAPIs()
+			var resp *dashboard.APISResponse
+			resp, errApisFetch = c.FetchAPIs()
 			if err != nil {
 				fmt.Println(errApisFetch)
 				return
 			}
+
+			apis = resp.Apis
 		}
+
+		var oasApisDB []objects.DBApiDefinition
+		apis, oasApisDB = extractOASApis(apis)
 
 		fmt.Printf("--> Identified %v policies\n", len(policies))
 		if len(wantedPolicies) > 0 {
@@ -106,6 +112,7 @@ var dumpCmd = &cobra.Command{
 		} else {
 			fmt.Println("--> Cleaning policy objects")
 		}
+
 		// A bug exists which causes decoding of the access rights to break,
 		// so we should fetch individually
 		cleanPolicyObjects := make([]*objects.Policy, len(policies))
@@ -139,12 +146,12 @@ var dumpCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Printf("--> Fetched %v APIs\n", len(apis))
+		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
+		fmt.Printf("--> Fetched %v OAS APIs\n", len(oasApisDB))
 
 		dir, _ := cmd.Flags().GetString("target")
 		apiFiles := make([]string, len(apis))
 		for i, api := range apis {
-
 			j, jerr := json.MarshalIndent(api, "", "  ")
 			if jerr != nil {
 				fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
@@ -161,22 +168,66 @@ var dumpCmd = &cobra.Command{
 			apiFiles[i] = fname
 		}
 
+		oasApiFiles := make([]string, len(oasApisDB))
+		for i, oasApi := range oasApisDB {
+			//j, jerr := oasApi.OAS.MarshalJSON()
+			//if jerr != nil {
+			//	fmt.Printf("OAS JSON Encoding error: %v\n", jerr.Error())
+			//	return
+			//}
+
+			//var data map[string]interface{}
+			//if err := json.Unmarshal(j, &data); err != nil {
+			//	fmt.Println("failed to unmarshal again")
+			//	return
+			//}
+			//
+			//// Marshal the map with indentation
+			//j, jerr = json.MarshalIndent(data, "", " ")
+			//if err != nil {
+			//	fmt.Println("FAILED third step")
+			//	return
+			//}
+
+			j, jerr := json.MarshalIndent(oasApi, "", "  ")
+			if jerr != nil {
+				fmt.Printf("OASAPI JSON Encoding error: %v\n", jerr.Error())
+				return
+			}
+
+			name := ""
+			if oasApi.OAS.GetTykExtension() != nil {
+				name = oasApi.OAS.GetTykExtension().Info.ID
+			}
+
+			fname := fmt.Sprintf("oas-%v.json", name)
+			p := path.Join(dir, fname)
+			err := os.WriteFile(p, j, 0644)
+			if err != nil {
+				fmt.Printf("Error writing file: %v\n", err)
+				return
+			}
+
+			oasApiFiles[i] = fname
+		}
+
 		// If we have selected Policies specified we're going to check if we're importing all the necessary APIs
 		if len(wantedPolicies) > 0 {
 			for _, policy := range cleanPolicyObjects {
-				for _, accesRights := range policy.AccessRights {
+				for _, accessRights := range policy.AccessRights {
 					found := false
 					for _, api := range apis {
-						if api.APIID == accesRights.APIID {
+						if api.APIID == accessRights.APIID {
 							found = true
 						}
 					}
 					if !found {
-						fmt.Println("--> [WARNING] Policy ", policy.ID, " has access rights over API ID ", accesRights.APIID, " and that API it's not imported. It might cause some problems in the future.")
+						fmt.Println("--> [WARNING] Policy ", policy.ID, " has access rights over API ID ", accessRights.APIID, " and that API it's not imported. It might cause some problems in the future.")
 					}
 				}
 			}
 		}
+
 		// If we have selected APIs specified we're going to check if we're importing all the necessary policies
 		if len(wantedAPIs) > 0 {
 			//checking selected APIs  -  Policies integrity
@@ -224,38 +275,62 @@ var dumpCmd = &cobra.Command{
 		// Create a spec file
 		gitSpec := tyk_vcs.TykSourceSpec{
 			Type:     tyk_vcs.TYPE_APIDEF,
-			Files:    make([]tyk_vcs.APIInfo, len(apiFiles)),
 			Policies: make([]tyk_vcs.PolicyInfo, len(policyFiles)),
 		}
 
-		for i, apiFile := range apiFiles {
+		for _, apiFile := range apiFiles {
 			asInfo := tyk_vcs.APIInfo{
 				File: apiFile,
 			}
-			gitSpec.Files[i] = asInfo
+
+			gitSpec.Files = append(gitSpec.Files, asInfo)
+		}
+
+		for _, oasApiFile := range oasApiFiles {
+			asInfo := tyk_vcs.APIInfo{
+				File: oasApiFile,
+			}
+
+			gitSpec.Files = append(gitSpec.Files, asInfo)
 		}
 
 		for i, polFile := range policyFiles {
 			asInfo := tyk_vcs.PolicyInfo{
 				File: polFile,
 			}
+
 			gitSpec.Policies[i] = asInfo
 		}
 
 		fname := ".tyk.json"
 		p := path.Join(dir, fname)
 		fmt.Printf("> Creating spec file in: %v\n", p)
+
 		j, jerr := json.MarshalIndent(gitSpec, "", "  ")
 		if jerr != nil {
 			fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
 			return
 		}
+
 		if err := os.WriteFile(p, j, 0644); err != nil {
 			fmt.Printf("Error writing file: %v\n", err)
 			return
 		}
+
 		fmt.Println("Done.")
 	},
+}
+
+func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBApiDefinition) {
+	for i := 0; i < len(apis); i++ {
+		if apis[i].IsOAS {
+			oas = append(oas, apis[i])
+		} else {
+			classic = append(classic, apis[i])
+		}
+	}
+
+	return
 }
 
 func init() {

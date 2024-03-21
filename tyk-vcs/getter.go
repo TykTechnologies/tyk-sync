@@ -158,6 +158,10 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdire
 	defNames := spec.Files
 	defs := make([]objects.DBApiDefinition, len(defNames))
 	for i, defInfo := range defNames {
+		if defInfo.File == "" {
+			continue
+		}
+		
 		defFile, err := fs.Open(getFilepath(defInfo.File, subdirectoryPath))
 		if err != nil {
 			return nil, err
