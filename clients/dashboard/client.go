@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -19,12 +20,54 @@ type Client struct {
 	allowUnsafeOAS     bool
 }
 
+// CategoriesPayload is a struct that holds a list of categories.
+type CategoriesPayload struct {
+	Categories []string `json:"categories"`
+}
+
+func (c *Client) UpdateOASCategory(oasApi *objects.DBApiDefinition) (*grequests.Response, error) {
+	if oasApi == nil {
+		return nil, nil
+	}
+
+	if !oasApi.IsOAS {
+		return nil, fmt.Errorf("malformed input to update OAS API category")
+	}
+
+	data, err := json.Marshal(CategoriesPayload{Categories: oasApi.Categories})
+	if err != nil {
+		return nil, err
+	}
+
+	fullPath := urljoin.Join(c.url, endpointOASAPIs, oasApi.APIID, endpointCategories)
+	putResp, err := grequests.Put(fullPath, &grequests.RequestOptions{
+		JSON: data,
+		Headers: map[string]string{
+			"Authorization": c.secret,
+		},
+		Params: map[string]string{
+			"accept_additional_properties": "true",
+		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if putResp.StatusCode != 200 {
+		return nil, fmt.Errorf("OAS Categories API Returned error: %v (code: %v)", putResp.String(), putResp.StatusCode)
+	}
+
+	return putResp, nil
+}
+
 const (
-	endpointAPIs     string = "/api/apis"
-	endpointOASAPIs  string = "/api/apis/oas"
-	endpointPolicies string = "/api/portal/policies"
-	endpointCerts    string = "/api/certs"
-	endpointUsers    string = "/api/users"
+	endpointAPIs       string = "/api/apis"
+	endpointCategories string = "/categories"
+	endpointOASAPIs    string = "/api/apis/oas"
+	endpointPolicies   string = "/api/portal/policies"
+	endpointCerts      string = "/api/certs"
+	endpointUsers      string = "/api/users"
 )
 
 var (
