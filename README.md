@@ -43,7 +43,8 @@ dependent tokens continue to have access to your services.
 
 ## Installation
 
-Currently, the application is available via Go, Docker and in packagecloud, so to install via Go you must have Go installed and run:
+Currently, the application is available via Docker, packagecloud, or can be installed from source.
+To install from source you must have Go installed.
 
 ### Go:
 To install via Go you must have Go installed and run:
