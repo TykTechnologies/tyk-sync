@@ -47,7 +47,7 @@ Currently, the application is available via Docker, packagecloud, or can be inst
 To install from source you must have Go installed.
 
 ### Go:
-To install via Go you must have Go installed and run:
+To install from source you must have Go installed and run:
 
 ```bash
 go install github.com/TykTechnologies/tyk-sync@latest
