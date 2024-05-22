@@ -170,25 +170,6 @@ var dumpCmd = &cobra.Command{
 
 		oasApiFiles := make([]string, len(oasApisDB))
 		for i, oasApi := range oasApisDB {
-			//j, jerr := oasApi.OAS.MarshalJSON()
-			//if jerr != nil {
-			//	fmt.Printf("OAS JSON Encoding error: %v\n", jerr.Error())
-			//	return
-			//}
-
-			//var data map[string]interface{}
-			//if err := json.Unmarshal(j, &data); err != nil {
-			//	fmt.Println("failed to unmarshal again")
-			//	return
-			//}
-			//
-			//// Marshal the map with indentation
-			//j, jerr = json.MarshalIndent(data, "", " ")
-			//if err != nil {
-			//	fmt.Println("FAILED third step")
-			//	return
-			//}
-
 			j, jerr := json.MarshalIndent(oasApi, "", "  ")
 			if jerr != nil {
 				fmt.Printf("OASAPI JSON Encoding error: %v\n", jerr.Error())
