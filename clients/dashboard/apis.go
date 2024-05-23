@@ -98,13 +98,15 @@ func (c *Client) FetchAPIs() (*APISResponse, error) {
 	}
 
 	var oasApis []oas.OAS
-	for i, _ := range apisResponse.Apis {
+
+	for i := range apisResponse.Apis {
 		if apisResponse.Apis[i].APIDefinition != nil && apisResponse.Apis[i].IsOAS {
 			oasApi, err := c.FetchOASAPI(apisResponse.Apis[i].APIID)
 			if err != nil {
 				fmt.Printf("Failed to fetch OAS API: %v, err: %v", apisResponse.Apis[i].APIID, err)
 				continue
 			}
+
 			oasApis = append(oasApis, *oasApi)
 		}
 	}
@@ -194,6 +196,7 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		var data []byte
 
 		fullPath := urljoin.Join(c.url, endpointAPIs)
+
 		if asDBDef.APIDefinition != nil {
 			switch asDBDef.IsOAS {
 			case true:
@@ -276,8 +279,8 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 	if err != nil {
 		return err
 	}
-	existingAPIs := resp.Apis
 
+	existingAPIs := resp.Apis
 	apiids, ids, slugs, paths := getAPIsIdentifiers(&existingAPIs)
 
 	for i := range *apiDefs {

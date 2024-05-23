@@ -40,6 +40,7 @@ func (c *Client) UpdateOASCategory(oasApi *objects.DBApiDefinition) (*grequests.
 	}
 
 	fullPath := urljoin.Join(c.url, endpointOASAPIs, oasApi.APIID, endpointCategories)
+
 	putResp, err := grequests.Put(fullPath, &grequests.RequestOptions{
 		JSON: data,
 		Headers: map[string]string{

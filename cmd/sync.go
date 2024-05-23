@@ -45,5 +45,7 @@ func init() {
 	syncCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to sync")
 	syncCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to sync")
 
-	syncCmd.Flags().MarkDeprecated("allow-unsafe-oas", "syncing of OAS should work without it")
+	if err := syncCmd.Flags().MarkDeprecated("allow-unsafe-oas", "syncing of OAS should work without it"); err != nil {
+		fmt.Println("failed to mark `allow-unsafe-oas` flag deprecated")
+	}
 }
