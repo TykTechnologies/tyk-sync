@@ -10,7 +10,7 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     outputs:
-      latest-tag: $(steps.latest-tag.outputs.tag)
+      latest-tag: $(steps.get-latest-tag.outputs.tag)
     steps:
       - name: Checkout Tyk Sync
         uses: actions/checkout@v4
@@ -22,12 +22,10 @@ jobs:
         with:
           go-version: 1.21.x
 
-      - name: Get latest tag
-        id: latest-tag
-        run: |
-          tag = $(git tag | sort -V | tail -1)
-          echo $tag
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
+        with:
+          semver_only: true
 
       - name: Run unit tests
         run: go test ./...
