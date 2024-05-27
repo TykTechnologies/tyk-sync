@@ -26,7 +26,7 @@ jobs:
         id: get-latest-version
         run: |
           go build
-          version = $(./tyk-sync version)
+          version=$(./tyk-sync v)
           echo "version=$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
