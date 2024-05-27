@@ -10,7 +10,7 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     outputs:
-      latest-tag: $(steps.latest-tag.outputs.)
+      latest-tag: $(steps.latest-tag.outputs.tag)
     steps:
       - name: Checkout Tyk Sync
         uses: actions/checkout@v4
@@ -24,7 +24,10 @@ jobs:
 
       - name: Get latest tag
         id: latest-tag
-        run: echo "tag=$(git tag | sort -V | tail -1)" >> "$GITHUB_OUTPUT"
+        run: |
+          tag = $(git tag | sort -V | tail -1)
+          echo $tag
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Run unit tests
         run: go test ./...
