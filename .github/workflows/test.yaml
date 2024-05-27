@@ -22,7 +22,7 @@ jobs:
         with:
           go-version: 1.21.x
 
-      - uses: actions-ecosystem/action-get-latest-tag@v1
+      - uses: actions-ecosystem/action-get-latest-tag@v1.6.0
         id: get-latest-tag
         with:
           semver_only: true
