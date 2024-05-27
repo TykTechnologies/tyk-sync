@@ -25,7 +25,8 @@ jobs:
       - name: Get latest version
         id: get-latest-version
         run: |
-          version = $(go run . version)
+          go build
+          version = $(./tyk-sync version)
           echo "version=$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
@@ -35,6 +36,7 @@ jobs:
 
   sbom:
     uses: TykTechnologies/github-actions/.github/workflows/sbom.yaml@main
+    needs: run-tests
     if: ${{ github.event_name  == 'pull_request' ||  github.event_name == 'push' }}
     secrets:
       TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
