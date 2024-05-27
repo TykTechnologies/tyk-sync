@@ -10,7 +10,7 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     outputs:
-      latest-version: ${{ steps.get-latest-tag.outputs.version }}
+      latest-version: ${{ steps.get-latest-version.outputs.version }}
     steps:
       - name: Checkout Tyk Sync
         uses: actions/checkout@v4
