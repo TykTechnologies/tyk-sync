@@ -23,6 +23,15 @@ jobs:
       - name: Run unit tests
         run: go test ./...
 
+  get-latest-tag:
+    runs-on: ubuntu-latest 
+    outputs:
+      latest-tag: $(steps.latest-tag.outputs.)
+    steps:
+      - name: Get latest tag
+        id: latest-tag
+        run: echo "tag=$(git tag | sort -V | tail -1)" >> "$GITHUB_OUTPUT"
+
   sbom:
     uses: TykTechnologies/github-actions/.github/workflows/sbom.yaml@main
     if: ${{ github.event_name  == 'pull_request' ||  github.event_name == 'push' }}
@@ -31,4 +40,4 @@ jobs:
       DEPDASH_URL: ${{ secrets.DEPDASH_URL }}
       DEPDASH_KEY: ${{ secrets.DEPDASH_KEY }}
       ORG_GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
-      DOCKER_IMAGE: "tykio/tyk-sync:latest"
+      DOCKER_IMAGE: "tykio/tyk-sync:${{ needs.get-latest-tag.outputs.latest-tag }})"
