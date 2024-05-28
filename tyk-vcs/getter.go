@@ -25,6 +25,7 @@ type Getter interface {
 	FetchAPIDef(spec *TykSourceSpec) ([]objects.DBApiDefinition, error)
 	FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error)
 	FetchTykSpec() (*TykSourceSpec, error)
+	FetchReadme() (string, error)
 }
 
 type BaseGetter struct {
@@ -100,6 +101,36 @@ func (gg *FSGetter) FetchRepo() error {
 	return nil
 }
 
+func openReadme(fs billy.Filesystem, subdirectoryPath string) (billy.File, error) {
+	filenames := []string{"README.md", "Readme.md", "readme.md"}
+	for _, filename := range filenames {
+		filePath := getFilepath(filename, subdirectoryPath)
+		file, err := fs.Open(filePath)
+		if err == nil {
+			return file, nil
+		}
+	}
+	return nil, fmt.Errorf("neither README.md, Readme.md or readme.md found in %s", subdirectoryPath)
+}
+
+func fetchReadme(fs billy.Filesystem, subdirectoryPath string) (string, error) {
+	readmeFile, err := openReadme(fs, subdirectoryPath)
+	if err != nil {
+		fmt.Println("Readme file not found")
+		return "", err
+	}
+	defer readmeFile.Close()
+
+	rawReadme, err := io.ReadAll(readmeFile)
+	if err != nil {
+		return "", err
+	}
+
+	readmeContent := string(rawReadme)
+
+	return readmeContent, nil
+}
+
 func fetchSpec(fs billy.Filesystem, subdirectoryPath string) (*TykSourceSpec, error) {
 	specFile, err := fs.Open(getFilepath(".tyk.json", subdirectoryPath))
 	if err != nil {
@@ -119,6 +150,13 @@ func fetchSpec(fs billy.Filesystem, subdirectoryPath string) (*TykSourceSpec, er
 	}
 
 	return &ts, nil
+}
+
+func (gg *GitGetter) FetchReadme() (string, error) {
+	if gg.r == nil {
+		return "", errors.New("no repository in memory, fetch repo first")
+	}
+	return fetchReadme(gg.fs, gg.subdirectoryPath)
 }
 
 func (gg *GitGetter) FetchTykSpec() (*TykSourceSpec, error) {

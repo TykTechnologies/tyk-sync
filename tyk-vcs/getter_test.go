@@ -8,6 +8,7 @@ import (
 )
 
 const REPO string = "https://github.com/lonelycode/integration-test.git"
+const README_REPO string = "https://github.com/TykTechnologies/tyk-sync"
 
 func TestNewGGetter(t *testing.T) {
 	_, e := NewGGetter(REPO, "refs/heads/master", []byte{}, "")
@@ -46,6 +47,27 @@ func TestGitGetter_FetchTykSpec(t *testing.T) {
 
 	if ts.Type != TYPE_APIDEF {
 		t.Fatalf("Spec Type is invalid: %v expected: '%v'", ts.Type, TYPE_APIDEF)
+	}
+}
+
+func TestGitGetter_FetchReadme(t *testing.T) {
+	g, e := NewGGetter(README_REPO, "refs/heads/master", []byte{}, "")
+	if e != nil {
+		t.Fatal(e)
+	}
+
+	e = g.FetchRepo()
+	if e != nil {
+		t.Fatal(e)
+	}
+
+	readmeContent, err := g.FetchReadme()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(readmeContent) == 0 {
+		t.Fatal("Readme content is empty")
 	}
 }
 
