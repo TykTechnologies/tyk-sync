@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"gopkg.in/mgo.v2/bson"
 
 	"encoding/json"
@@ -144,6 +145,8 @@ var dumpCmd = &cobra.Command{
 				}
 				apis[i] = fullAPI
 			}
+
+			apis, oasApisDB = extractOASApis(apis)
 		}
 
 		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
