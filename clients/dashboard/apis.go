@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/storage/persistent/model"
+	"github.com/TykTechnologies/tyk-sync/clients/objects"
+	"github.com/TykTechnologies/tyk/apidef/oas"
 	"github.com/gofrs/uuid"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
-
-	"github.com/TykTechnologies/tyk-sync/clients/objects"
 )
 
 type APIResponse struct {
@@ -19,8 +19,9 @@ type APIResponse struct {
 }
 
 type APISResponse struct {
-	Apis  []objects.DBApiDefinition `json:"apis"`
-	Pages int                       `json:"pages"`
+	OASApis []oas.OAS                 `json:"oasApis"`
+	Apis    []objects.DBApiDefinition `json:"apis"`
+	Pages   int                       `json:"pages"`
 }
 
 func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
@@ -44,7 +45,34 @@ func (c *Client) GetActiveID(def *objects.DBApiDefinition) string {
 	return def.Id.Hex()
 }
 
-func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
+func (c *Client) FetchOASAPI(id string) (*oas.OAS, error) {
+	fullPath := urljoin.Join(c.url, endpointOASAPIs, id, "export")
+
+	ro := &grequests.RequestOptions{
+		Headers: map[string]string{
+			"Authorization": c.secret,
+		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
+	}
+
+	resp, err := grequests.Get(fullPath, ro)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("API Returned error: %v for %v", resp.String(), fullPath)
+	}
+
+	oasApi := &oas.OAS{}
+	if err := oasApi.UnmarshalJSON(resp.Bytes()); err != nil {
+		return nil, err
+	}
+
+	return oasApi, nil
+}
+
+func (c *Client) FetchAPIs() (*APISResponse, error) {
 	fullPath := urljoin.Join(c.url, endpointAPIs)
 
 	ro := &grequests.RequestOptions{
@@ -64,12 +92,26 @@ func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
 		return nil, fmt.Errorf("API Returned error: %v for %v", resp.String(), fullPath)
 	}
 
-	apis := APISResponse{}
-	if err := resp.JSON(&apis); err != nil {
+	apisResponse := APISResponse{}
+	if err := resp.JSON(&apisResponse); err != nil {
 		return nil, err
 	}
 
-	return apis.Apis, nil
+	var oasApis []oas.OAS
+	for i, _ := range apisResponse.Apis {
+		if apisResponse.Apis[i].APIDefinition != nil && apisResponse.Apis[i].IsOAS {
+			oasApi, err := c.FetchOASAPI(apisResponse.Apis[i].APIID)
+			if err != nil {
+				fmt.Printf("Failed to fetch OAS API: %v, err: %v", apisResponse.Apis[i].APIID, err)
+				continue
+			}
+			oasApis = append(oasApis, *oasApi)
+		}
+	}
+
+	apisResponse.OASApis = oasApis
+
+	return &apisResponse, nil
 }
 
 func (c *Client) FetchAPI(apiID string) (objects.DBApiDefinition, error) {
@@ -118,14 +160,16 @@ func getAPIsIdentifiers(apiDefs *[]objects.DBApiDefinition) (map[string]*objects
 }
 
 func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
-	existingAPIs, err := c.FetchAPIs()
+	resp, err := c.FetchAPIs()
 	if err != nil {
 		return err
 	}
 
+	existingAPIs := resp.Apis
 	apiids, ids, slugs, paths := getAPIsIdentifiers(&existingAPIs)
 
 	retainAPIIdList := make([]objects.DBApiDefinition, 0)
+
 	for i := range *apiDefs {
 		apiDef := (*apiDefs)[i]
 		fmt.Printf("Creating API %v: %v\n", i, apiDef.Name)
@@ -135,7 +179,7 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		} else if thisAPI, ok := ids[apiDef.Id.Hex()]; ok && thisAPI != nil {
 			fmt.Println("Warning: Object ID Exists")
 			return UseUpdateError
-		} else if thisAPI, ok := slugs[apiDef.Slug]; ok && thisAPI != nil {
+		} else if thisAPI, ok := slugs[apiDef.Slug]; apiDef.Slug != "" && ok && thisAPI != nil {
 			fmt.Println("Warning: Slug Exists")
 			return UseUpdateError
 		} else if thisAPI, ok := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]; ok && thisAPI != nil {
@@ -147,12 +191,26 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		asDBDef := &apiDef
 		c.fixDBDef(asDBDef)
 
-		data, err := json.Marshal(asDBDef)
-		if err != nil {
-			return err
-		}
+		var data []byte
 
 		fullPath := urljoin.Join(c.url, endpointAPIs)
+		if asDBDef.APIDefinition != nil {
+			switch asDBDef.IsOAS {
+			case true:
+				fullPath = urljoin.Join(c.url, endpointOASAPIs)
+
+				data, err = json.Marshal(asDBDef.OAS)
+				if err != nil {
+					return err
+				}
+			default:
+				data, err = json.Marshal(asDBDef)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		createResp, err := grequests.Post(fullPath, &grequests.RequestOptions{
 			JSON: data,
 			Headers: map[string]string{
@@ -163,7 +221,6 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			},
 			InsecureSkipVerify: c.InsecureSkipVerify,
 		})
-
 		if err != nil {
 			return err
 		}
@@ -195,6 +252,15 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		slugs[apiDef.Slug] = &apiDef
 		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
 
+		if asDBDef.APIDefinition != nil && asDBDef.IsOAS && len(asDBDef.Categories) > 0 {
+			resp, err := c.UpdateOASCategory(asDBDef)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("OAS API Categories updated, %v", resp.String())
+		}
+
 		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
 	}
 
@@ -206,10 +272,11 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 }
 
 func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
-	existingAPIs, err := c.FetchAPIs()
+	resp, err := c.FetchAPIs()
 	if err != nil {
 		return err
 	}
+	existingAPIs := resp.Apis
 
 	apiids, ids, slugs, paths := getAPIsIdentifiers(&existingAPIs)
 
@@ -286,6 +353,15 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			return fmt.Errorf("API request completed, but with error: %v", status.Message)
 		}
 
+		if asDBDef.APIDefinition != nil && asDBDef.IsOAS && len(asDBDef.Categories) > 0 {
+			resp, err := c.UpdateOASCategory(asDBDef)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("OAS API Categories updated, %v", resp.String())
+		}
+
 		// Add updated API to existing API list.
 		apiids[apiDef.APIID] = &apiDef
 		ids[apiDef.Id.Hex()] = &apiDef
@@ -303,10 +379,12 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	updateAPIs := []objects.DBApiDefinition{}
 	createAPIs := []objects.DBApiDefinition{}
 
-	existingAPIs, err := c.FetchAPIs()
+	resp, err := c.FetchAPIs()
 	if err != nil {
 		return err
 	}
+
+	existingAPIs := resp.Apis
 
 	DashIDMap := map[string]int{}
 	GitIDMap := map[string]int{}
@@ -323,6 +401,10 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 
 	// Build the Git ID Map
 	for i, def := range apiDefs {
+		if def.APIDefinition == nil {
+			continue
+		}
+
 		if c.isCloud {
 			GitIDMap[def.Slug] = i
 			continue
