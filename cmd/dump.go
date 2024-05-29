@@ -205,6 +205,13 @@ var dumpCmd = &cobra.Command{
 							found = true
 						}
 					}
+
+					for _, api := range oasApisDB {
+						if api.APIID == accessRights.APIID {
+							found = true
+						}
+					}
+
 					if !found {
 						fmt.Println("--> [WARNING] Policy ", policy.ID, " has access rights over API ID ", accessRights.APIID, " and that API it's not imported. It might cause some problems in the future.")
 					}
@@ -214,7 +221,7 @@ var dumpCmd = &cobra.Command{
 
 		// If we have selected APIs specified we're going to check if we're importing all the necessary policies
 		if len(wantedAPIs) > 0 {
-			//checking selected APIs  -  Policies integrity
+			// checking selected APIs  -  Policies integrity
 			for _, api := range apis {
 				for _, provider := range api.OpenIDOptions.Providers {
 					for _, id := range provider.ClientIDs {
