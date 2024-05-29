@@ -55,7 +55,7 @@ func init() {
 	updateCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to update")
 	updateCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to update")
 
-	if err := syncCmd.Flags().MarkDeprecated("allow-unsafe-oas", "OAS API can synced without the flag."); err != nil {
+	if err := updateCmd.Flags().MarkDeprecated("allow-unsafe-oas", "OAS API can updated without the flag."); err != nil {
 		fmt.Printf("Failed to mark `allow-unsafe-oas` flag as deprecated: %v", err)
 	}
 }
