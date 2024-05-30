@@ -24,6 +24,7 @@ type Getter interface {
 	FetchRepo() error
 	FetchAPIDef(spec *TykSourceSpec) ([]objects.DBApiDefinition, error)
 	FetchPolicies(spec *TykSourceSpec) ([]objects.Policy, error)
+	FetchAssets(spec *TykSourceSpec) ([]objects.DBAssets, error)
 	FetchTykSpec() (*TykSourceSpec, error)
 }
 
@@ -301,6 +302,55 @@ func fetchPolicies(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath st
 
 	fmt.Printf("Fetched %v policies\n", len(defs))
 
+	return defs, nil
+}
+
+func (gg *FSGetter) FetchAssets(spec *TykSourceSpec) ([]objects.DBAssets, error) {
+	return fetchAssets(gg.fs, spec, gg.subdirectoryPath)
+}
+
+func (gg *GitGetter) FetchAssets(spec *TykSourceSpec) ([]objects.DBAssets, error) {
+	if gg.r == nil {
+		return nil, errors.New("No repository in memory, fetch repo first")
+	}
+
+	return fetchAssets(gg.fs, spec, gg.subdirectoryPath)
+}
+
+func fetchAssets(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath string) ([]objects.DBAssets, error) {
+	defNames := spec.Assets
+
+	defs := make([]objects.DBAssets, len(defNames))
+	for i, defInfo := range defNames {
+		defFile, err := fs.Open(getFilepath(defInfo.File, subdirectoryPath))
+		if err != nil {
+			fmt.Println(defInfo.File)
+			return nil, err
+		}
+
+		rawDef, err := io.ReadAll(defFile)
+		if err != nil {
+			return nil, err
+		}
+
+		asset := objects.DBAssets{}
+		err = json.Unmarshal(rawDef, &asset)
+		if err != nil {
+			return nil, err
+		}
+
+		if defInfo.ID != "" {
+			asset.ID = defInfo.ID
+		}
+
+		if asset.OrgID == "" {
+			return nil, errors.New("Assets must include an org ID")
+		}
+
+		defs[i] = asset
+	}
+
+	fmt.Printf("Fetched %v assets\n", len(defs))
 	return defs, nil
 }
 

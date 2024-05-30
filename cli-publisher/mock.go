@@ -2,6 +2,7 @@ package cli_publisher
 
 import (
 	"fmt"
+
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 )
 
@@ -42,6 +43,18 @@ func (mp MockPublisher) UpdatePolicies(pols *[]objects.Policy) error {
 }
 
 func (mp MockPublisher) SyncPolicies(pols []objects.Policy) error {
+	return nil
+}
+
+func (mp MockPublisher) CreateAssets(assets *[]objects.DBAssets) error {
+	return nil
+}
+
+func (mp MockPublisher) UpdateAssets(assets *[]objects.DBAssets) error {
+	return nil
+}
+
+func (mp MockPublisher) SyncAssets(assets []objects.DBAssets) error {
 	return nil
 }
 

@@ -6,3 +6,4 @@ dist/
 *.key
 .idea/
 vendor/
+.vscode

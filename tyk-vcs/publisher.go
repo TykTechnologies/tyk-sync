@@ -12,5 +12,8 @@ type Publisher interface {
 	CreatePolicies(pols *[]objects.Policy) error
 	UpdatePolicies(pols *[]objects.Policy) error
 	SyncPolicies(pols []objects.Policy) error
+	CreateAssets(assets *[]objects.DBAssets) error
+	SyncAssets(assets []objects.DBAssets) error
+	UpdateAssets(assets *[]objects.DBAssets) error
 	Reload() error
 }

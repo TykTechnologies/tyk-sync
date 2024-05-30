@@ -63,3 +63,30 @@ func (p *GatewayPublisher) UpdatePolicies(pols *[]objects.Policy) error {
 func (p *GatewayPublisher) SyncPolicies(pols []objects.Policy) error {
 	return errors.New("Policy handling not supported by Gateway publisher")
 }
+
+func (p *GatewayPublisher) CreateAssets(apiDefs *[]objects.DBAssets) error {
+	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
+	if err != nil {
+		return err
+	}
+
+	return c.CreateAssets(apiDefs)
+}
+
+func (p *GatewayPublisher) SyncAssets(assetsDefs []objects.DBAssets) error {
+	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
+	if err != nil {
+		return err
+	}
+
+	return c.SyncAssets(&assetsDefs)
+}
+
+func (p *GatewayPublisher) UpdateAssets(assetsDefs *[]objects.DBAssets) error {
+	c, err := gateway.NewGatewayClient(p.Hostname, p.Secret)
+	if err != nil {
+		return err
+	}
+
+	return c.UpdateAssets(assetsDefs)
+}

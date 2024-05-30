@@ -54,6 +54,7 @@ func init() {
 	updateCmd.Flags().Bool("allow-unsafe-oas", false, "Use Tyk Classic endpoints in Tyk Dashboard API for Tyk OAS APIs (optional)")
 	updateCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to update")
 	updateCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to update")
+	updateCmd.Flags().StringSlice("templates", []string{}, "Specific template or Assets IDs to update (optional")
 
 	if err := updateCmd.Flags().MarkDeprecated("allow-unsafe-oas", "OAS API can updated without the flag."); err != nil {
 		fmt.Printf("Failed to mark `allow-unsafe-oas` flag as deprecated: %v", err)
