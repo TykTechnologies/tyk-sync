@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"fmt"
-	"gopkg.in/mgo.v2/bson"
-
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
+
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
@@ -144,6 +144,8 @@ var dumpCmd = &cobra.Command{
 				}
 				apis[i] = fullAPI
 			}
+
+			apis, oasApisDB = extractOASApis(apis)
 		}
 
 		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
@@ -160,7 +162,7 @@ var dumpCmd = &cobra.Command{
 
 			fname := fmt.Sprintf("api-%v.json", api.APIID)
 			p := path.Join(dir, fname)
-			err := os.WriteFile(p, j, 0644)
+			err := os.WriteFile(p, j, 0o644)
 			if err != nil {
 				fmt.Printf("Error writing file: %v\n", err)
 				return
@@ -183,7 +185,7 @@ var dumpCmd = &cobra.Command{
 
 			fname := fmt.Sprintf("oas-%v.json", name)
 			p := path.Join(dir, fname)
-			err := os.WriteFile(p, j, 0644)
+			err := os.WriteFile(p, j, 0o644)
 			if err != nil {
 				fmt.Printf("Error writing file: %v\n", err)
 				return
@@ -202,8 +204,17 @@ var dumpCmd = &cobra.Command{
 							found = true
 						}
 					}
+
+					for _, api := range oasApisDB {
+						if api.APIID == accessRights.APIID {
+							found = true
+						}
+					}
+
 					if !found {
-						fmt.Println("--> [WARNING] Policy ", policy.ID, " has access rights over API ID ", accessRights.APIID, " and that API it's not imported. It might cause some problems in the future.")
+						fmt.Println("--> [WARNING] Policy ", policy.ID,
+							" has access rights over API ID ", accessRights.APIID,
+							" and that API it's not imported. It might cause some problems in the future.")
 					}
 				}
 			}
@@ -211,7 +222,7 @@ var dumpCmd = &cobra.Command{
 
 		// If we have selected APIs specified we're going to check if we're importing all the necessary policies
 		if len(wantedAPIs) > 0 {
-			//checking selected APIs  -  Policies integrity
+			// checking selected APIs  -  Policies integrity
 			for _, api := range apis {
 				for _, provider := range api.OpenIDOptions.Providers {
 					for _, id := range provider.ClientIDs {
@@ -244,7 +255,7 @@ var dumpCmd = &cobra.Command{
 
 			fname := fmt.Sprintf("policy-%v.json", pol.ID)
 			p := path.Join(dir, fname)
-			err := os.WriteFile(p, j, 0644)
+			err := os.WriteFile(p, j, 0o644)
 			if err != nil {
 				fmt.Printf("Error writing file: %v\n", err)
 				return
@@ -293,7 +304,7 @@ var dumpCmd = &cobra.Command{
 			return
 		}
 
-		if err := os.WriteFile(p, j, 0644); err != nil {
+		if err := os.WriteFile(p, j, 0o644); err != nil {
 			fmt.Printf("Error writing file: %v\n", err)
 			return
 		}
