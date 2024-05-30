@@ -144,6 +144,8 @@ var dumpCmd = &cobra.Command{
 				}
 				apis[i] = fullAPI
 			}
+
+			apis, oasApisDB = extractOASApis(apis)
 		}
 
 		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
@@ -202,6 +204,13 @@ var dumpCmd = &cobra.Command{
 							found = true
 						}
 					}
+
+					for _, api := range oasApisDB {
+						if api.APIID == accessRights.APIID {
+							found = true
+						}
+					}
+
 					if !found {
 						fmt.Println("--> [WARNING] Policy ", policy.ID,
 							" has access rights over API ID ", accessRights.APIID,
