@@ -17,28 +17,33 @@ import (
 
 var isGateway bool
 
-func doGitFetchCycle(getter tyk_vcs.Getter) ([]objects.DBApiDefinition, []objects.Policy, error) {
+func doGitFetchCycle(getter tyk_vcs.Getter) ([]objects.DBApiDefinition, []objects.Policy, []objects.DBAssets, error) {
 	err := getter.FetchRepo()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	ts, err := getter.FetchTykSpec()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	ads, err := getter.FetchAPIDef(ts)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	pols, err := getter.FetchPolicies(ts)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return ads, pols, nil
+	assets, err := getter.FetchAssets(ts)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return ads, pols, assets, nil
 }
 
 func getPublisher(cmd *cobra.Command, args []string) (tyk_vcs.Publisher, error) {
@@ -136,25 +141,28 @@ func NewGetter(cmd *cobra.Command, args []string) (tyk_vcs.Getter, error) {
 	return tyk_vcs.NewGGetter(args[0], branch, auth, subdirectoryPath)
 }
 
-func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []objects.Policy, error) {
+func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []objects.Policy, []objects.DBAssets, error) {
 	getter, err := NewGetter(cmd, args)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	defs, pols, err := doGitFetchCycle(getter)
+	defs, pols, assets, err := doGitFetchCycle(getter)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 	wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
+	wantedAssets, _ := cmd.Flags().GetStringSlice("templates")
 
-	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
-		return defs, pols, nil
+	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 && len(wantedAssets) == 0 {
+		return defs, pols, assets, nil
 	}
+
 	filteredAPIS := []objects.DBApiDefinition{}
 	filteredPolicies := []objects.Policy{}
+	filteredAssets := []objects.DBAssets{}
 
 	if len(wantedAPIs) > 0 {
 		filteredAPIS = defs[:]
@@ -186,11 +194,30 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 		filteredPolicies = filteredPolicies[:newL]
 	}
 
-	return filteredAPIS, filteredPolicies, nil
+	if len(wantedAssets) > 0 {
+		filteredAssets = assets[:]
+
+		newL := 0
+		for _, assetID := range wantedAssets {
+			for _, asset := range filteredAssets {
+				if assetID != asset.ID {
+					continue
+				}
+
+				filteredAssets[newL] = asset
+
+				newL++
+			}
+		}
+
+		filteredAssets = filteredAssets[:newL]
+	}
+
+	return filteredAPIS, filteredPolicies, filteredAssets, nil
 }
 
 func processSync(cmd *cobra.Command, args []string) error {
-	defs, pols, err := doGetData(cmd, args)
+	defs, pols, assets, err := doGetData(cmd, args)
 	if err != nil {
 		return err
 	}
@@ -213,6 +240,11 @@ func processSync(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	fmt.Println("Processing Assets...")
+	if err := publisher.SyncAssets(assets); err != nil {
+		return err
+	}
+
 	if isGateway {
 		if err := publisher.Reload(); err != nil {
 			return err
@@ -223,7 +255,7 @@ func processSync(cmd *cobra.Command, args []string) error {
 }
 
 func processPublish(cmd *cobra.Command, args []string) error {
-	defs, pols, err := doGetData(cmd, args)
+	defs, pols, assets, err := doGetData(cmd, args)
 	if err != nil {
 		return err
 	}
@@ -243,6 +275,18 @@ func processPublish(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		fmt.Printf("--> Status: FAIL, Error:%v\n", err)
 		fmt.Println("Failed to publish APIs")
+		return err
+	}
+
+	if "publish" == cmd.Use {
+		err = publisher.CreateAssets(&assets)
+	} else if "update" == cmd.Use {
+		err = publisher.UpdateAssets(&assets)
+	}
+
+	if err != nil {
+		fmt.Printf("--> Status: FAIL, Error:%v\n", err)
+		fmt.Println("Failed to publish Assets")
 		return err
 	}
 

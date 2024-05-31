@@ -379,3 +379,15 @@ func (c *Client) deleteAPI(id string) error {
 
 	return nil
 }
+
+func (c *Client) CreateAssets(assetsDefs *[]objects.DBAssets) error {
+	return nil
+}
+
+func (c *Client) SyncAssets(assetsDefs *[]objects.DBAssets) error {
+	return nil
+}
+
+func (c *Client) UpdateAssets(assetsDefs *[]objects.DBAssets) error {
+	return nil
+}

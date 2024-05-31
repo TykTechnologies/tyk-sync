@@ -34,6 +34,16 @@ func (p *DashboardPublisher) enforceOrgIDForPolicies(pols *[]objects.Policy) {
 	}
 }
 
+func (p *DashboardPublisher) enforceOrgIDForAssets(assetsDefs *[]objects.DBAssets) {
+	if p.OrgOverride != "" {
+		fmt.Println("org override detected, setting.")
+
+		for i := range *assetsDefs {
+			(*assetsDefs)[i].OrgID = p.OrgOverride
+		}
+	}
+}
+
 func (p *DashboardPublisher) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
@@ -144,4 +154,56 @@ func (p *DashboardPublisher) SyncPolicies(pols []objects.Policy) error {
 	}
 
 	return c.SyncPolicies(pols)
+}
+
+func (p *DashboardPublisher) CreateAssets(assets *[]objects.DBAssets) error {
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, false)
+	if err != nil {
+		return err
+	}
+
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+
+	p.enforceOrgIDForAssets(assets)
+
+	return c.CreateAssets(assets)
+}
+
+func (p *DashboardPublisher) UpdateAssets(assetDefs *[]objects.DBAssets) error {
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, false)
+	if err != nil {
+		return err
+	}
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+
+	p.enforceOrgIDForAssets(assetDefs)
+	return c.UpdateAssets(assetDefs)
+}
+
+func (p *DashboardPublisher) SyncAssets(assets []objects.DBAssets) error {
+	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, false)
+	if err != nil {
+		return err
+	}
+
+	if p.OrgOverride == "" {
+		p.OrgOverride = c.OrgID
+	}
+
+	if p.OrgOverride != "" {
+		fixedDefs := make([]objects.DBAssets, len(assets))
+		for i, a := range assets {
+			newDef := a
+			newDef.OrgID = p.OrgOverride
+			fixedDefs[i] = newDef
+		}
+
+		return c.SyncAssets(fixedDefs)
+	}
+
+	return c.SyncAssets(assets)
 }

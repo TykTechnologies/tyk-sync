@@ -30,8 +30,14 @@ type PolicyInfo struct {
 	ID   string `json:"id,omitempty"`
 }
 
+type AssetsInfo struct {
+	File string `json:"file,omitempty"`
+	ID   string `json:"id,omitempty"`
+}
+
 type TykSourceSpec struct {
 	Type     SpecType     `json:"type,omitempty"`
 	Files    []APIInfo    `json:"files,omitempty"`
 	Policies []PolicyInfo `json:"policies,omitempty"`
+	Assets   []AssetsInfo `json:"assets,omitempty"`
 }

@@ -6,12 +6,12 @@ import (
 	"os"
 	"path"
 
+	"github.com/spf13/cobra"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/TykTechnologies/tyk-sync/clients/dashboard"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	tyk_vcs "github.com/TykTechnologies/tyk-sync/tyk-vcs"
-	"github.com/spf13/cobra"
 )
 
 // dumpCmd represents the dump command
@@ -46,7 +46,7 @@ var dumpCmd = &cobra.Command{
 			secret = flagVal
 		}
 
-		fmt.Printf("Extracting APIs and Policies from %v\n", dbString)
+		fmt.Printf("Extracting APIs, Policies, and Assets from %v\n", dbString)
 
 		c, err := dashboard.NewDashboardClient(dbString, secret, "", false)
 		if err != nil {
@@ -56,11 +56,15 @@ var dumpCmd = &cobra.Command{
 		fmt.Println("> Fetching policies")
 		wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 		wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
+		wantedAssets, _ := cmd.Flags().GetStringSlice("templates")
 
 		policies := []objects.Policy{}
 		apis := []objects.DBApiDefinition{}
+		assets := []objects.DBAssets{}
+
 		var errPoliciesFetch error
 		var errApisFetch error
+		var errAssetsFetch error
 
 		// building the api def objs from wantedAPIs
 		for _, APIID := range wantedAPIs {
@@ -80,6 +84,13 @@ var dumpCmd = &cobra.Command{
 				MID: bson.ObjectIdHex(wantedPolicy),
 			}
 			policies = append(policies, pol)
+		}
+
+		//building the assets object from wantedAssets
+		for _, aID := range wantedAssets {
+			asset := objects.DBAssets{}
+			asset.ID = aID
+			assets = append(assets, asset)
 		}
 
 		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
@@ -105,6 +116,15 @@ var dumpCmd = &cobra.Command{
 
 		var oasApisDB []objects.DBApiDefinition
 		apis, oasApisDB = extractOASApis(apis)
+		if len(wantedAssets) == 0 {
+			fmt.Println("> Fetching Asset(s)")
+
+			assets, errAssetsFetch = c.FetchAssets()
+			if err != nil {
+				fmt.Println(errAssetsFetch)
+				return
+			}
+		}
 
 		fmt.Printf("--> Identified %v policies\n", len(policies))
 		if len(wantedPolicies) > 0 {
@@ -150,9 +170,29 @@ var dumpCmd = &cobra.Command{
 
 		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
 		fmt.Printf("--> Fetched %v OAS APIs\n", len(oasApisDB))
+		fmt.Printf("--> Fetched %v Assets\n", len(assets))
+
+		if len(wantedAssets) > 0 {
+			fmt.Println("> Fetching Asset(s)")
+			fmt.Println("--> Fetching and cleaning Assets objects")
+			fmt.Printf("--> Identified %v Assets\n", len(assets))
+
+			for i, asset := range assets {
+				fullAsset, err := c.FetchAsset(asset.ID)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				assets[i] = fullAsset
+			}
+		}
+
+		fmt.Printf("--> Fetched %v Apis\n", len(apis))
 
 		dir, _ := cmd.Flags().GetString("target")
 		apiFiles := make([]string, len(apis))
+
 		for i, api := range apis {
 			j, jerr := json.MarshalIndent(api, "", "  ")
 			if jerr != nil {
@@ -168,6 +208,26 @@ var dumpCmd = &cobra.Command{
 				return
 			}
 			apiFiles[i] = fname
+		}
+
+		assetFiles := make([]string, len(assets))
+		for i, asset := range assets {
+			j, jerr := json.MarshalIndent(asset, "", "  ")
+			if jerr != nil {
+				fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
+				return
+			}
+
+			fname := fmt.Sprintf("asset-%v.json", asset.ID)
+
+			p := path.Join(dir, fname)
+			err := os.WriteFile(p, j, 0o644)
+			if err != nil {
+				fmt.Printf("Error writing file: %v\n", err)
+				return
+			}
+
+			assetFiles[i] = fname
 		}
 
 		oasApiFiles := make([]string, len(oasApisDB))
@@ -268,19 +328,12 @@ var dumpCmd = &cobra.Command{
 		gitSpec := tyk_vcs.TykSourceSpec{
 			Type:     tyk_vcs.TYPE_APIDEF,
 			Policies: make([]tyk_vcs.PolicyInfo, len(policyFiles)),
+			Assets:   make([]tyk_vcs.AssetsInfo, len(assetFiles)),
 		}
 
 		for _, apiFile := range apiFiles {
 			asInfo := tyk_vcs.APIInfo{
 				File: apiFile,
-			}
-
-			gitSpec.Files = append(gitSpec.Files, asInfo)
-		}
-
-		for _, oasApiFile := range oasApiFiles {
-			asInfo := tyk_vcs.APIInfo{
-				File: oasApiFile,
 			}
 
 			gitSpec.Files = append(gitSpec.Files, asInfo)
@@ -294,8 +347,25 @@ var dumpCmd = &cobra.Command{
 			gitSpec.Policies[i] = asInfo
 		}
 
+		for _, oasApiFile := range oasApiFiles {
+			asInfo := tyk_vcs.APIInfo{
+				File: oasApiFile,
+			}
+
+			gitSpec.Files = append(gitSpec.Files, asInfo)
+		}
+
+		for i, assetFile := range assetFiles {
+			asInfo := tyk_vcs.AssetsInfo{
+				File: assetFile,
+			}
+
+			gitSpec.Assets[i] = asInfo
+		}
+
 		fname := ".tyk.json"
 		p := path.Join(dir, fname)
+
 		fmt.Printf("> Creating spec file in: %v\n", p)
 
 		j, jerr := json.MarshalIndent(gitSpec, "", "  ")
@@ -304,7 +374,7 @@ var dumpCmd = &cobra.Command{
 			return
 		}
 
-		if err := os.WriteFile(p, j, 0o644); err != nil {
+		if err := os.WriteFile(p, j, 0644); err != nil {
 			fmt.Printf("Error writing file: %v\n", err)
 			return
 		}
@@ -333,6 +403,7 @@ func init() {
 	dumpCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
 	dumpCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
+	dumpCmd.Flags().StringSlice("templates", []string{}, "List of template IDs to be dumped")
 	dumpCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to dump")
 	dumpCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to dump")
 }

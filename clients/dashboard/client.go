@@ -69,12 +69,14 @@ const (
 	endpointPolicies   string = "/api/portal/policies"
 	endpointCerts      string = "/api/certs"
 	endpointUsers      string = "/api/users"
+	endpointAssets     string = "/api/assets"
 )
 
 var (
-	UseUpdateError    error = errors.New("Object seems to exist (same ID, API ID, Listen Path or Slug), use update()")
-	UsePolUpdateError error = errors.New("Object seems to exist (same ID, Explicit ID), use update()")
-	UseCreateError    error = errors.New("Object does not exist, use create()")
+	UseUpdateError      error = errors.New("Object seems to exist (same ID, API ID, Listen Path or Slug), use update()")
+	UsePolUpdateError   error = errors.New("Object seems to exist (same ID, Explicit ID), use update()")
+	UseCreateError      error = errors.New("Object does not exist, use create()")
+	UseAssetUpdateError error = errors.New("Object seems to exist (same ID) use update()")
 )
 
 func NewDashboardClient(url, secret, orgID string, allowUnsafeOAS bool) (*Client, error) {
