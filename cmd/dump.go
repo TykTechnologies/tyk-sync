@@ -383,9 +383,12 @@ var dumpCmd = &cobra.Command{
 	},
 }
 
+// extractOASApis extracts OAS APIs from the array of API Definition objects which each
+// object in the array corresponds to the API Definition representation stored in database.
 func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBApiDefinition) {
 	for i := 0; i < len(apis); i++ {
 		if apis[i].IsOAS {
+			apis[i].APIDefinition = nil
 			oas = append(oas, apis[i])
 		} else {
 			classic = append(classic, apis[i])

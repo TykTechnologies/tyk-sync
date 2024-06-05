@@ -12,7 +12,7 @@ func NewDefinition() *DBApiDefinition {
 }
 
 type DBApiDefinition struct {
-	*APIDefinition  `bson:"api_definition" json:"api_definition"`
+	*APIDefinition  `bson:"api_definition" json:"api_definition,omitempty"`
 	OAS             *oas.OAS        `json:"oas,omitempty"`
 	Categories      []string        `bson:"categories" json:"categories,omitempty"`
 	HookReferences  []interface{}   `bson:"hook_references" json:"hook_references"`
