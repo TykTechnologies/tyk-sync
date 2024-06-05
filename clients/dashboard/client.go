@@ -34,12 +34,16 @@ func (c *Client) UpdateOASCategory(oasApi *objects.DBApiDefinition) (*grequests.
 		return nil, fmt.Errorf("malformed input to update OAS API category")
 	}
 
+	if oasApi.OAS == nil || oasApi.OAS.GetTykExtension() == nil {
+		return nil, fmt.Errorf("malformed input to update OAS API category, invalid OAS spec or x-tyk-api-gateway field")
+	}
+
 	data, err := json.Marshal(CategoriesPayload{Categories: oasApi.Categories})
 	if err != nil {
 		return nil, err
 	}
 
-	fullPath := urljoin.Join(c.url, endpointOASAPIs, oasApi.APIID, endpointCategories)
+	fullPath := urljoin.Join(c.url, endpointOASAPIs, oasApi.OAS.GetTykExtension().Info.ID, endpointCategories)
 
 	putResp, err := grequests.Put(fullPath, &grequests.RequestOptions{
 		JSON: data,
