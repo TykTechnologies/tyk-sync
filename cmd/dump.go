@@ -232,15 +232,18 @@ var dumpCmd = &cobra.Command{
 
 		oasApiFiles := make([]string, len(oasApisDB))
 		for i, oasApi := range oasApisDB {
-			j, jerr := json.MarshalIndent(oasApi, "", "  ")
+			oasApiC := oasApi
+			oasApiC.APIDefinition = nil
+
+			j, jerr := json.MarshalIndent(oasApiC, "", "  ")
 			if jerr != nil {
 				fmt.Printf("OASAPI JSON Encoding error: %v\n", jerr.Error())
 				return
 			}
 
 			name := ""
-			if oasApi.OAS.GetTykExtension() != nil {
-				name = oasApi.OAS.GetTykExtension().Info.ID
+			if oasApiC.OAS.GetTykExtension() != nil {
+				name = oasApiC.OAS.GetTykExtension().Info.ID
 			}
 
 			fname := fmt.Sprintf("oas-%v.json", name)
@@ -388,7 +391,6 @@ var dumpCmd = &cobra.Command{
 func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBApiDefinition) {
 	for i := 0; i < len(apis); i++ {
 		if apis[i].IsOAS {
-			apis[i].APIDefinition = nil
 			oas = append(oas, apis[i])
 		} else {
 			classic = append(classic, apis[i])
