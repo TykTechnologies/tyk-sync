@@ -3,6 +3,8 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/TykTechnologies/tyk/apidef/oas"
 	"os"
 	"path"
 
@@ -56,6 +58,7 @@ var dumpCmd = &cobra.Command{
 		fmt.Println("> Fetching policies")
 		wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 		wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
+		wantedOASAPIs, _ := cmd.Flags().GetStringSlice("oas-apis")
 		wantedAssets, _ := cmd.Flags().GetStringSlice("templates")
 
 		policies := []objects.Policy{}
@@ -70,6 +73,24 @@ var dumpCmd = &cobra.Command{
 		for _, APIID := range wantedAPIs {
 			api := objects.DBApiDefinition{APIDefinition: &objects.APIDefinition{}}
 			api.APIID = APIID
+			apis = append(apis, api)
+		}
+
+		// building the oas api def objs from wantedOASAPIs
+		for _, APIID := range wantedOASAPIs {
+			myOas := &oas.OAS{}
+			myOas.SetTykExtension(&oas.XTykAPIGateway{Info: oas.Info{ID: APIID}})
+
+			api := objects.DBApiDefinition{
+				APIDefinition: &objects.APIDefinition{
+					APIDefinition: apidef.APIDefinition{
+						APIID: APIID,
+						IsOAS: true,
+					},
+				},
+				OAS: myOas,
+			}
+
 			apis = append(apis, api)
 		}
 
