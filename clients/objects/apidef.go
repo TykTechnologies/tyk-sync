@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/TykTechnologies/tyk/apidef/oas"
 
@@ -27,4 +28,112 @@ type APIDefinition struct {
 	Scopes                *apidef.Scopes                `json:"scopes,omitempty"`
 	AnalyticsPluginConfig *apidef.AnalyticsPluginConfig `json:"analytics_plugin,omitempty"`
 	ExternalOAuth         *apidef.ExternalOAuth         `json:"external_oauth,omitempty"`
+}
+
+func (d *DBApiDefinition) IsClassicAPI() bool {
+	if d.APIDefinition != nil && !d.APIDefinition.IsOAS && d.OAS == nil {
+		return true
+	}
+
+	return false
+}
+
+func (d *DBApiDefinition) IsOASAPI() bool {
+	if (d.APIDefinition != nil && d.APIDefinition.IsOAS) || (d.OAS != nil) {
+		return true
+	}
+
+	return false
+}
+
+func (d *DBApiDefinition) GetAPIName() string {
+	if d.IsOASAPI() {
+		if d.OAS.GetTykExtension() != nil {
+			return d.OAS.GetTykExtension().Info.Name
+		}
+
+		return ""
+	}
+
+	return d.Name
+}
+
+func (d *DBApiDefinition) GetAPIID() string {
+	if d.IsOASAPI() {
+		if d.OAS.GetTykExtension() != nil {
+			return d.OAS.GetTykExtension().Info.ID
+		}
+
+		return ""
+	}
+
+	return d.APIID
+}
+
+func (d *DBApiDefinition) SetAPIID(apiID string) {
+	if d.IsOASAPI() {
+		if d.OAS.GetTykExtension() != nil {
+			d.OAS.GetTykExtension().Info.ID = apiID
+		}
+
+		return
+	}
+
+	d.APIID = apiID
+}
+
+func (d *DBApiDefinition) GetListenPath() string {
+	if d.IsOASAPI() {
+		if d.OAS.GetTykExtension() != nil {
+			return d.OAS.GetTykExtension().Server.ListenPath.Value
+		}
+
+		return ""
+	}
+
+	return d.Proxy.ListenPath
+}
+
+func (d *DBApiDefinition) GetDomain() string {
+	if d.IsOASAPI() {
+		if d.OAS.GetTykExtension() != nil && d.OAS.GetTykExtension().Server.CustomDomain != nil {
+			return d.OAS.GetTykExtension().Server.CustomDomain.Name
+		}
+	}
+
+	return d.Domain
+}
+
+func (d *DBApiDefinition) GetDBID() model.ObjectID {
+	if d.IsOASAPI() {
+		if d.OAS.GetTykExtension() != nil {
+			return d.OAS.GetTykExtension().Info.DBID
+		}
+	}
+
+	return d.Id
+}
+
+func (d *DBApiDefinition) SetDBID(id model.ObjectID) {
+	if d.IsOASAPI() {
+		if d.OAS.GetTykExtension() != nil {
+			d.OAS.GetTykExtension().Info.DBID = id
+		}
+
+		return
+	}
+
+	d.Id = id
+}
+
+func (d *DBApiDefinition) SetOrgID(orgID string) {
+	if d.IsOASAPI() {
+		if d.OAS.GetTykExtension() != nil {
+			d.OAS.GetTykExtension().Info.OrgID = orgID
+		}
+
+		return
+	}
+
+	d.OrgID = orgID
 }

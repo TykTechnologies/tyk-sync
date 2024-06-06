@@ -51,7 +51,7 @@ func (c *Client) SetInsecureTLS(val bool) {
 }
 
 func (c *Client) GetActiveID(def *objects.DBApiDefinition) string {
-	return def.APIID
+	return def.GetAPIID()
 }
 
 func (c *Client) FetchAPIs() ([]objects.DBApiDefinition, error) {
@@ -93,9 +93,9 @@ func getAPIsIdentifiers(apiDefs *[]objects.DBApiDefinition) (map[string]*objects
 	paths := make(map[string]*objects.DBApiDefinition)
 
 	for i, apiDef := range *apiDefs {
-		apiids[apiDef.APIID] = &(*apiDefs)[i]
+		apiids[apiDef.GetAPIID()] = &(*apiDefs)[i]
 		slugs[apiDef.Slug] = &(*apiDefs)[i]
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &(*apiDefs)[i]
+		paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()] = &(*apiDefs)[i]
 	}
 
 	return apiids, slugs, paths
@@ -111,14 +111,14 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 
 	for i := range *apiDefs {
 		apiDef := (*apiDefs)[i]
-		fmt.Printf("Creating API %v: %v\n", i, apiDef.Name)
-		if thisAPI, ok := apiids[apiDef.APIID]; ok && thisAPI != nil {
+		fmt.Printf("Creating API %v: %v\n", i, apiDef.GetAPIName())
+		if thisAPI, ok := apiids[apiDef.GetAPIID()]; ok && thisAPI != nil {
 			fmt.Println("Warning: API ID Exists")
 			return UseUpdateError
 		} else if thisAPI, ok := slugs[apiDef.Slug]; ok && thisAPI != nil {
 			fmt.Println("Warning: Slug Exists")
 			return UseUpdateError
-		} else if thisAPI, ok := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]; ok && thisAPI != nil {
+		} else if thisAPI, ok := paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()]; ok && thisAPI != nil {
 			fmt.Println("Warning: Listen Path Exists")
 			return UseUpdateError
 		}
@@ -160,11 +160,11 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		go c.Reload()
 
 		// Add updated API to existing API list.
-		apiids[apiDef.APIID] = &apiDef
+		apiids[apiDef.GetAPIID()] = &apiDef
 		slugs[apiDef.Slug] = &apiDef
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+		paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()] = &apiDef
 
-		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
+		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.GetAPIID())
 	}
 
 	return nil
@@ -210,13 +210,13 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 	apiids, slugs, paths := getAPIsIdentifiers(&existingAPIs)
 
 	for i, apiDef := range *apiDefs {
-		fmt.Printf("Updating API %v: %v\n", i, apiDef.Name)
-		if nil == apiids[apiDef.APIID] {
+		fmt.Printf("Updating API %v: %v\n", i, apiDef.GetAPIName())
+		if nil == apiids[apiDef.GetAPIID()] {
 			return UseCreateError
 		}
 
 		// Update
-		if apiDef.APIID == "" {
+		if apiDef.GetAPIID() == "" {
 			return errors.New("API ID must be set")
 		}
 
@@ -225,7 +225,7 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			return err
 		}
 
-		updatePath := urljoin.Join(c.url, endpointAPIs, apiDef.APIID)
+		updatePath := urljoin.Join(c.url, endpointAPIs, apiDef.GetAPIID())
 		uResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
 			JSON: data,
 			Headers: map[string]string{
@@ -250,11 +250,11 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		go c.Reload()
 
 		// Add updated API to existing API list.
-		apiids[apiDef.APIID] = &(*apiDefs)[i]
+		apiids[apiDef.GetAPIID()] = &(*apiDefs)[i]
 		slugs[apiDef.Slug] = &(*apiDefs)[i]
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &(*apiDefs)[i]
+		paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()] = &(*apiDefs)[i]
 
-		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
+		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.GetAPIID())
 	}
 
 	return nil
@@ -276,13 +276,13 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	// Build the gw ID map
 	for i, api := range apis {
 		// Lets get a full list of existing IDs
-		GWIDMap[api.APIID] = i
+		GWIDMap[api.GetAPIID()] = i
 	}
 
 	// Build the Git ID Map
 	for i, def := range apiDefs {
-		if def.APIID != "" {
-			GitIDMap[def.APIID] = i
+		if def.GetAPIID() != "" {
+			GitIDMap[def.GetAPIID()] = i
 		} else {
 			uid, err := uuid.NewV4()
 			if err != nil {
@@ -336,7 +336,7 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 		return err
 	}
 	for _, apiDef := range updateAPIs {
-		fmt.Printf("SYNC Updated: %v\n", apiDef.APIID)
+		fmt.Printf("SYNC Updated: %v\n", apiDef.GetAPIID())
 	}
 
 	// Do the creates
@@ -344,7 +344,7 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 		return err
 	}
 	for _, apiDef := range createAPIs {
-		fmt.Printf("SYNC Created: %v\n", apiDef.Name)
+		fmt.Printf("SYNC Created: %v\n", apiDef.GetAPIName())
 	}
 
 	return nil

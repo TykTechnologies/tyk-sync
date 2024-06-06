@@ -30,7 +30,7 @@ func (c *Client) UpdateOASCategory(oasApi *objects.DBApiDefinition) (*grequests.
 		return nil, nil
 	}
 
-	if !oasApi.IsOAS {
+	if !oasApi.IsOASAPI() {
 		return nil, fmt.Errorf("malformed input to update OAS API category")
 	}
 
