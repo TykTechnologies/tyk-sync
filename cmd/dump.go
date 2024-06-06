@@ -232,18 +232,17 @@ var dumpCmd = &cobra.Command{
 
 		oasApiFiles := make([]string, len(oasApisDB))
 		for i, oasApi := range oasApisDB {
-			oasApiC := oasApi
-			oasApiC.APIDefinition = nil
+			oasApi.APIDefinition = nil
 
-			j, jerr := json.MarshalIndent(oasApiC, "", "  ")
+			j, jerr := json.MarshalIndent(oasApi, "", "  ")
 			if jerr != nil {
 				fmt.Printf("OASAPI JSON Encoding error: %v\n", jerr.Error())
 				return
 			}
 
 			name := ""
-			if oasApiC.OAS.GetTykExtension() != nil {
-				name = oasApiC.OAS.GetTykExtension().Info.ID
+			if oasApi.OAS.GetTykExtension() != nil {
+				name = oasApi.OAS.GetTykExtension().Info.ID
 			}
 
 			fname := fmt.Sprintf("oas-%v.json", name)
