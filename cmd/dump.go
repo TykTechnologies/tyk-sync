@@ -114,7 +114,7 @@ var dumpCmd = &cobra.Command{
 			assets = append(assets, asset)
 		}
 
-		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
+		if len(apis) == 0 && len(wantedPolicies) == 0 {
 			fmt.Println("> Fetching policies ")
 
 			policies, errPoliciesFetch = c.FetchPolicies()
@@ -185,8 +185,26 @@ var dumpCmd = &cobra.Command{
 				}
 				apis[i] = fullAPI
 			}
+		}
 
-			apis, oasApisDB = extractOASApis(apis)
+		if len(wantedOASAPIs) > 0 {
+			fmt.Printf("--> Identified %v OAS APIs\n", len(wantedOASAPIs))
+
+			for i, api := range oasApisDB {
+				if api.IsOASAPI() {
+					fullAPI, err := c.FetchOASAPI(api.GetAPIID())
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+
+					if oasApisDB[i].OAS == nil {
+						oasApisDB[i].OAS = new(oas.OAS)
+					}
+
+					oasApisDB[i].OAS = fullAPI
+				}
+			}
 		}
 
 		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
@@ -429,6 +447,7 @@ func init() {
 	dumpCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
 	dumpCmd.Flags().StringSlice("templates", []string{}, "List of template IDs to be dumped")
-	dumpCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to dump")
-	dumpCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to dump")
+	dumpCmd.Flags().StringSlice("policies", []string{}, "Specific Policies IDs to dump")
+	dumpCmd.Flags().StringSlice("apis", []string{}, "Specific Classic API Definition IDs to dump")
+	dumpCmd.Flags().StringSlice("oas-apis", []string{}, "Specific OAS API Definition IDs to dump")
 }
