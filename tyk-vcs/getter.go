@@ -218,7 +218,7 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdire
 
 		ad := objects.DBApiDefinition{}
 		err = json.Unmarshal(rawDef, &ad)
-		if err != nil || (ad.APIDefinition == nil) {
+		if err != nil || (!ad.IsOASAPI() && ad.APIDefinition == nil) {
 			def := objects.APIDefinition{}
 			errSecondUnmarshal := json.Unmarshal(rawDef, &def)
 			if errSecondUnmarshal != nil {

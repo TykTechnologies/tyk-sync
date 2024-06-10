@@ -30,14 +30,6 @@ type APIDefinition struct {
 	ExternalOAuth         *apidef.ExternalOAuth         `json:"external_oauth,omitempty"`
 }
 
-func (d *DBApiDefinition) IsClassicAPI() bool {
-	if d.APIDefinition != nil && !d.APIDefinition.IsOAS && d.OAS == nil {
-		return true
-	}
-
-	return false
-}
-
 func (d *DBApiDefinition) IsOASAPI() bool {
 	if (d.APIDefinition != nil && d.APIDefinition.IsOAS) || (d.OAS != nil) {
 		return true

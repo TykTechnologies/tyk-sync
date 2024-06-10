@@ -155,28 +155,40 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 	wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 	wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
 	wantedAssets, _ := cmd.Flags().GetStringSlice("templates")
+	wantedOASAPIs, _ := cmd.Flags().GetStringSlice("oas-apis")
 
-	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 && len(wantedAssets) == 0 {
+	if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 && len(wantedAssets) == 0 && len(wantedOASAPIs) == 0 {
 		return defs, pols, assets, nil
 	}
 
-	filteredAPIS := []objects.DBApiDefinition{}
+	filteredAPIs := []objects.DBApiDefinition{}
 	filteredPolicies := []objects.Policy{}
 	filteredAssets := []objects.DBAssets{}
 
 	if len(wantedAPIs) > 0 {
-		filteredAPIS = defs[:]
-		newL := 0
 		for _, apiID := range wantedAPIs {
-			for _, api := range filteredAPIS {
-				if apiID != api.APIID {
-					continue
+			for _, api := range defs {
+				if apiID == api.GetAPIID() {
+					filteredAPIs = append(filteredAPIs, api)
 				}
-				filteredAPIS[newL] = api
-				newL++
 			}
 		}
-		filteredAPIS = filteredAPIS[:newL]
+	}
+
+	if len(wantedOASAPIs) > 0 {
+		fmt.Printf("--> Identified %v OAS APIs\n", len(wantedOASAPIs))
+
+		idToDef := make(map[string]objects.DBApiDefinition)
+		for _, def := range defs {
+			idToDef[def.GetAPIID()] = def
+		}
+
+		// building the oas api def objs from wantedOASAPIs
+		for _, APIID := range wantedOASAPIs {
+			if def, exists := idToDef[APIID]; exists {
+				filteredAPIs = append(filteredAPIs, def)
+			}
+		}
 	}
 
 	if len(wantedPolicies) > 0 {
@@ -213,7 +225,7 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 		filteredAssets = filteredAssets[:newL]
 	}
 
-	return filteredAPIS, filteredPolicies, filteredAssets, nil
+	return filteredAPIs, filteredPolicies, filteredAssets, nil
 }
 
 func processSync(cmd *cobra.Command, args []string) error {
