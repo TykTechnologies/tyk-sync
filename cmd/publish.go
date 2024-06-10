@@ -41,7 +41,8 @@ func init() {
 	publishCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 	publishCmd.Flags().Bool("allow-unsafe-oas", false, "Use Tyk Classic endpoints in Tyk Dashboard API for Tyk OAS APIs (optional)")
 	publishCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to publish")
-	publishCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to publish")
+	publishCmd.Flags().StringSlice("apis", []string{}, "Specific Classic API Definition IDs to publish")
+	publishCmd.Flags().StringSlice("oas-apis", []string{}, "Specific OAS API Definition IDs to publish")
 	publishCmd.Flags().StringSlice("templates", []string{}, "List of template or Assets IDs to publish (optional")
 
 	if err := publishCmd.Flags().MarkDeprecated("allow-unsafe-oas", "OAS API can published without the flag."); err != nil {
