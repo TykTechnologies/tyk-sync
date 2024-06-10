@@ -45,6 +45,36 @@ func (c *Client) GetActiveID(def *objects.DBApiDefinition) string {
 	return def.GetDBID().Hex()
 }
 
+func (c *Client) FetchOASCategory(id string) ([]string, error) {
+	fullPath := urljoin.Join(c.url, endpointOASAPIs, "/"+id, endpointCategories)
+
+	getResp, err := grequests.Get(fullPath, &grequests.RequestOptions{
+		Headers: map[string]string{
+			"Authorization": c.secret,
+		},
+		Params: map[string]string{
+			"accept_additional_properties": "true",
+		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if getResp.StatusCode != 200 {
+		return nil, fmt.Errorf(
+			"OAS Categories API Returned error: %v (code: %v)", getResp.String(), getResp.StatusCode,
+		)
+	}
+
+	categoriesOutput := CategoriesPayload{}
+	if err := getResp.JSON(&categoriesOutput); err != nil {
+		return nil, fmt.Errorf("failed to read OAS Category API output, %v", getResp.String())
+	}
+
+	return categoriesOutput.Categories, nil
+}
+
 func (c *Client) FetchOASAPI(id string) (*oas.OAS, error) {
 	fullPath := urljoin.Join(c.url, endpointOASAPIs, id, "export")
 

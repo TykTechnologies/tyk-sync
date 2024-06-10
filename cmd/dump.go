@@ -198,11 +198,18 @@ var dumpCmd = &cobra.Command{
 						return
 					}
 
+					categories, err := c.FetchOASCategory(api.GetAPIID())
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+
 					if oasApisDB[i].OAS == nil {
 						oasApisDB[i].OAS = new(oas.OAS)
 					}
 
 					oasApisDB[i].OAS = fullAPI
+					oasApisDB[i].Categories = categories
 				}
 			}
 		}
