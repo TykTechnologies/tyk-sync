@@ -31,8 +31,9 @@ func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
 
 	if def.IsOAS && def.OAS != nil {
 		tykExt := def.OAS.GetTykExtension()
-		if tykExt != nil && def.GetDBID() != "" {
-			tykExt.Info.DBID = def.GetDBID()
+		dbID := def.GetDBID()
+		if tykExt != nil && dbID != "" {
+			tykExt.Info.DBID = dbID
 		}
 	}
 }
@@ -46,7 +47,7 @@ func (c *Client) GetActiveID(def *objects.DBApiDefinition) string {
 }
 
 func (c *Client) FetchOASCategory(id string) ([]string, error) {
-	fullPath := urljoin.Join(c.url, endpointOASAPIs, "/"+id, endpointCategories)
+	fullPath := urljoin.Join(c.url, endpointOASAPIs, id, endpointCategories)
 
 	getResp, err := grequests.Get(fullPath, &grequests.RequestOptions{
 		Headers: map[string]string{
@@ -427,7 +428,7 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 	for i, api := range existingAPIs {
 		id := ""
 
-		if api.APIDefinition != nil && !api.APIDefinition.IsOAS {
+		if !api.IsOASAPI() {
 			// Lets get a full list of existing IDs
 			if c.isCloud {
 				DashIDMap[api.Slug] = i
@@ -438,12 +439,10 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 			if err != nil {
 				return err
 			}
-		} else if api.OAS != nil {
-			if api.OAS.GetTykExtension() != nil {
-				id, err = parseId(api.OAS.GetTykExtension().Info.ID, api.OAS.GetTykExtension().Info.DBID.Hex())
-				if err != nil {
-					return err
-				}
+		} else {
+			id, err = parseId(api.GetAPIID(), api.GetDBID().Hex())
+			if err != nil {
+				return err
 			}
 		}
 
@@ -471,11 +470,9 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 				continue
 			}
 
-			if def.OAS.GetTykExtension() != nil {
-				id, err = parseId(def.OAS.GetTykExtension().Info.ID, def.OAS.GetTykExtension().Info.DBID.Hex())
-				if err != nil {
-					return err
-				}
+			id, err = parseId(def.GetAPIID(), def.GetDBID().Hex())
+			if err != nil {
+				return err
 			}
 		} else {
 			continue
@@ -503,8 +500,8 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 					return fmt.Errorf("invalid OAS doc, expected x-tyk-gateway field exists")
 				}
 
-				api.OAS.GetTykExtension().Info.ID = existingApi.OAS.GetTykExtension().Info.ID
-				api.OAS.GetTykExtension().Info.DBID = existingApi.OAS.GetTykExtension().Info.DBID
+				api.SetAPIID(existingApi.GetAPIID())
+				api.SetDBID(existingApi.GetDBID())
 			}
 
 			updateAPIs = append(updateAPIs, api)

@@ -40,8 +40,8 @@ func (d *DBApiDefinition) IsOASAPI() bool {
 
 func (d *DBApiDefinition) GetAPIName() string {
 	if d.IsOASAPI() {
-		if d.OAS.GetTykExtension() != nil {
-			return d.OAS.GetTykExtension().Info.Name
+		if tykExt := d.OAS.GetTykExtension(); tykExt != nil {
+			return tykExt.Info.Name
 		}
 
 		return ""
