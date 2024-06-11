@@ -191,26 +191,24 @@ var dumpCmd = &cobra.Command{
 			fmt.Printf("--> Identified %v OAS APIs\n", len(wantedOASAPIs))
 
 			for i, api := range oasApisDB {
-				if api.IsOASAPI() {
-					fullAPI, err := c.FetchOASAPI(api.GetAPIID())
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-
-					categories, err := c.FetchOASCategory(api.GetAPIID())
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-
-					if oasApisDB[i].OAS == nil {
-						oasApisDB[i].OAS = new(oas.OAS)
-					}
-
-					oasApisDB[i].OAS = fullAPI
-					oasApisDB[i].Categories = categories
+				fullAPI, err := c.FetchOASAPI(api.GetAPIID())
+				if err != nil {
+					fmt.Println(err)
+					return
 				}
+
+				categories, err := c.FetchOASCategory(api.GetAPIID())
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				if oasApisDB[i].OAS == nil {
+					oasApisDB[i].OAS = new(oas.OAS)
+				}
+
+				oasApisDB[i].OAS = fullAPI
+				oasApisDB[i].Categories = categories
 			}
 		}
 
@@ -438,7 +436,7 @@ func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBAp
 	oas = []objects.DBApiDefinition{}
 
 	for i := 0; i < len(apis); i++ {
-		if apis[i].IsOAS {
+		if apis[i].IsOASAPI() {
 			oas = append(oas, apis[i])
 		} else {
 			classic = append(classic, apis[i])
