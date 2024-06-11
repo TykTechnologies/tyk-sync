@@ -229,21 +229,24 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdire
 
 		if ad.OAS != nil {
 			oasAPICount++
-			ad.APIDefinition = &objects.APIDefinition{APIDefinition: apidef.APIDefinition{IsOAS: true}}
+			ad.APIDefinition = &objects.APIDefinition{
+				APIDefinition: apidef.APIDefinition{
+					IsOAS: true,
+				}}
 		} else {
 			classicAPICount++
+		}
 
-			if apiFileInfo.APIID != "" {
-				ad.APIID = apiFileInfo.APIID
-			}
+		if apiFileInfo.APIID != "" {
+			ad.SetAPIID(apiFileInfo.APIID)
+		}
 
-			if apiFileInfo.DBID != "" {
-				ad.Id = model.ObjectIDHex(apiFileInfo.DBID)
-			}
+		if apiFileInfo.DBID != "" {
+			ad.SetDBID(model.ObjectIDHex(apiFileInfo.DBID))
+		}
 
-			if apiFileInfo.ORGID != "" {
-				ad.OrgID = apiFileInfo.ORGID
-			}
+		if apiFileInfo.ORGID != "" {
+			ad.SetOrgID(apiFileInfo.ORGID)
 		}
 
 		allApiDefinitions = append(allApiDefinitions, ad)

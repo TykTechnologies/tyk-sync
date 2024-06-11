@@ -19,9 +19,8 @@ type APIResponse struct {
 }
 
 type APISResponse struct {
-	OASApis []oas.OAS                 `json:"oasApis"`
-	Apis    []objects.DBApiDefinition `json:"apis"`
-	Pages   int                       `json:"pages"`
+	Apis  []objects.DBApiDefinition `json:"apis"`
+	Pages int                       `json:"pages"`
 }
 
 func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
@@ -127,22 +126,6 @@ func (c *Client) FetchAPIs() (*APISResponse, error) {
 	if err := resp.JSON(&apisResponse); err != nil {
 		return nil, err
 	}
-
-	var oasApis []oas.OAS
-
-	for i := range apisResponse.Apis {
-		if apisResponse.Apis[i].IsOASAPI() {
-			oasApi, err := c.FetchOASAPI(apisResponse.Apis[i].GetAPIID())
-			if err != nil {
-				fmt.Printf("Failed to fetch OAS API: %v, err: %v", apisResponse.Apis[i].GetAPIID(), err)
-				continue
-			}
-
-			oasApis = append(oasApis, *oasApi)
-		}
-	}
-
-	apisResponse.OASApis = oasApis
 
 	return &apisResponse, nil
 }
