@@ -8,6 +8,7 @@ on:
 
 env:
   TYK_STACK_NS: tyk-stack
+  TIMEOUT: 10m
 
 jobs:
   run-tests:
