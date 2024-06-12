@@ -111,7 +111,7 @@ jobs:
           echo "../ direcotry content => $(ls ../ -la)"
           echo "waiting for dashboard to be ready..."
           kubectl rollout status -n ${{ env.TYK_STACK_NS }} deployment dashboard-tyk-stack-tyk-dashboard
-          kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000
+          kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000 &
           
           echo "starting running integration tests"
           TYK_AUTH=${{ secrets.DASH_LICENSE }} TYK_URL=http://localhost:3000 ./sync-tests/init.sh
