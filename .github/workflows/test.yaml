@@ -110,8 +110,6 @@ jobs:
           echo "sync-tests directory content => $(ls ./sync-tests -la)"
           echo "../ direcotry content => $(ls ../ -la)"
           echo "waiting for dashboard to be ready..."
-          kubectl rollout status -n ${{ env.TYK_STACK_NS }} deployment dashboard-tyk-stack-tyk-dashboard
-          kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000
           
           echo "starting running integration tests"
           cat ./sync-tests/init.sh
