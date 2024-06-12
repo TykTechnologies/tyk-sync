@@ -108,8 +108,9 @@ jobs:
           echo "current directory => $(pwd)"
           echo "current directory content => $(ls -la)"
           kubectl rollout status -n ${{ env.TYK_STACK_NS }} deployment dashboard-tyk-stack-tyk-dashboard
-          kubectl get pods -n ${{ env.TYK_STACK_NS }}
           kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000 &
+          sleep 1;
+          kubectl get pods -n ${{ env.TYK_STACK_NS }}
           echo "sending hello request to dashboard"
           curl http://localhost:3000/hello
           
