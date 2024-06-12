@@ -44,12 +44,10 @@ jobs:
       matrix:
         k8s_version: [ "v1.29.1" ]
     steps:
-      - name: Checkout Tyk Sync Integration Tests
+      - name: Checkout Tyk Sync
         uses: actions/checkout@v4
         with:
-          repository: "TykTechnologies/tyk-sync-tests"
-          path: sync-tests
-          depth: 1
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Setup Golang
         uses: actions/setup-go@v5
@@ -96,6 +94,13 @@ jobs:
             --set "global.license.dashboard=${{ secrets.DASH_LICENSE }}" \
             --set "global.storageType=mongo" \
             --timeout=${{ env.TIMEOUT }}
+
+      - name: Checkout Tyk Sync Integration Tests
+        uses: actions/checkout@v4
+        with:
+          repository: "TykTechnologies/tyk-sync-tests"
+          path: sync-tests
+          depth: 1
 
       - name: Run integration tests
         run: |
