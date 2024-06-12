@@ -104,6 +104,8 @@ jobs:
           depth: 1
 
       - name: Run integration tests
+        env:
+          TYK_AUTH: ${{ secrets.DASH_LICENSE }}
         run: |
           echo "current directory => $(pwd)"
           echo "current directory content => $(ls -la)"
@@ -112,10 +114,10 @@ jobs:
           sleep 1;
           echo "sending hello request to dashboard"
           curl http://localhost:3000/hello
-          curl -H "Authorization: ${{ secrets.DASH_LICENSE }}" http://localhost:3000/api/apis
+          curl -H "Authorization: $TYK_AUTH" http://localhost:3000/api/apis
           echo "starting running integration tests"
           cd ./sync-tests
-          TYK_AUTH="${{ secrets.DASH_LICENSE }}" TYK_URL=http://localhost:3000 ./init.sh
+          TYK_AUTH=$TYK_AUTH TYK_URL=http://localhost:3000 ./init.sh
           echo "finished running integration tests"
 #
 #  sbom:
