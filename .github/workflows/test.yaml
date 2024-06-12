@@ -111,7 +111,7 @@ jobs:
           kubectl get pods -n ${{ env.TYK_STACK_NS }}
           kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000 &
           echo "sending hello request to dashboard"
-          curl http://localhost:8080/hello
+          curl http://localhost:3000/hello
           
           echo "starting running integration tests"
           TYK_AUTH=${{ secrets.DASH_LICENSE }} TYK_URL=http://localhost:3000 ./sync-tests/init.sh
