@@ -107,11 +107,11 @@ jobs:
         run: |
           echo "current directory => $(pwd)"
           echo "current directory content => $(ls -la)"
-          echo "sync-tests directory content => $(ls ./sync-tests -la)"
-          echo "../ direcotry content => $(ls ../ -la)"
-          echo "waiting for dashboard to be ready..."
           kubectl rollout status -n ${{ env.TYK_STACK_NS }} deployment dashboard-tyk-stack-tyk-dashboard
+          kubectl get pods -n ${{ env.TYK_STACK_NS }}
           kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000 &
+          echo "sending hello request to dashboard"
+          curl http://localhost:8080/hello
           
           echo "starting running integration tests"
           TYK_AUTH=${{ secrets.DASH_LICENSE }} TYK_URL=http://localhost:3000 ./sync-tests/init.sh
