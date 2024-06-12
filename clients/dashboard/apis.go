@@ -371,7 +371,7 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			return fmt.Errorf("API request completed, but with error: %v", status.Message)
 		}
 
-		if asDBDef.IsOASAPI() && len(asDBDef.Categories) > 0 {
+		if asDBDef.IsOASAPI() {
 			resp, err := c.UpdateOASCategory(asDBDef)
 			if err != nil {
 				return err
