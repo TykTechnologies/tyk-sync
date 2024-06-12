@@ -49,52 +49,52 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Setup Golang
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.21.x
-
-      - name: Get latest version
-        id: get-latest-version
-        run: |
-          go build && go install
-          version=$(tyk-sync v)
-          echo "version=$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Create Kind Cluster
-        uses: helm/kind-action@v1.9.0
-        with:
-          node_image: "kindest/node:${{ matrix.k8s_version }}"
-
-      - name: Install helm
-        uses: azure/setup-helm@v4
-
-      - name: Deploy Tyk Stack and dependencies
-        id: deploy-stack
-        run: |
-          kubectl create namespace ${{ env.TYK_STACK_NS }}
-
-          # Do not change the name
-          # Install redis
-          helm install redis oci://registry-1.docker.io/bitnamicharts/redis --wait -n ${{ env.TYK_STACK_NS }} --timeout ${{ env.TIMEOUT }} --version 19.0.2
-
-          # Install mongo
-          helm install mongo oci://registry-1.docker.io/bitnamicharts/mongodb --wait -n ${{ env.TYK_STACK_NS }} --timeout ${{ env.TIMEOUT }} --version 15.1.3
-
-          MONGODB_ROOT_PASSWORD=$(kubectl get secret -n ${{ env.TYK_STACK_NS }} mongo-mongodb -o jsonpath="{.data.mongodb-root-password}" | base64 -d)
-
-          helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
-          helm repo update
-
-          helm install --namespace ${{ env.TYK_STACK_NS }} tyk-stack tyk-helm/tyk-stack \
-            --set "global.mongo.mongoURL=mongodb://root:$MONGODB_ROOT_PASSWORD@mongo-mongodb.${{ env.TYK_STACK_NS }}.svc:27017/tyk_analytics?authSource=admin" \
-            --set "global.redis.addrs={redis-master.${{ env.TYK_STACK_NS }}.svc:6379"} \
-            --set "global.redis.passSecret.name=redis" \
-            --set "global.redis.passSecret.keyName=redis-password" \
-            --set "global.license.dashboard=${{ secrets.DASH_LICENSE }}" \
-            --set "global.storageType=mongo" \
-            --timeout=${{ env.TIMEOUT }}
+#      - name: Setup Golang
+#        uses: actions/setup-go@v5
+#        with:
+#          go-version: 1.21.x
+#
+#      - name: Get latest version
+#        id: get-latest-version
+#        run: |
+#          go build && go install
+#          version=$(tyk-sync v)
+#          echo "version=$version"
+#          echo "version=$version" >> "$GITHUB_OUTPUT"
+#
+#      - name: Create Kind Cluster
+#        uses: helm/kind-action@v1.9.0
+#        with:
+#          node_image: "kindest/node:${{ matrix.k8s_version }}"
+#
+#      - name: Install helm
+#        uses: azure/setup-helm@v4
+#
+#      - name: Deploy Tyk Stack and dependencies
+#        id: deploy-stack
+#        run: |
+#          kubectl create namespace ${{ env.TYK_STACK_NS }}
+#
+#          # Do not change the name
+#          # Install redis
+#          helm install redis oci://registry-1.docker.io/bitnamicharts/redis --wait -n ${{ env.TYK_STACK_NS }} --timeout ${{ env.TIMEOUT }} --version 19.0.2
+#
+#          # Install mongo
+#          helm install mongo oci://registry-1.docker.io/bitnamicharts/mongodb --wait -n ${{ env.TYK_STACK_NS }} --timeout ${{ env.TIMEOUT }} --version 15.1.3
+#
+#          MONGODB_ROOT_PASSWORD=$(kubectl get secret -n ${{ env.TYK_STACK_NS }} mongo-mongodb -o jsonpath="{.data.mongodb-root-password}" | base64 -d)
+#
+#          helm repo add tyk-helm https://helm.tyk.io/public/helm/charts/
+#          helm repo update
+#
+#          helm install --namespace ${{ env.TYK_STACK_NS }} tyk-stack tyk-helm/tyk-stack \
+#            --set "global.mongo.mongoURL=mongodb://root:$MONGODB_ROOT_PASSWORD@mongo-mongodb.${{ env.TYK_STACK_NS }}.svc:27017/tyk_analytics?authSource=admin" \
+#            --set "global.redis.addrs={redis-master.${{ env.TYK_STACK_NS }}.svc:6379"} \
+#            --set "global.redis.passSecret.name=redis" \
+#            --set "global.redis.passSecret.keyName=redis-password" \
+#            --set "global.license.dashboard=${{ secrets.DASH_LICENSE }}" \
+#            --set "global.storageType=mongo" \
+#            --timeout=${{ env.TIMEOUT }}
 
       - name: Checkout Tyk Sync Integration Tests
         uses: actions/checkout@v4
@@ -105,13 +105,18 @@ jobs:
 
       - name: Run integration tests
         run: |
-          echo $(pwd)
-          echo $(ls -la)
-          echo $(ls ../ -la)
+          echo "current directory => $(pwd)"
+          echo "current directory content => $(ls -la)"
+          echo "sync-tests directory content => $(ls ./sync-tests -la)"
+          echo "../ direcotry content => $(ls ../ -la)"
           echo "waiting for dashboard to be ready..."
           kubectl rollout status -n ${{ env.TYK_STACK_NS }} deployment dashboard-tyk-stack-tyk-dashboard
           kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000
+          
+          echo "starting running integration tests"
+          cat ./sync-tests/init.sh
           TYK_AUTH=${{ secrets.DASH_LICENSE }} TYK_URL=http://localhost:3000 ./sync-tests/init.sh
+          echo "finished running integration tests"
 #
 #  sbom:
 #    uses: TykTechnologies/github-actions/.github/workflows/sbom.yaml@main
