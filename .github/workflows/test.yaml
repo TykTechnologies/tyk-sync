@@ -110,12 +110,12 @@ jobs:
           kubectl rollout status -n ${{ env.TYK_STACK_NS }} deployment dashboard-tyk-stack-tyk-dashboard
           kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000 &
           sleep 1;
-          kubectl get pods -n ${{ env.TYK_STACK_NS }}
           echo "sending hello request to dashboard"
           curl http://localhost:3000/hello
-          
+          curl -H "Authorization: ${{ secrets.DASH_LICENSE }}" http://localhost:3000/api/apis
           echo "starting running integration tests"
-          TYK_AUTH=${{ secrets.DASH_LICENSE }} TYK_URL=http://localhost:3000 ./sync-tests/init.sh
+          cd ./sync-tests
+          TYK_AUTH="${{ secrets.DASH_LICENSE }}" TYK_URL=http://localhost:3000 ./init.sh
           echo "finished running integration tests"
 #
 #  sbom:
