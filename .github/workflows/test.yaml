@@ -46,7 +46,7 @@ jobs:
       - name: Checkout Tyk Sync Integration Tests
         uses: actions/checkout@v4
         with:
-          repository: "tyk-sync-tests"
+          repository: "TykTechnologies/tyk-sync-tests"
           path: sync-tests
           depth: 1
 
