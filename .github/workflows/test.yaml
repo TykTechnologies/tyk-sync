@@ -110,14 +110,15 @@ jobs:
           echo "current directory => $(pwd)"
           echo "current directory content => $(ls -la)"
           kubectl rollout status -n ${{ env.TYK_STACK_NS }} deployment dashboard-tyk-stack-tyk-dashboard
-          kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000 &
+          (&>/dev/null kubectl port-forward -n ${{ env.TYK_STACK_NS }} services/dashboard-svc-tyk-stack-tyk-dashboard 3000 &)
+          
           sleep 1;
           echo "sending hello request to dashboard"
           curl http://localhost:3000/hello
           curl -H "Authorization: $TYK_AUTH" http://localhost:3000/api/apis
           echo "starting running integration tests"
           cd ./sync-tests
-          TYK_AUTH=$TYK_AUTH TYK_URL=http://localhost:3000 ./init.sh
+          TYK_AUTH="$TYK_AUTH" TYK_URL=http://localhost:3000 ./init.sh
           echo "finished running integration tests"
 #
 #  sbom:
