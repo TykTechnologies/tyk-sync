@@ -120,6 +120,10 @@ jobs:
           cd ./sync-tests
           TYK_AUTH="$TYK_AUTH" TYK_URL=http://localhost:3000 ./init.sh
           echo "finished running integration tests"
+      - name: "debug logs in case of failure"
+        if: failure()
+        run: |
+          kubectl logs -n ${{ env.TYK_STACK_NS }} deployments/dashboard-tyk-stack-tyk-dashboard
 #
 #  sbom:
 #    uses: TykTechnologies/github-actions/.github/workflows/sbom.yaml@main
