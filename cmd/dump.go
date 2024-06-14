@@ -53,7 +53,6 @@ var dumpCmd = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		fmt.Println("> Fetching policies")
 		wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 		wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
 		wantedAssets, _ := cmd.Flags().GetStringSlice("templates")
@@ -115,6 +114,8 @@ var dumpCmd = &cobra.Command{
 
 			apis = resp.Apis
 
+			fmt.Println("> Fetching templates ")
+
 			assets, errAssetsFetch = c.FetchAssets()
 			if err != nil {
 				fmt.Println(errAssetsFetch)
@@ -126,10 +127,9 @@ var dumpCmd = &cobra.Command{
 		var oasApisDB []objects.DBApiDefinition
 		apis, oasApisDB = extractOASApis(apis)
 
-		fmt.Printf("--> Identified %v policies\n", len(policies))
 		if len(wantedPolicies) > 0 {
 			fmt.Println("--> Fetching and cleaning policy objects")
-		} else {
+		} else if len(policies) > 0 {
 			fmt.Println("--> Cleaning policy objects")
 		}
 
@@ -170,7 +170,7 @@ var dumpCmd = &cobra.Command{
 
 		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
 		fmt.Printf("--> Fetched %v OAS APIs\n", len(oasApisDB))
-		fmt.Printf("--> Fetched %v Assets\n", len(assets))
+		fmt.Printf("--> Fetched %v Templates\n", len(assets))
 
 		if len(wantedAssets) > 0 {
 			fmt.Println("> Fetching Asset(s)")
