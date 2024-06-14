@@ -397,8 +397,6 @@ func init() {
 	RootCmd.AddCommand(dumpCmd)
 
 	dumpCmd.Flags().StringP("dashboard", "d", "", "Fully qualified dashboard target URL")
-	dumpCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
-	dumpCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
 	dumpCmd.Flags().StringP("secret", "s", "", "Your API secret")
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
 	dumpCmd.Flags().StringSlice("templates", []string{}, "List of template IDs to be dumped")
