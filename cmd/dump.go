@@ -46,7 +46,7 @@ var dumpCmd = &cobra.Command{
 			secret = flagVal
 		}
 
-		fmt.Printf("Extracting APIs, Policies, and Assets from %v\n", dbString)
+		fmt.Printf("Extracting APIs, Policies, and Templates from %v\n", dbString)
 
 		c, err := dashboard.NewDashboardClient(dbString, secret, "", false)
 		if err != nil {
@@ -73,7 +73,7 @@ var dumpCmd = &cobra.Command{
 			apis = append(apis, api)
 		}
 
-		// building the policies obj from wantedAPIs
+		// building the policies obj from wantedPolicies
 		for _, wantedPolicy := range wantedPolicies {
 			if !bson.IsObjectIdHex(wantedPolicy) {
 				fmt.Printf("Invalid selected policy ID: %s.\n", wantedPolicy)
@@ -86,14 +86,16 @@ var dumpCmd = &cobra.Command{
 			policies = append(policies, pol)
 		}
 
-		//building the assets object from wantedAssets
+		// building the assets object from wantedAssets
 		for _, aID := range wantedAssets {
 			asset := objects.DBAssets{}
 			asset.ID = aID
 			assets = append(assets, asset)
 		}
 
-		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 {
+		// Fetch all apis,policies and assets if specific ids are not provided
+		// in command arguement.
+		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 && len(wantedAssets) == 0 {
 			fmt.Println("> Fetching policies ")
 
 			policies, errPoliciesFetch = c.FetchPolicies()
@@ -112,19 +114,17 @@ var dumpCmd = &cobra.Command{
 			}
 
 			apis = resp.Apis
-		}
-
-		var oasApisDB []objects.DBApiDefinition
-		apis, oasApisDB = extractOASApis(apis)
-		if len(wantedAssets) == 0 {
-			fmt.Println("> Fetching Asset(s)")
 
 			assets, errAssetsFetch = c.FetchAssets()
 			if err != nil {
 				fmt.Println(errAssetsFetch)
 				return
 			}
+
 		}
+
+		var oasApisDB []objects.DBApiDefinition
+		apis, oasApisDB = extractOASApis(apis)
 
 		fmt.Printf("--> Identified %v policies\n", len(policies))
 		if len(wantedPolicies) > 0 {
@@ -187,8 +187,6 @@ var dumpCmd = &cobra.Command{
 				assets[i] = fullAsset
 			}
 		}
-
-		fmt.Printf("--> Fetched %v Apis\n", len(apis))
 
 		dir, _ := cmd.Flags().GetString("target")
 		apiFiles := make([]string, len(apis))
