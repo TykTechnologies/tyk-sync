@@ -44,13 +44,13 @@ func init() {
 	syncCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard where configuration changes should be applied (Either -d or -g is required)")
 	syncCmd.Flags().StringP("key", "k", "", "Provide the location of the SSH key file for authentication to Git (optional)")
 	syncCmd.Flags().StringP("branch", "b", "refs/heads/master", "Specify the branch of the GitHub repository to use")
-	syncCmd.Flags().StringP("secret", "s", "", "Your API secret for accessing Dashboard or Gateway API (optional).  If not set, value of TYKGIT_DB_SECRET environment variable will be used")
+	syncCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard or Gateway API (optional).  If not set, value of TYKGIT_DB_SECRET environment variable will be used")
 	syncCmd.Flags().StringP("org", "o", "", "Override the organization ID to use for the synchronisation process (optional)")
 	syncCmd.Flags().StringP("path", "p", "", "Specify the source file directory where API configuration files are located (Required for synchronising from file system)")
 	syncCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 	syncCmd.Flags().Bool("allow-unsafe-oas", false, "Use Tyk Classic endpoints in Tyk Dashboard API for Tyk OAS APIs (optional)")
-	syncCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to synchronise. These APIs will be created or updated during synchronisation. Other resources will be deleted.")
-	syncCmd.Flags().StringSlice("policies", []string{}, "Specify policy IDs to synchronise. These policies will be created or updated during synchronisation. Other resources will be deleted.")
+	syncCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to synchronise. These APIs will be created or updated during synchronisation. Other resources will be deleted")
+	syncCmd.Flags().StringSlice("policies", []string{}, "Specify policy IDs to synchronise. These policies will be created or updated during synchronisation. Other resources will be deleted")
 	syncCmd.Flags().StringSlice("templates", []string{}, "List of template or Assets IDs to sync (optional")
 
 	if err := syncCmd.Flags().MarkDeprecated("allow-unsafe-oas", "OAS API can be synced without the flag."); err != nil {

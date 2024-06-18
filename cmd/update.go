@@ -55,7 +55,7 @@ func init() {
 	updateCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard where configuration changes should be applied (Either -d or -g is required)")
 	updateCmd.Flags().StringP("key", "k", "", "Provide the location of the SSH key file for authentication to Git (optional)")
 	updateCmd.Flags().StringP("branch", "b", "refs/heads/master", "Specify the branch of the GitHub repository to use")
-	updateCmd.Flags().StringP("secret", "s", "", "Your API secret for accessing Dashboard or Gateway API (optional)")
+	updateCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard or Gateway API (optional)")
 	updateCmd.Flags().StringP("path", "p", "", "Specify the source file directory where API configuration files are located (Required for synchronising from file system)")
 	updateCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 	updateCmd.Flags().Bool("allow-unsafe-oas", false, "Use Tyk Classic endpoints in Tyk Dashboard API for Tyk OAS APIs (optional)")

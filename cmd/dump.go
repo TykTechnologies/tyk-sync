@@ -452,15 +452,15 @@ func init() {
 
 	dumpCmd.Flags().SortFlags = false
 
-	dumpCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard.")
+	dumpCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard")
 	dumpCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
 	dumpCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
-	dumpCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard API. If not set, value of TYKGIT_DB_SECRET environment variable will be used.")
+	dumpCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard API. If not set, value of TYKGIT_DB_SECRET environment variable will be used")
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for the output files. Default to current directory if not provided")
-	dumpCmd.Flags().StringSlice("templates", []string{}, "Specify template IDs to dump. Use this to selectively dump specific API templates. It can be a single ID or an array of string such as “id1,id2”.")
-	dumpCmd.Flags().StringSlice("policies", []string{}, "Specify policy IDs to dump. Use this to selectively dump specific policies. It can be a single ID or an array of string such as “id1,id2”.")
-	dumpCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to dump. Use this to selectively dump specific APIs. It can be a single ID or an array of string such as “id1,id2”.")
-	dumpCmd.Flags().StringSlice("oas-apis", []string{}, "Specify OAS API IDs to dump. Use this to selectively dump specific OAS APIs. It can be a single ID or an array of string such as “id1,id2”.")
+	dumpCmd.Flags().StringSlice("templates", []string{}, "Specify template IDs to dump. Use this to selectively dump specific API templates. It can be a single ID or an array of string such as “id1,id2”")
+	dumpCmd.Flags().StringSlice("policies", []string{}, "Specify policy IDs to dump. Use this to selectively dump specific policies. It can be a single ID or an array of string such as “id1,id2”")
+	dumpCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to dump. Use this to selectively dump specific APIs. It can be a single ID or an array of string such as “id1,id2”")
+	dumpCmd.Flags().StringSlice("oas-apis", []string{}, "Specify OAS API IDs to dump. Use this to selectively dump specific OAS APIs. It can be a single ID or an array of string such as “id1,id2”")
 
 	dumpCmd.MarkFlagRequired("dashboard")
 }
