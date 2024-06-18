@@ -3,10 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/TykTechnologies/tyk/apidef"
-	"github.com/TykTechnologies/tyk/apidef/oas"
 	"os"
 	"path"
+
+	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/TykTechnologies/tyk/apidef/oas"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/mgo.v2/bson"
@@ -18,11 +19,11 @@ import (
 
 // dumpCmd represents the dump command
 var dumpCmd = &cobra.Command{
-	Use:   "dump",
+	Use:   "dump -d DASHBOARD_URL [-s SECRET] [-t PATH]",
 	Short: "Export API configurations from Tyk Dashboard to local files",
-	Long: `Dump will extract policies and APIs from a target (dashboard) and
-	place them in a directory of your choosing. It will also generate a spec file
-	that can be used for sync.`,
+	Long: `The tyk-sync dump command is used to export API definitions, policies, and templates from your Tyk Dashboard to local files.
+This command helps in creating backups or migrating configurations.
+It will also generate an index file .tyk.json that can be used for sync, update, and publish command.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dbString, _ := cmd.Flags().GetString("dashboard")
 
@@ -449,13 +450,17 @@ func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBAp
 func init() {
 	RootCmd.AddCommand(dumpCmd)
 
-	dumpCmd.Flags().StringP("dashboard", "d", "", "Fully qualified dashboard target URL")
+	dumpCmd.Flags().SortFlags = false
+
+	dumpCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard.")
 	dumpCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
 	dumpCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
-	dumpCmd.Flags().StringP("secret", "s", "", "Your API secret")
-	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
-	dumpCmd.Flags().StringSlice("templates", []string{}, "List of template IDs to be dumped")
-	dumpCmd.Flags().StringSlice("policies", []string{}, "Specific Policies IDs to dump")
-	dumpCmd.Flags().StringSlice("apis", []string{}, "Specific Classic API Definition IDs to dump")
-	dumpCmd.Flags().StringSlice("oas-apis", []string{}, "Specific OAS API Definition IDs to dump")
+	dumpCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard API. If not set, value of TYKGIT_DB_SECRET environment variable will be used.")
+	dumpCmd.Flags().StringP("target", "t", "", "Target directory for the output files. Default to current directory if not provided")
+	dumpCmd.Flags().StringSlice("templates", []string{}, "Specify template IDs to dump. Use this to selectively dump specific API templates. It can be a single ID or an array of string such as “id1,id2”.")
+	dumpCmd.Flags().StringSlice("policies", []string{}, "Specify policy IDs to dump. Use this to selectively dump specific policies. It can be a single ID or an array of string such as “id1,id2”.")
+	dumpCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to dump. Use this to selectively dump specific APIs. It can be a single ID or an array of string such as “id1,id2”.")
+	dumpCmd.Flags().StringSlice("oas-apis", []string{}, "Specify OAS API IDs to dump. Use this to selectively dump specific OAS APIs. It can be a single ID or an array of string such as “id1,id2”.")
+
+	dumpCmd.MarkFlagRequired("dashboard")
 }
