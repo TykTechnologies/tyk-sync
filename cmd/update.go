@@ -27,6 +27,11 @@ var updateCmd = &cobra.Command{
 	Short: "Update existing API configurations in Tyk Gateway or Dashboard",
 	Long: `Update will attempt to identify matching APIs or Policies in the target, and update those APIs
 	It will not create new ones, to do this use publish or sync.`,
+	Example: `Update from Git repository:
+	tyk-sync update {-d DASHBOARD_URL | -g GATEWAY_URL} [-s SECRET] [-b BRANCH] [-k SSHKEY] [-o ORG_ID] REPOSITORY_URL
+
+Update from file system:
+	tyk-sync update {-d DASHBOARD_URL | -g GATEWAY_URL} [-s SECRET] [-o ORG_ID] -p PATH`,
 	Run: func(cmd *cobra.Command, args []string) {
 		verificationError := verifyArguments(cmd)
 		if verificationError != nil {
@@ -44,18 +49,20 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(updateCmd)
-	updateCmd.Flags().StringP("gateway", "g", "", "Fully qualified gateway target URL")
-	updateCmd.Flags().StringP("dashboard", "d", "", "Fully qualified dashboard target URL")
-	updateCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
-	updateCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
-	updateCmd.Flags().StringP("secret", "s", "", "Your API secret")
-	updateCmd.Flags().StringP("path", "p", "", "Source directory for definition files (optional)")
+	updateCmd.Flags().SortFlags = false
+
+	updateCmd.Flags().StringP("gateway", "g", "", "Specify the fully qualified URL of the Tyk Gateway where configuration changes should be applied (Either -d or -g is required)")
+	updateCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard where configuration changes should be applied (Either -d or -g is required)")
+	updateCmd.Flags().StringP("key", "k", "", "Provide the location of the SSH key file for authentication to Git (optional)")
+	updateCmd.Flags().StringP("branch", "b", "refs/heads/master", "Specify the branch of the GitHub repository to use")
+	updateCmd.Flags().StringP("secret", "s", "", "Your API secret for accessing Dashboard or Gateway API (optional)")
+	updateCmd.Flags().StringP("path", "p", "", "Specify the source file directory where API configuration files are located (Required for synchronising from file system)")
 	updateCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
 	updateCmd.Flags().Bool("allow-unsafe-oas", false, "Use Tyk Classic endpoints in Tyk Dashboard API for Tyk OAS APIs (optional)")
-	updateCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to update")
-	updateCmd.Flags().StringSlice("apis", []string{}, "Specific Classic API Definition IDs to update")
-	updateCmd.Flags().StringSlice("oas-apis", []string{}, "Specific OAS API Definition IDs to update")
-	updateCmd.Flags().StringSlice("templates", []string{}, "Specific template or Assets IDs to update (optional")
+	updateCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to update. Use this to selectively update specific APIs. It can be a single ID or an array of string such as “id1,id2”")
+	updateCmd.Flags().StringSlice("oas-apis", []string{}, "Specify OAS API IDs to dump. Use this to selectively dump specific OAS APIs. It can be a single ID or an array of string such as “id1,id2”")
+	updateCmd.Flags().StringSlice("policies", []string{}, "Specify policy IDs to update. Use this to selectively update specific policies. It can be a single ID or an array of string such as “id1,id2”")
+	updateCmd.Flags().StringSlice("templates", []string{}, "Specify template IDs to update. Use this to selectively update specific API templates. It can be a single ID or an array of string such as “id1,id2”")
 
 	if err := updateCmd.Flags().MarkDeprecated("allow-unsafe-oas", "OAS API can updated without the flag."); err != nil {
 		fmt.Printf("Failed to mark `allow-unsafe-oas` flag as deprecated: %v", err)
