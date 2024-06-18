@@ -44,7 +44,7 @@ func init() {
 	syncCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard where configuration changes should be applied (Either -d or -g is required)")
 	syncCmd.Flags().StringP("key", "k", "", "Provide the location of the SSH key file for authentication to Git (optional)")
 	syncCmd.Flags().StringP("branch", "b", "refs/heads/master", "Specify the branch of the GitHub repository to use")
-	syncCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard or Gateway API (optional).  If not set, value of TYKGIT_DB_SECRET environment variable will be used")
+	syncCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard or Gateway API (optional).  If not set, value of TYKGIT_DB_SECRET/TYKGIT_GW_SECRET environment variable will be used for dahboard or gateway respectively")
 	syncCmd.Flags().StringP("org", "o", "", "Override the organization ID to use for the synchronisation process (optional)")
 	syncCmd.Flags().StringP("path", "p", "", "Specify the source file directory where API configuration files are located (Required for synchronising from file system)")
 	syncCmd.Flags().Bool("test", false, "Use test publisher, output results to stdio")
