@@ -19,7 +19,7 @@ import (
 // dumpCmd represents the dump command
 var dumpCmd = &cobra.Command{
 	Use:   "dump",
-	Short: "Dump will extract policies and APIs from a target (dashboard)",
+	Short: "Export API configurations from Tyk Dashboard to local files",
 	Long: `Dump will extract policies and APIs from a target (dashboard) and
 	place them in a directory of your choosing. It will also generate a spec file
 	that can be used for sync.`,

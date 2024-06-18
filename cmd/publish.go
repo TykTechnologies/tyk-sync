@@ -10,7 +10,7 @@ import (
 // publishCmd represents the publish command
 var publishCmd = &cobra.Command{
 	Use:   "publish",
-	Short: "publish API definitions from a Git repo or file system to a gateway or dashboard",
+	Short: "Publish new API configurations to Tyk Gateway or Dashboard",
 	Long: `Publish API definitions from a Git repo to a gateway or dashboard, this
 	will not update existing APIs, and if it detects a collision, will stop.`,
 	Run: func(cmd *cobra.Command, args []string) {

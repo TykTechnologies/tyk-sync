@@ -24,7 +24,7 @@ import (
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Update a dashboard or gateway with APIs and policies",
+	Short: "Update existing API configurations in Tyk Gateway or Dashboard",
 	Long: `Update will attempt to identify matching APIs or Policies in the target, and update those APIs
 	It will not create new ones, to do this use publish or sync.`,
 	Run: func(cmd *cobra.Command, args []string) {
