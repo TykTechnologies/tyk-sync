@@ -1,5 +1,9 @@
 package examplesrepo
 
+import (
+	"sort"
+)
+
 func IndexHasExamples(index *RepositoryIndex) bool {
 	if index == nil {
 		return false
@@ -21,10 +25,12 @@ func MergeExamples(index *RepositoryIndex) []ExampleMetadata {
 	}
 
 	for category := range index.Examples {
-		for _, example := range index.Examples[category] {
-			examples = append(examples, example)
-		}
+		examples = append(examples, index.Examples[category]...)
 	}
+
+	sort.Slice(examples, func(i, j int) bool {
+		return examples[i].Location < examples[j].Location
+	})
 
 	return examples
 }

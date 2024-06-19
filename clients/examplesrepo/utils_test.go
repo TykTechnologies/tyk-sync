@@ -58,8 +58,8 @@ func TestMergeExamples(t *testing.T) {
 		}
 
 		expectedExamples := []ExampleMetadata{
-			udgExample,
 			graphqlExample,
+			udgExample,
 		}
 
 		examples := MergeExamples(&index)
