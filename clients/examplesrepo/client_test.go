@@ -54,8 +54,9 @@ func TestExamplesClient_GetAllExamples(t *testing.T) {
 		require.NoError(t, err)
 
 		examples, err := client.GetAllExamples()
-		assert.Len(t, examples, len(repositoryIndexModel.Examples.UDG))
-		assert.Equal(t, repositoryIndexModel.Examples.UDG[0], examples[0])
+		assert.Len(t, examples, len(repositoryIndexModel.Examples["udg"]))
+		assert.Equal(t, repositoryIndexModel.Examples["udg"][0], examples[0])
+		assert.Equal(t, repositoryIndexModel.Examples["graphql"][0], examples[2])
 	})
 }
 
@@ -70,8 +71,9 @@ func TestExamplesClient_GetAllExamplesAsLocationIndexedMap(t *testing.T) {
 		require.NoError(t, err)
 
 		examplesMap, err := client.GetAllExamplesAsLocationIndexedMap()
-		assert.Len(t, examplesMap, len(repositoryIndexModel.Examples.UDG))
-		assert.Equal(t, repositoryIndexModel.Examples.UDG[0], examplesMap[repositoryIndexModel.Examples.UDG[0].Location])
+		assert.Len(t, examplesMap, len(repositoryIndexModel.Examples["udg"]))
+		assert.Equal(t, repositoryIndexModel.Examples["udg"], examplesMap[repositoryIndexModel.Examples["udg"][0].Location])
+		assert.Equal(t, repositoryIndexModel.Examples["graphql"], examplesMap[repositoryIndexModel.Examples["graphql"][0].Location])
 	})
 }
 
@@ -91,7 +93,7 @@ func createRepositoryTestServer(t *testing.T, statusCode int) *httptest.Server {
 
 var repositoryIndexModel = &RepositoryIndex{
 	Examples: ExamplesCategories{
-		UDG: []ExampleMetadata{
+		"udg": []ExampleMetadata{
 			{
 				Location:    "udg/first-demo",
 				Name:        "First UDG Demo",
@@ -113,6 +115,17 @@ var repositoryIndexModel = &RepositoryIndex{
 					"Subscriptions",
 				},
 				MinTykVersion: "5.0",
+			},
+		},
+		"graphql": []ExampleMetadata{
+			{
+				Location:    "graphql/star-wars",
+				Name:        "Star Wars GQL API",
+				Description: "This GraphQL API retrieves all the Star Wars data you've ever wanted: Planets, Spaceships, Vehicles, People, Films and Species from all seven Star Wars films.",
+				Features: []string{
+					"Authorization Token",
+				},
+				MinTykVersion: "5.4",
 			},
 		},
 	},
@@ -143,6 +156,17 @@ const repositoryIndexJson = `{
 				],
 				"minTykVersion": "5.0"
 			}
-		]
+		],
+		"graphql": [
+        	{
+				"location": "graphql/star-wars",
+				"name": "Star Wars GQL API",
+				"description": "This GraphQL API retrieves all the Star Wars data you've ever wanted: Planets, Spaceships, Vehicles, People, Films and Species from all seven Star Wars films.",
+				"features": [
+					"Authorization Token"
+				],
+          		"minTykVersion": "5.4"
+        	}
+      	]
 	}
 }`

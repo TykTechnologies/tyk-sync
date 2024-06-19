@@ -5,7 +5,13 @@ func IndexHasExamples(index *RepositoryIndex) bool {
 		return false
 	}
 
-	return len(index.Examples.UDG) > 0
+	for category := range index.Examples {
+		if len(index.Examples[category]) > 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 func MergeExamples(index *RepositoryIndex) []ExampleMetadata {
@@ -14,8 +20,10 @@ func MergeExamples(index *RepositoryIndex) []ExampleMetadata {
 		return examples
 	}
 
-	for _, udgExample := range index.Examples.UDG {
-		examples = append(examples, udgExample)
+	for category := range index.Examples {
+		for _, example := range index.Examples[category] {
+			examples = append(examples, example)
+		}
 	}
 
 	return examples

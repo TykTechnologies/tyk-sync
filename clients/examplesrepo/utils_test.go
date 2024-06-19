@@ -19,7 +19,7 @@ func TestIndexHasExamples(t *testing.T) {
 	t.Run("should return true if index has at least one example", func(t *testing.T) {
 		index := RepositoryIndex{
 			Examples: ExamplesCategories{
-				UDG: []ExampleMetadata{
+				"udg": []ExampleMetadata{
 					{
 						Location: "location",
 					},
@@ -42,16 +42,24 @@ func TestMergeExamples(t *testing.T) {
 			Location: "udg",
 		}
 
+		graphqlExample := ExampleMetadata{
+			Location: "graphql",
+		}
+
 		index := RepositoryIndex{
 			Examples: ExamplesCategories{
-				UDG: []ExampleMetadata{
+				"udg": []ExampleMetadata{
 					udgExample,
+				},
+				"graphql": []ExampleMetadata{
+					graphqlExample,
 				},
 			},
 		}
 
 		expectedExamples := []ExampleMetadata{
 			udgExample,
+			graphqlExample,
 		}
 
 		examples := MergeExamples(&index)
@@ -74,18 +82,26 @@ func TestExamplesAsLocationIndexedMap(t *testing.T) {
 			Location: "udg/example-2",
 		}
 
+		graphqlExample1 := ExampleMetadata{
+			Location: "graphql/example-1",
+		}
+
 		index := RepositoryIndex{
 			Examples: ExamplesCategories{
-				UDG: []ExampleMetadata{
+				"udg": []ExampleMetadata{
 					udgExample1,
 					udgExample2,
+				},
+				"graphql": []ExampleMetadata{
+					graphqlExample1,
 				},
 			},
 		}
 
 		examplesMap := ExamplesAsLocationIndexedMap(&index)
-		assert.Len(t, examplesMap, 2)
+		assert.Len(t, examplesMap, 3)
 		assert.Equal(t, udgExample1, examplesMap[udgExample1.Location])
 		assert.Equal(t, udgExample2, examplesMap[udgExample2.Location])
+		assert.Equal(t, graphqlExample1, examplesMap[graphqlExample1.Location])
 	})
 }
