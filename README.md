@@ -96,7 +96,7 @@ Available Commands:
   version     This command will show the current Tyk-Sync version
 
 Flags:
-  -h, --help   help for tyk-sync
+  -h, --help   Help for tyk-sync
 
 Use "tyk-sync [command] --help" for more information about a command.
 ```
