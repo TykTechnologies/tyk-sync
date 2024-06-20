@@ -4,9 +4,7 @@ type RepositoryIndex struct {
 	Examples ExamplesCategories `json:"examples"`
 }
 
-type ExamplesCategories struct {
-	UDG []ExampleMetadata `json:"udg"`
-}
+type ExamplesCategories map[string][]ExampleMetadata
 
 type ExampleMetadata struct {
 	Location      string   `json:"location"`
