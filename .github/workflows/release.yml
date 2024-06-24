@@ -142,7 +142,7 @@ jobs:
           RUN dpkg -i /tyk-sync.deb' > Dockerfile
 
       - name: install on ${{ matrix.distro }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: "."
           platforms: linux/${{ matrix.arch }}
@@ -184,7 +184,7 @@ jobs:
           RUN rpm -Uvh --force tyk-sync.rpm' > Dockerfile
 
       - name: install on ${{ matrix.distro }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: "."
           file: Dockerfile
