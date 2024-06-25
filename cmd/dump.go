@@ -3,10 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/TykTechnologies/tyk/apidef"
-	"github.com/TykTechnologies/tyk/apidef/oas"
 	"os"
 	"path"
+
+	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/TykTechnologies/tyk/apidef/oas"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/mgo.v2/bson"
@@ -436,7 +437,7 @@ func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBAp
 	oas = []objects.DBApiDefinition{}
 
 	for i := 0; i < len(apis); i++ {
-		if apis[i].IsOASAPI() {
+		if apis[i].APIDefinition.IsOAS {
 			oas = append(oas, apis[i])
 		} else {
 			classic = append(classic, apis[i])
