@@ -239,6 +239,8 @@ var dumpCmd = &cobra.Command{
 		apiFiles := make([]string, len(apis))
 
 		for i, api := range apis {
+			api.OAS = nil
+
 			j, jerr := json.MarshalIndent(api, "", "  ")
 			if jerr != nil {
 				fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
