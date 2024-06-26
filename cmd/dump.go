@@ -439,7 +439,7 @@ func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBAp
 	oas = []objects.DBApiDefinition{}
 
 	for i := 0; i < len(apis); i++ {
-		if apis[i].APIDefinition.IsOAS {
+		if apis[i].APIDefinition != nil && apis[i].APIDefinition.IsOAS {
 			oas = append(oas, apis[i])
 		} else {
 			classic = append(classic, apis[i])
