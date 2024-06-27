@@ -51,9 +51,16 @@ func init() {
 	syncCmd.Flags().Bool("allow-unsafe-oas", false, "Use Tyk Classic endpoints in Tyk Dashboard API for Tyk OAS APIs (optional)")
 	syncCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to synchronise. These APIs will be created or updated during synchronisation. Other resources will be deleted")
 	syncCmd.Flags().StringSlice("policies", []string{}, "Specify policy IDs to synchronise. These policies will be created or updated during synchronisation. Other resources will be deleted")
-	syncCmd.Flags().StringSlice("templates", []string{}, "List of template or Assets IDs to sync (optional")
 
 	if err := syncCmd.Flags().MarkDeprecated("allow-unsafe-oas", "OAS API can be synced without the flag."); err != nil {
 		fmt.Printf("Failed to mark `allow-unsafe-oas` flag as deprecated: %v", err)
+	}
+
+	if err := syncCmd.Flags().MarkDeprecated("apis", "The flag will be removed in upcoming release"); err != nil {
+		fmt.Printf("Failed to mark `apis` flag as deprecated: %v", err)
+	}
+
+	if err := syncCmd.Flags().MarkDeprecated("policies", "The flag will be removed in upcoming release"); err != nil {
+		fmt.Printf("Failed to mark `policies` flag as deprecated: %v", err)
 	}
 }

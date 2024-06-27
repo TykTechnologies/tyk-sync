@@ -49,14 +49,13 @@ It will also generate an index file .tyk.json that can be used for sync, update,
 			secret = flagVal
 		}
 
-		fmt.Printf("Extracting APIs, Policies, and Assets from %v\n", dbString)
+		fmt.Printf("Extracting APIs, Policies, and Templates from %v\n", dbString)
 
 		c, err := dashboard.NewDashboardClient(dbString, secret, "", false)
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		fmt.Println("> Fetching policies")
 		wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 		wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
 		wantedOASAPIs, _ := cmd.Flags().GetStringSlice("oas-apis")
@@ -95,7 +94,7 @@ It will also generate an index file .tyk.json that can be used for sync, update,
 			apis = append(apis, api)
 		}
 
-		// building the policies obj from wantedAPIs
+		// building the policies obj from wantedPolicies
 		for _, wantedPolicy := range wantedPolicies {
 			if !bson.IsObjectIdHex(wantedPolicy) {
 				fmt.Printf("Invalid selected policy ID: %s.\n", wantedPolicy)
@@ -108,14 +107,16 @@ It will also generate an index file .tyk.json that can be used for sync, update,
 			policies = append(policies, pol)
 		}
 
-		//building the assets object from wantedAssets
+		// building the assets object from wantedAssets
 		for _, aID := range wantedAssets {
 			asset := objects.DBAssets{}
 			asset.ID = aID
 			assets = append(assets, asset)
 		}
 
-		if len(apis) == 0 && len(wantedPolicies) == 0 {
+		// Fetch all apis,policies and assets if specific ids are not provided
+		// in command arguement.
+		if len(wantedAPIs) == 0 && len(wantedPolicies) == 0 && len(wantedAssets) == 0 {
 			fmt.Println("> Fetching policies ")
 
 			policies, errPoliciesFetch = c.FetchPolicies()
@@ -134,24 +135,23 @@ It will also generate an index file .tyk.json that can be used for sync, update,
 			}
 
 			apis = resp.Apis
-		}
 
-		var oasApisDB []objects.DBApiDefinition
-		apis, oasApisDB = extractOASApis(apis)
-		if len(wantedAssets) == 0 {
-			fmt.Println("> Fetching Asset(s)")
+			fmt.Println("> Fetching templates ")
 
 			assets, errAssetsFetch = c.FetchAssets()
 			if err != nil {
 				fmt.Println(errAssetsFetch)
 				return
 			}
+
 		}
 
-		fmt.Printf("--> Identified %v policies\n", len(policies))
+		var oasApisDB []objects.DBApiDefinition
+		apis, oasApisDB = extractOASApis(apis)
+
 		if len(wantedPolicies) > 0 {
 			fmt.Println("--> Fetching and cleaning policy objects")
-		} else {
+		} else if len(policies) > 0 {
 			fmt.Println("--> Cleaning policy objects")
 		}
 
@@ -215,7 +215,7 @@ It will also generate an index file .tyk.json that can be used for sync, update,
 
 		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
 		fmt.Printf("--> Fetched %v OAS APIs\n", len(oasApisDB))
-		fmt.Printf("--> Fetched %v Assets\n", len(assets))
+		fmt.Printf("--> Fetched %v Templates\n", len(assets))
 
 		if len(wantedAssets) > 0 {
 			fmt.Println("> Fetching Asset(s)")
@@ -232,8 +232,6 @@ It will also generate an index file .tyk.json that can be used for sync, update,
 				assets[i] = fullAsset
 			}
 		}
-
-		fmt.Printf("--> Fetched %v Apis\n", len(apis))
 
 		dir, _ := cmd.Flags().GetString("target")
 		apiFiles := make([]string, len(apis))
@@ -437,7 +435,7 @@ func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBAp
 	oas = []objects.DBApiDefinition{}
 
 	for i := 0; i < len(apis); i++ {
-		if apis[i].IsOASAPI() {
+		if apis[i].APIDefinition != nil && apis[i].APIDefinition.IsOAS {
 			oas = append(oas, apis[i])
 		} else {
 			classic = append(classic, apis[i])
@@ -453,8 +451,6 @@ func init() {
 	dumpCmd.Flags().SortFlags = false
 
 	dumpCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard")
-	dumpCmd.Flags().StringP("key", "k", "", "Key file location for auth (optional)")
-	dumpCmd.Flags().StringP("branch", "b", "refs/heads/master", "Branch to use (defaults to refs/heads/master)")
 	dumpCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard API. If not set, value of TYKGIT_DB_SECRET environment variable will be used")
 	dumpCmd.Flags().StringP("target", "t", "", "Target directory for the output files. Default to current directory if not provided")
 	dumpCmd.Flags().StringSlice("templates", []string{}, "Specify template IDs to dump. Use this to selectively dump specific API templates. It can be a single ID or an array of string such as “id1,id2”")

@@ -192,37 +192,33 @@ func doGetData(cmd *cobra.Command, args []string) ([]objects.DBApiDefinition, []
 	}
 
 	if len(wantedPolicies) > 0 {
-		filteredPolicies = pols[:]
-		newL := 0
-		for _, polID := range wantedPolicies {
-			for _, pol := range filteredPolicies {
-				if !((polID == pol.ID) || (polID == pol.MID.Hex())) {
-					continue
-				}
-				filteredPolicies[newL] = pol
-				newL++
+		mapPolicyIDs := map[string]bool{}
+
+		for _, id := range wantedPolicies {
+			mapPolicyIDs[id] = true
+		}
+
+		for _, pol := range pols {
+			if _, ok := mapPolicyIDs[pol.ID]; ok {
+				filteredPolicies = append(filteredPolicies, pol)
+			} else if _, ok := mapPolicyIDs[pol.MID.Hex()]; ok {
+				filteredPolicies = append(filteredPolicies, pol)
 			}
 		}
-		filteredPolicies = filteredPolicies[:newL]
 	}
 
 	if len(wantedAssets) > 0 {
-		filteredAssets = assets[:]
+		mapAssetIDs := map[string]bool{}
 
-		newL := 0
-		for _, assetID := range wantedAssets {
-			for _, asset := range filteredAssets {
-				if assetID != asset.ID {
-					continue
-				}
-
-				filteredAssets[newL] = asset
-
-				newL++
-			}
+		for _, id := range wantedAssets {
+			mapAssetIDs[id] = true
 		}
 
-		filteredAssets = filteredAssets[:newL]
+		for _, asset := range assets {
+			if _, ok := mapAssetIDs[asset.ID]; ok {
+				filteredAssets = append(filteredAssets, asset)
+			}
+		}
 	}
 
 	return filteredAPIs, filteredPolicies, filteredAssets, nil
