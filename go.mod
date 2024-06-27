@@ -5,7 +5,7 @@ go 1.21.0
 require (
 	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20240607104824-59aa3f44f12e
 	github.com/TykTechnologies/storage v1.2.2
-	github.com/TykTechnologies/tyk v1.9.2-0.20240611093826-c423ac22f50b
+	github.com/TykTechnologies/tyk v1.9.2-0.20240626094223-9b62c317f33a
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/gofrs/uuid v4.4.0+incompatible
