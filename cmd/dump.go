@@ -458,5 +458,5 @@ func init() {
 	dumpCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to dump. Use this to selectively dump specific APIs. It can be a single ID or an array of string such as “id1,id2”")
 	dumpCmd.Flags().StringSlice("oas-apis", []string{}, "Specify OAS API IDs to dump. Use this to selectively dump specific OAS APIs. It can be a single ID or an array of string such as “id1,id2”")
 
-	dumpCmd.MarkFlagRequired("dashboard")
+	dumpCmd.MarkFlagRequired("dashboard") //nolint
 }
