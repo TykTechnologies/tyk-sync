@@ -45,6 +45,10 @@ func (p *DashboardPublisher) enforceOrgIDForAssets(assetsDefs *[]objects.DBAsset
 }
 
 func (p *DashboardPublisher) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
+	if apiDefs == nil || len(*apiDefs) == 0 {
+		return nil
+	}
+
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
 		return err
@@ -108,10 +112,15 @@ func (p *DashboardPublisher) Name() string {
 }
 
 func (p *DashboardPublisher) CreatePolicies(pols *[]objects.Policy) error {
+	if pols == nil || len(*pols) == 0 {
+		return nil
+	}
+
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, p.AllowUnsafeOAS)
 	if err != nil {
 		return err
 	}
+
 	if p.OrgOverride == "" {
 		p.OrgOverride = c.OrgID
 	}
@@ -157,6 +166,10 @@ func (p *DashboardPublisher) SyncPolicies(pols []objects.Policy) error {
 }
 
 func (p *DashboardPublisher) CreateAssets(assets *[]objects.DBAssets) error {
+	if assets == nil || len(*assets) == 0 {
+		return nil
+	}
+
 	c, err := dashboard.NewDashboardClient(p.Hostname, p.Secret, p.OrgOverride, false)
 	if err != nil {
 		return err
