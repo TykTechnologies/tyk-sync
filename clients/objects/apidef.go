@@ -31,7 +31,7 @@ type APIDefinition struct {
 }
 
 func (d *DBApiDefinition) IsOASAPI() bool {
-	if (d.APIDefinition != nil && d.APIDefinition.IsOAS) || (d.OAS != nil) {
+	if d.APIDefinition != nil && d.APIDefinition.IsOAS {
 		return true
 	}
 
