@@ -237,6 +237,8 @@ It will also generate an index file .tyk.json that can be used for sync, update,
 		apiFiles := make([]string, len(apis))
 
 		for i, api := range apis {
+			api.OAS = nil
+
 			j, jerr := json.MarshalIndent(api, "", "  ")
 			if jerr != nil {
 				fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
