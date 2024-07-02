@@ -88,7 +88,7 @@ func (p *DashboardPublisher) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 			}
 
 			newDef := a
-			newDef.OrgID = p.OrgOverride
+			newDef.SetOrgID(p.OrgOverride)
 			fixedDefs[i] = newDef
 		}
 

@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"path/filepath"
-
 	"github.com/TykTechnologies/storage/persistent/model"
+	"github.com/TykTechnologies/tyk/apidef"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-billy/v5/osfs"
@@ -15,6 +13,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/memory"
+	"io"
+	"path/filepath"
 
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	tyk_swagger "github.com/TykTechnologies/tyk-sync/tyk-swagger"
@@ -194,14 +194,19 @@ func fetchAPIDefinitions(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryP
 }
 
 func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath string) ([]objects.DBApiDefinition, error) {
-	defNames := spec.Files
-	defs := make([]objects.DBApiDefinition, len(defNames))
-	for i, defInfo := range defNames {
-		if defInfo.File == "" {
+	var (
+		classicAPICount = 0
+		oasAPICount     = 0
+	)
+
+	var allApiDefinitions []objects.DBApiDefinition
+
+	for _, apiFileInfo := range spec.Files {
+		if apiFileInfo.File == "" {
 			continue
 		}
 
-		defFile, err := fs.Open(getFilepath(defInfo.File, subdirectoryPath))
+		defFile, err := fs.Open(getFilepath(apiFileInfo.File, subdirectoryPath))
 		if err != nil {
 			return nil, err
 		}
@@ -213,7 +218,7 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdire
 
 		ad := objects.DBApiDefinition{}
 		err = json.Unmarshal(rawDef, &ad)
-		if err != nil || (ad.APIDefinition == nil) {
+		if err != nil || (!ad.IsOASAPI() && ad.APIDefinition == nil) {
 			def := objects.APIDefinition{}
 			errSecondUnmarshal := json.Unmarshal(rawDef, &def)
 			if errSecondUnmarshal != nil {
@@ -222,23 +227,35 @@ func fetchAPIDefinitionsDirect(fs billy.Filesystem, spec *TykSourceSpec, subdire
 			ad.APIDefinition = &def
 		}
 
-		if defInfo.APIID != "" {
-			ad.APIID = defInfo.APIID
+		if ad.OAS != nil {
+			oasAPICount++
+			ad.APIDefinition = &objects.APIDefinition{
+				APIDefinition: apidef.APIDefinition{
+					IsOAS: true,
+				}}
+		} else {
+			classicAPICount++
 		}
 
-		if defInfo.DBID != "" {
-			ad.Id = model.ObjectIDHex(defInfo.DBID)
+		if apiFileInfo.APIID != "" {
+			ad.SetAPIID(apiFileInfo.APIID)
 		}
 
-		if defInfo.ORGID != "" {
-			ad.OrgID = defInfo.ORGID
+		if apiFileInfo.DBID != "" {
+			ad.SetDBID(model.ObjectIDHex(apiFileInfo.DBID))
 		}
 
-		defs[i] = ad
+		if apiFileInfo.ORGID != "" {
+			ad.SetOrgID(apiFileInfo.ORGID)
+		}
+
+		allApiDefinitions = append(allApiDefinitions, ad)
 	}
 
-	fmt.Printf("Fetched %v definitions\n", len(defs))
-	return defs, nil
+	fmt.Printf("Fetched %d classic API Definitions\n", classicAPICount)
+	fmt.Printf("Fetched %d OAS API Definitions\n", oasAPICount)
+
+	return allApiDefinitions, nil
 }
 
 func fetchAPIDefinitionsFromOAI(fs billy.Filesystem, spec *TykSourceSpec, subdirectoryPath string) ([]objects.DBApiDefinition, error) {

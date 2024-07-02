@@ -10,7 +10,7 @@ import (
 // examplesCmd represents a command to show and publish examples from an examples repository
 var examplesCmd = &cobra.Command{
 	Use:   "examples",
-	Short: "Shows a list of all available tyk examples",
+	Short: "Show a list of all available Tyk examples",
 	Long: `This command will show a list of all available tyk examples that are hosted on the official
 	GitHub repository. For more details please use the 'examples show' command.'`,
 	Run: func(cmd *cobra.Command, args []string) {

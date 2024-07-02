@@ -6,6 +6,9 @@ import (
 	"os"
 	"path"
 
+	"github.com/TykTechnologies/tyk/apidef"
+	"github.com/TykTechnologies/tyk/apidef/oas"
+
 	"github.com/spf13/cobra"
 	"gopkg.in/mgo.v2/bson"
 
@@ -16,11 +19,11 @@ import (
 
 // dumpCmd represents the dump command
 var dumpCmd = &cobra.Command{
-	Use:   "dump",
-	Short: "Dump will extract policies and APIs from a target (dashboard)",
-	Long: `Dump will extract policies and APIs from a target (dashboard) and
-	place them in a directory of your choosing. It will also generate a spec file
-	that can be used for sync.`,
+	Use:   "dump -d DASHBOARD_URL [-s SECRET] [-t PATH]",
+	Short: "Export API configurations from Tyk Dashboard to local files",
+	Long: `The tyk-sync dump command is used to export API definitions, policies, and templates from your Tyk Dashboard to local files.
+This command helps in creating backups or migrating configurations.
+It will also generate an index file .tyk.json that can be used for sync, update, and publish command.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dbString, _ := cmd.Flags().GetString("dashboard")
 
@@ -55,6 +58,7 @@ var dumpCmd = &cobra.Command{
 
 		wantedPolicies, _ := cmd.Flags().GetStringSlice("policies")
 		wantedAPIs, _ := cmd.Flags().GetStringSlice("apis")
+		wantedOASAPIs, _ := cmd.Flags().GetStringSlice("oas-apis")
 		wantedAssets, _ := cmd.Flags().GetStringSlice("templates")
 
 		policies := []objects.Policy{}
@@ -69,6 +73,24 @@ var dumpCmd = &cobra.Command{
 		for _, APIID := range wantedAPIs {
 			api := objects.DBApiDefinition{APIDefinition: &objects.APIDefinition{}}
 			api.APIID = APIID
+			apis = append(apis, api)
+		}
+
+		// building the oas api def objs from wantedOASAPIs
+		for _, APIID := range wantedOASAPIs {
+			myOas := &oas.OAS{}
+			myOas.SetTykExtension(&oas.XTykAPIGateway{Info: oas.Info{ID: APIID}})
+
+			api := objects.DBApiDefinition{
+				APIDefinition: &objects.APIDefinition{
+					APIDefinition: apidef.APIDefinition{
+						APIID: APIID,
+						IsOAS: true,
+					},
+				},
+				OAS: myOas,
+			}
+
 			apis = append(apis, api)
 		}
 
@@ -164,8 +186,31 @@ var dumpCmd = &cobra.Command{
 				}
 				apis[i] = fullAPI
 			}
+		}
 
-			apis, oasApisDB = extractOASApis(apis)
+		if len(wantedOASAPIs) > 0 {
+			fmt.Printf("--> Identified %v OAS APIs\n", len(wantedOASAPIs))
+
+			for i, api := range oasApisDB {
+				fullAPI, err := c.FetchOASAPI(api.GetAPIID())
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				categories, err := c.FetchOASCategory(api.GetAPIID())
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				if oasApisDB[i].OAS == nil {
+					oasApisDB[i].OAS = new(oas.OAS)
+				}
+
+				oasApisDB[i].OAS = fullAPI
+				oasApisDB[i].Categories = categories
+			}
 		}
 
 		fmt.Printf("--> Fetched %v Classic APIs\n", len(apis))
@@ -192,6 +237,8 @@ var dumpCmd = &cobra.Command{
 		apiFiles := make([]string, len(apis))
 
 		for i, api := range apis {
+			api.OAS = nil
+
 			j, jerr := json.MarshalIndent(api, "", "  ")
 			if jerr != nil {
 				fmt.Printf("JSON Encoding error: %v\n", jerr.Error())
@@ -230,6 +277,8 @@ var dumpCmd = &cobra.Command{
 
 		oasApiFiles := make([]string, len(oasApisDB))
 		for i, oasApi := range oasApisDB {
+			oasApi.APIDefinition = nil
+
 			j, jerr := json.MarshalIndent(oasApi, "", "  ")
 			if jerr != nil {
 				fmt.Printf("OASAPI JSON Encoding error: %v\n", jerr.Error())
@@ -381,9 +430,14 @@ var dumpCmd = &cobra.Command{
 	},
 }
 
+// extractOASApis extracts OAS APIs from the array of API Definition objects.
+// Each object in the array corresponds to the API Definition representation stored in database.
 func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBApiDefinition) {
+	classic = []objects.DBApiDefinition{}
+	oas = []objects.DBApiDefinition{}
+
 	for i := 0; i < len(apis); i++ {
-		if apis[i].IsOAS {
+		if apis[i].APIDefinition != nil && apis[i].APIDefinition.IsOAS {
 			oas = append(oas, apis[i])
 		} else {
 			classic = append(classic, apis[i])
@@ -396,10 +450,15 @@ func extractOASApis(apis []objects.DBApiDefinition) (classic, oas []objects.DBAp
 func init() {
 	RootCmd.AddCommand(dumpCmd)
 
-	dumpCmd.Flags().StringP("dashboard", "d", "", "Fully qualified dashboard target URL")
-	dumpCmd.Flags().StringP("secret", "s", "", "Your API secret")
-	dumpCmd.Flags().StringP("target", "t", "", "Target directory for files")
-	dumpCmd.Flags().StringSlice("templates", []string{}, "List of template IDs to be dumped")
-	dumpCmd.Flags().StringSlice("policies", []string{}, "Specific Policies ids to dump")
-	dumpCmd.Flags().StringSlice("apis", []string{}, "Specific Apis ids to dump")
+	dumpCmd.Flags().SortFlags = false
+
+	dumpCmd.Flags().StringP("dashboard", "d", "", "Specify the fully qualified URL of the Tyk Dashboard")
+	dumpCmd.Flags().StringP("secret", "s", "", "API secret for accessing Dashboard API. If not set, value of TYKGIT_DB_SECRET environment variable will be used")
+	dumpCmd.Flags().StringP("target", "t", "", "Target directory for the output files. Default to current directory if not provided")
+	dumpCmd.Flags().StringSlice("templates", []string{}, "Specify template IDs to dump. Use this to selectively dump specific API templates. It can be a single ID or an array of string such as “id1,id2”")
+	dumpCmd.Flags().StringSlice("policies", []string{}, "Specify policy IDs to dump. Use this to selectively dump specific policies. It can be a single ID or an array of string such as “id1,id2”")
+	dumpCmd.Flags().StringSlice("apis", []string{}, "Specify API IDs to dump. Use this to selectively dump specific APIs. It can be a single ID or an array of string such as “id1,id2”")
+	dumpCmd.Flags().StringSlice("oas-apis", []string{}, "Specify OAS API IDs to dump. Use this to selectively dump specific OAS APIs. It can be a single ID or an array of string such as “id1,id2”")
+
+	dumpCmd.MarkFlagRequired("dashboard") //nolint
 }

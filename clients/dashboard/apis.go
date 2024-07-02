@@ -3,11 +3,11 @@ package dashboard
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gofrs/uuid"
 
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-sync/clients/objects"
 	"github.com/TykTechnologies/tyk/apidef/oas"
-	"github.com/gofrs/uuid"
 	"github.com/levigross/grequests"
 	"github.com/ongoingio/urljoin"
 )
@@ -19,9 +19,8 @@ type APIResponse struct {
 }
 
 type APISResponse struct {
-	OASApis []oas.OAS                 `json:"oasApis"`
-	Apis    []objects.DBApiDefinition `json:"apis"`
-	Pages   int                       `json:"pages"`
+	Apis  []objects.DBApiDefinition `json:"apis"`
+	Pages int                       `json:"pages"`
 }
 
 func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
@@ -31,8 +30,9 @@ func (c *Client) fixDBDef(def *objects.DBApiDefinition) {
 
 	if def.IsOAS && def.OAS != nil {
 		tykExt := def.OAS.GetTykExtension()
-		if tykExt != nil && def.Id != "" {
-			tykExt.Info.DBID = def.Id
+		dbID := def.GetDBID()
+		if tykExt != nil && dbID != "" {
+			tykExt.Info.DBID = dbID
 		}
 	}
 }
@@ -42,7 +42,37 @@ func (c *Client) SetInsecureTLS(val bool) {
 }
 
 func (c *Client) GetActiveID(def *objects.DBApiDefinition) string {
-	return def.Id.Hex()
+	return def.GetDBID().Hex()
+}
+
+func (c *Client) FetchOASCategory(id string) ([]string, error) {
+	fullPath := urljoin.Join(c.url, endpointOASAPIs, id, endpointCategories)
+
+	getResp, err := grequests.Get(fullPath, &grequests.RequestOptions{
+		Headers: map[string]string{
+			"Authorization": c.secret,
+		},
+		Params: map[string]string{
+			"accept_additional_properties": "true",
+		},
+		InsecureSkipVerify: c.InsecureSkipVerify,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if getResp.StatusCode != 200 {
+		return nil, fmt.Errorf(
+			"OAS Categories API Returned error: %v (code: %v)", getResp.String(), getResp.StatusCode,
+		)
+	}
+
+	categoriesOutput := CategoriesPayload{}
+	if err := getResp.JSON(&categoriesOutput); err != nil {
+		return nil, fmt.Errorf("failed to read OAS Category API output, %v", getResp.String())
+	}
+
+	return categoriesOutput.Categories, nil
 }
 
 func (c *Client) FetchOASAPI(id string) (*oas.OAS, error) {
@@ -97,22 +127,6 @@ func (c *Client) FetchAPIs() (*APISResponse, error) {
 		return nil, err
 	}
 
-	var oasApis []oas.OAS
-
-	for i := range apisResponse.Apis {
-		if apisResponse.Apis[i].APIDefinition != nil && apisResponse.Apis[i].IsOAS {
-			oasApi, err := c.FetchOASAPI(apisResponse.Apis[i].APIID)
-			if err != nil {
-				fmt.Printf("Failed to fetch OAS API: %v, err: %v", apisResponse.Apis[i].APIID, err)
-				continue
-			}
-
-			oasApis = append(oasApis, *oasApi)
-		}
-	}
-
-	apisResponse.OASApis = oasApis
-
 	return &apisResponse, nil
 }
 
@@ -152,10 +166,10 @@ func getAPIsIdentifiers(apiDefs *[]objects.DBApiDefinition) (map[string]*objects
 
 	for i := range *apiDefs {
 		apiDef := (*apiDefs)[i]
-		apiids[apiDef.APIID] = &apiDef
-		ids[apiDef.Id.Hex()] = &apiDef
+		apiids[apiDef.GetAPIID()] = &apiDef
+		ids[apiDef.GetDBID().Hex()] = &apiDef
 		slugs[apiDef.Slug] = &apiDef
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+		paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()] = &apiDef
 	}
 
 	return apiids, ids, slugs, paths
@@ -174,17 +188,18 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 
 	for i := range *apiDefs {
 		apiDef := (*apiDefs)[i]
-		fmt.Printf("Creating API %v: %v\n", i, apiDef.Name)
-		if thisAPI, ok := apiids[apiDef.APIID]; ok && thisAPI != nil {
+		fmt.Printf("Creating API %v: %v\n", i, apiDef.GetAPIName())
+
+		if thisAPI, ok := apiids[apiDef.GetAPIID()]; ok && thisAPI != nil {
 			fmt.Println("Warning: API ID Exists")
 			return UseUpdateError
-		} else if thisAPI, ok := ids[apiDef.Id.Hex()]; ok && thisAPI != nil {
+		} else if thisAPI, ok := ids[apiDef.GetDBID().Hex()]; ok && thisAPI != nil {
 			fmt.Println("Warning: Object ID Exists")
 			return UseUpdateError
 		} else if thisAPI, ok := slugs[apiDef.Slug]; apiDef.Slug != "" && ok && thisAPI != nil {
 			fmt.Println("Warning: Slug Exists")
 			return UseUpdateError
-		} else if thisAPI, ok := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]; ok && thisAPI != nil {
+		} else if thisAPI, ok := paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()]; ok && thisAPI != nil {
 			fmt.Println("Warning: Listen Path Exists")
 			return UseUpdateError
 		}
@@ -198,7 +213,7 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		fullPath := urljoin.Join(c.url, endpointAPIs)
 
 		if asDBDef.APIDefinition != nil {
-			switch asDBDef.IsOAS {
+			switch asDBDef.IsOASAPI() {
 			case true:
 				fullPath = urljoin.Join(c.url, endpointOASAPIs)
 
@@ -242,20 +257,20 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		}
 
 		// Update apiDef with its ID before adding it to the existing APIs list.
-		apiDef.Id = model.ObjectIDHex(status.Meta)
+		apiDef.SetDBID(model.ObjectIDHex(status.Meta))
 
 		// Create will always reset the API ID on dashboard, if we want to retain it, we must use UPDATE
-		if apiDef.APIID != "" {
+		if apiDef.GetAPIID() != "" {
 			retainAPIIdList = append(retainAPIIdList, apiDef)
 		}
 
 		// Add created API to existing API list.
-		apiids[apiDef.APIID] = &apiDef
-		ids[apiDef.Id.Hex()] = &apiDef
+		apiids[apiDef.GetAPIID()] = &apiDef
+		ids[apiDef.GetDBID().Hex()] = &apiDef
 		slugs[apiDef.Slug] = &apiDef
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+		paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()] = &apiDef
 
-		if asDBDef.APIDefinition != nil && asDBDef.IsOAS && len(asDBDef.Categories) > 0 {
+		if asDBDef.IsOASAPI() && len(asDBDef.Categories) > 0 {
 			resp, err := c.UpdateOASCategory(asDBDef)
 			if err != nil {
 				return err
@@ -264,7 +279,7 @@ func (c *Client) CreateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			fmt.Printf("OAS API Categories updated, %v", resp.String())
 		}
 
-		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
+		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.GetAPIID())
 	}
 
 	if err := c.UpdateAPIs(&retainAPIIdList); err != nil {
@@ -285,26 +300,26 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 
 	for i := range *apiDefs {
 		apiDef := (*apiDefs)[i]
-		fmt.Printf("Updating API %v: %v\n", i, apiDef.Name)
-		if thisAPI, ok := apiids[apiDef.APIID]; ok && thisAPI != nil {
-			apiDef.Id = thisAPI.Id
-		} else if thisAPI, ok := ids[apiDef.Id.Hex()]; ok && thisAPI != nil {
-			if apiDef.APIID == "" {
-				apiDef.APIID = thisAPI.APIID
+		fmt.Printf("Updating API %v: %v\n", i, apiDef.GetAPIName())
+		if thisAPI, ok := apiids[apiDef.GetAPIID()]; ok && thisAPI != nil {
+			apiDef.SetDBID(thisAPI.GetDBID())
+		} else if thisAPI, ok := ids[apiDef.GetDBID().Hex()]; ok && thisAPI != nil {
+			if apiDef.GetAPIID() == "" {
+				apiDef.SetAPIID(thisAPI.GetAPIID())
 			}
 		} else if thisAPI, ok := slugs[apiDef.Slug]; ok && thisAPI != nil {
-			if apiDef.APIID == "" {
-				apiDef.APIID = thisAPI.APIID
+			if apiDef.GetAPIID() == "" {
+				apiDef.SetAPIID(thisAPI.GetAPIID())
 			}
-			if apiDef.Id == "" {
-				apiDef.Id = thisAPI.Id
+			if apiDef.GetDBID() == "" {
+				apiDef.SetDBID(thisAPI.GetDBID())
 			}
-		} else if thisAPI, ok := paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain]; ok && thisAPI != nil {
-			if apiDef.APIID == "" {
-				apiDef.APIID = thisAPI.APIID
+		} else if thisAPI, ok := paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()]; ok && thisAPI != nil {
+			if apiDef.GetAPIID() == "" {
+				apiDef.SetAPIID(thisAPI.GetAPIID())
 			}
-			if apiDef.Id == "" {
-				apiDef.Id = thisAPI.Id
+			if apiDef.GetDBID() == "" {
+				apiDef.SetDBID(thisAPI.GetDBID())
 			}
 		} else {
 			return UseCreateError
@@ -317,7 +332,7 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		endpoint := endpointAPIs
 		var payload interface{}
 		payload = asDBDef
-		if apiDef.IsOAS && !c.allowUnsafeOAS {
+		if apiDef.IsOASAPI() {
 			endpoint = endpointOASAPIs
 			payload = asDBDef.OAS
 		}
@@ -327,7 +342,7 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			return err
 		}
 
-		updatePath := urljoin.Join(c.url, endpoint, apiDef.Id.Hex())
+		updatePath := urljoin.Join(c.url, endpoint, apiDef.GetDBID().Hex())
 		updateResp, err := grequests.Put(updatePath, &grequests.RequestOptions{
 			JSON: data,
 			Headers: map[string]string{
@@ -356,7 +371,7 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 			return fmt.Errorf("API request completed, but with error: %v", status.Message)
 		}
 
-		if asDBDef.APIDefinition != nil && asDBDef.IsOAS && len(asDBDef.Categories) > 0 {
+		if asDBDef.IsOASAPI() {
 			resp, err := c.UpdateOASCategory(asDBDef)
 			if err != nil {
 				return err
@@ -366,12 +381,12 @@ func (c *Client) UpdateAPIs(apiDefs *[]objects.DBApiDefinition) error {
 		}
 
 		// Add updated API to existing API list.
-		apiids[apiDef.APIID] = &apiDef
-		ids[apiDef.Id.Hex()] = &apiDef
+		apiids[apiDef.GetAPIID()] = &apiDef
+		ids[apiDef.GetDBID().Hex()] = &apiDef
 		slugs[apiDef.Slug] = &apiDef
-		paths[apiDef.Proxy.ListenPath+"-"+apiDef.Domain] = &apiDef
+		paths[apiDef.GetListenPath()+"-"+apiDef.GetDomain()] = &apiDef
 
-		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.APIID)
+		fmt.Printf("--> Status: OK, ID:%v\n", apiDef.GetAPIID())
 	}
 
 	return nil
@@ -394,40 +409,60 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 
 	// Build the dash ID map
 	for i, api := range existingAPIs {
-		// Lets get a full list of existing IDs
-		if c.isCloud {
-			DashIDMap[api.Slug] = i
-			continue
+		id := ""
+
+		if !api.IsOASAPI() {
+			// Lets get a full list of existing IDs
+			if c.isCloud {
+				DashIDMap[api.Slug] = i
+				continue
+			}
+
+			id, err = parseId(api.GetAPIID(), api.GetDBID().Hex())
+			if err != nil {
+				return err
+			}
+		} else {
+			id, err = parseId(api.GetAPIID(), api.GetDBID().Hex())
+			if err != nil {
+				return err
+			}
 		}
-		DashIDMap[api.APIID] = i
+
+		if id != "" {
+			DashIDMap[id] = i
+		}
 	}
 
 	// Build the Git ID Map
 	for i, def := range apiDefs {
-		if def.APIDefinition == nil {
-			continue
-		}
+		id := ""
+		if def.APIDefinition != nil && !def.APIDefinition.IsOAS {
+			if c.isCloud {
+				GitIDMap[def.Slug] = i
+				continue
+			}
 
-		if c.isCloud {
-			GitIDMap[def.Slug] = i
-			continue
-		}
-
-		if def.APIID != "" {
-			GitIDMap[def.APIID] = i
-			continue
-		} else if def.Id.Hex() != "" {
-			// No API ID? Let's try the actual DB ID
-			GitIDMap[def.Id.Hex()] = i
-			continue
-		} else {
-			uid, err := uuid.NewV4()
+			id, err = parseId(def.GetAPIID(), def.GetDBID().Hex())
 			if err != nil {
-				fmt.Println("error generating UUID", err)
 				return err
 			}
-			created := fmt.Sprintf("temp-%v", uid.String())
-			GitIDMap[created] = i
+		} else if def.OAS != nil {
+			if c.isCloud {
+				GitIDMap[def.Slug] = i
+				continue
+			}
+
+			id, err = parseId(def.GetAPIID(), def.GetDBID().Hex())
+			if err != nil {
+				return err
+			}
+		} else {
+			continue
+		}
+
+		if id != "" {
+			GitIDMap[id] = i
 		}
 	}
 
@@ -438,8 +473,20 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 		if ok {
 			// Make sure we are targeting the correct DB ID
 			api := apiDefs[index]
-			api.Id = existingAPIs[dashIndex].Id
-			api.APIID = existingAPIs[dashIndex].APIID
+			existingApi := existingAPIs[dashIndex]
+			if existingApi.APIDefinition != nil && !existingApi.IsOAS {
+				api.SetDBID(existingApi.GetDBID())
+				api.SetAPIID(existingApi.GetAPIID())
+
+			} else if existingApi.OAS != nil {
+				if existingApi.OAS.GetTykExtension() == nil {
+					return fmt.Errorf("invalid OAS doc, expected x-tyk-gateway field exists")
+				}
+
+				api.SetAPIID(existingApi.GetAPIID())
+				api.SetDBID(existingApi.GetDBID())
+			}
+
 			updateAPIs = append(updateAPIs, api)
 		}
 	}
@@ -449,7 +496,7 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 		_, ok := GitIDMap[key]
 		if !ok {
 			// Make sure we always target the DB ID
-			deleteAPIs = append(deleteAPIs, existingAPIs[dashIndex].Id.Hex())
+			deleteAPIs = append(deleteAPIs, existingAPIs[dashIndex].GetDBID().Hex())
 		}
 	}
 
@@ -478,7 +525,11 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 		return err
 	}
 	for _, apiDef := range updateAPIs {
-		fmt.Printf("SYNC Updated: %v\n", apiDef.Id.Hex())
+		if apiDef.IsOASAPI() {
+			fmt.Printf("SYNC Updated OAS API Definition %v\n", apiDef.GetDBID().Hex())
+		} else {
+			fmt.Printf("SYNC Updated Classic API Definition %v\n", apiDef.GetDBID().Hex())
+		}
 	}
 
 	// Do the creates
@@ -486,7 +537,7 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 		return err
 	}
 	for _, apiDef := range createAPIs {
-		fmt.Printf("SYNC Created: %v\n", apiDef.Name)
+		fmt.Printf("SYNC Created: %v\n", apiDef.GetAPIName())
 	}
 
 	return nil
@@ -510,4 +561,25 @@ func (c *Client) DeleteAPI(id string) error {
 	}
 
 	return nil
+}
+
+func parseId(apiID, dbIDHex string) (string, error) {
+	id := ""
+	if apiID != "" {
+		id = apiID
+	} else if dbIDHex != "" {
+		// No API ID? Let's try the actual DB ID
+		id = dbIDHex
+	} else {
+		uid, err := uuid.NewV4()
+		if err != nil {
+			fmt.Println("error generating UUID", err)
+			return "", err
+		}
+
+		created := fmt.Sprintf("temp-%v", uid.String())
+		id = created
+	}
+
+	return id, nil
 }
