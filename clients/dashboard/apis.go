@@ -3,7 +3,6 @@ package dashboard
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/gofrs/uuid"
 
 	"github.com/TykTechnologies/storage/persistent/model"
