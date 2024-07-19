@@ -3,6 +3,7 @@ package dashboard
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/gofrs/uuid"
 
 	"github.com/TykTechnologies/storage/persistent/model"
@@ -448,10 +449,10 @@ func (c *Client) SyncAPIs(apiDefs []objects.DBApiDefinition) error {
 				return err
 			}
 		} else if def.OAS != nil {
-			if c.isCloud {
-				GitIDMap[def.Slug] = i
-				continue
-			}
+			// if c.isCloud {
+			// 	GitIDMap[def.Slug] = i
+			// 	continue
+			// }
 
 			id, err = parseId(def.GetAPIID(), def.GetDBID().Hex())
 			if err != nil {
