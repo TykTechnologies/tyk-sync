@@ -67,13 +67,13 @@ func (c *Client) UpdateOASCategory(oasApi *objects.DBApiDefinition) (*grequests.
 }
 
 const (
-	endpointAPIs       string = "/api/apis"
-	endpointCategories string = "/categories"
-	endpointOASAPIs    string = "/api/apis/oas"
-	endpointPolicies   string = "/api/portal/policies"
-	endpointCerts      string = "/api/certs"
-	endpointUsers      string = "/api/users"
-	endpointAssets     string = "/api/assets"
+	endpointAPIs       string = "/api/apis/"
+	endpointCategories string = "/categories/"
+	endpointOASAPIs    string = "/api/apis/oas/"
+	endpointPolicies   string = "/api/portal/policies/"
+	endpointCerts      string = "/api/certs/"
+	endpointUsers      string = "/api/users/"
+	endpointAssets     string = "/api/assets/"
 )
 
 var (
