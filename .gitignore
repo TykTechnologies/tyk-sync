@@ -1,9 +1,0 @@
-tyk-sync.exe
-tmp/
-pre/
-tyk-sync
-dist/
-*.key
-.idea/
-vendor/
-.vscode
