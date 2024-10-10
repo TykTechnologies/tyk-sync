@@ -1,5 +1,8 @@
 # Tyk Sync
 
+>[!NOTE] 
+From October 2024, the latest release of Tyk Sync will be closed source. They will only be available to paying customers under [EULA license](https://github.com/TykTechnologies/tyk-sync/blob/deprecated/LICENSE.pdf), as will all future releases. The repository will be archived and no longer maintained.
+
 ## What is it?
 
 Tyk Sync is a command line tool and library to manage and synchronise a Tyk installation with your version control system (VCS).
