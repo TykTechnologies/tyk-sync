@@ -4,4 +4,4 @@ From October 2024, the latest release of Tyk Sync will be closed source. They wi
 
 If you are looking for documentation, please go to the [Tyk Sync Official Documentation](https://tyk.io/docs/nightly/product-stack/tyk-sync/overview/).
 
-If you want to access the source code prior to close-sourcing, please visit the “master” branch.
+If you want to access the source code prior to close-sourcing, please visit the [“master”](https://github.com/TykTechnologies/tyk-sync/tree/master) branch.
